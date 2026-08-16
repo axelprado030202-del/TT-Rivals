@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="TT Rivals — Tu juego. Tu ranking. Tu desafío.">
+  <title>TT Rivals</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="authShell" class="app-shell">
+    <section id="welcomeView" class="view active">
+      <div class="panel welcome-panel">
+        <div class="brand-mark">🏓</div>
+        <p class="eyebrow">TABLE TENNIS</p>
+        <h1>TT RIVALS</h1>
+        <p class="headline"><span>TU JUEGO.</span><span>TU RANKING.</span><span>TU DESAFÍO.</span></p>
+        <p class="subtitle">Jugá partidos reales. Desafiá jugadores. Construí tu ranking.</p>
+        <div class="stack">
+          <button id="goRegister" class="btn btn-start" type="button">COMENZAR</button>
+          <button id="goLogin" class="btn btn-login" type="button">INICIAR SESIÓN</button>
+        </div>
+        <p id="globalStatus" class="status"></p>
+      </div>
+    </section>
+
+    <section id="registerView" class="view">
+      <div class="panel form-panel">
+        <button class="back-btn" data-back="welcomeView" type="button">← Volver</button>
+        <p class="eyebrow">NUEVA CUENTA</p>
+        <h2>Creá tu cuenta</h2>
+        <form id="registerForm" class="form-grid" novalidate>
+          <label>Nombre<input id="firstName" required></label>
+          <label>Apellido<input id="lastName" required></label>
+          <label>Nombre de usuario
+            <input id="username" minlength="3" maxlength="24" required>
+            <small>3–24 caracteres. Letras, números y guion bajo.</small>
+          </label>
+          <label>Correo electrónico<input id="registerEmail" type="email" required></label>
+          <label>Contraseña<input id="registerPassword" type="password" minlength="6" required></label>
+          <label>Confirmar contraseña<input id="confirmPassword" type="password" minlength="6" required></label>
+          <button class="btn btn-start" type="submit">CREAR CUENTA</button>
+          <p id="registerStatus" class="status"></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="loginView" class="view">
+      <div class="panel form-panel">
+        <button class="back-btn" data-back="welcomeView" type="button">← Volver</button>
+        <p class="eyebrow">ACCESO</p>
+        <h2>Iniciar sesión</h2>
+        <form id="loginForm" class="form-grid" novalidate>
+          <label>Correo electrónico<input id="loginEmail" type="email" required></label>
+          <label>Contraseña<input id="loginPassword" type="password" required></label>
+          <button class="btn btn-login" type="submit">INICIAR SESIÓN</button>
+          <p id="loginStatus" class="status"></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="sportsProfileView" class="view">
+      <div class="panel form-panel">
+        <p class="eyebrow">PERFIL DEPORTIVO</p>
+        <h2>Completá tu perfil</h2>
+        <form id="sportsProfileForm" class="form-grid" novalidate>
+          <label>Fecha de nacimiento<input id="birthDate" type="date" required></label>
+          <label>Estilo de juego
+            <select id="playingStyle" required>
+              <option value="">Seleccioná</option><option value="ofensivo">Ofensivo</option>
+              <option value="defensivo">Defensivo</option><option value="allround">Allround</option>
+            </select>
+          </label>
+          <label>Mano hábil
+            <select id="dominantHand" required>
+              <option value="">Seleccioná</option><option value="diestro">Diestro</option>
+              <option value="zurdo">Zurdo</option><option value="ambidiestro">Ambidiestro</option>
+            </select>
+          </label>
+          <label>Club
+            <select id="clubName" required>
+              <option value="">Seleccioná</option><option value="N/A">N/A — No pertenezco a un club</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </label>
+          <label id="customClubWrap" class="hidden">Nombre del club<input id="customClubName" maxlength="80"></label>
+          <label>Foto de perfil (opcional)<input id="profilePhotoUrl" type="url" placeholder="https://..."></label>
+          <button class="btn btn-start" type="submit">COMPLETAR PERFIL</button>
+          <p id="sportsStatus" class="status"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <div id="mainApp" class="main-app hidden">
+    <header class="topbar">
+      <div><p class="eyebrow top-eyebrow">TT RIVALS</p><h2 id="topGreeting">Hola</h2></div>
+      <button id="notificationButton" class="icon-btn" type="button">🔔<span id="notificationBadge" class="badge">0</span></button>
+    </header>
+
+    <section class="content-area">
+      <section id="tab-home" class="tab-page active">
+        <div class="hero-card">
+          <div><p class="muted-label">TU NIVEL ACTUAL</p><h3 id="homeCategory">Provisional</h3><p id="homeUsername" class="profile-handle">@usuario</p></div>
+          <div class="ratings-dual">
+            <article><span>🏓 Individual</span><strong id="homeIndividualRating">1000</strong><small id="homeIndividualRank">—</small></article>
+            <article><span>👥 Dobles</span><strong id="homeDoublesRating">1000</strong><small>—</small></article>
+          </div>
+        </div>
+        <div class="quick-actions">
+          <button class="quick-card primary-action" data-go-tab="play" type="button"><span class="quick-icon">⚔️</span><span><strong>Nuevo desafío</strong><small>Buscá un rival</small></span></button>
+          <button class="quick-card" data-go-tab="ranking" type="button"><span class="quick-icon">🏆</span><span><strong>Ver ranking</strong><small>Compará tu posición</small></span></button>
+        </div>
+        <section class="section-card"><p class="muted-label">ACTIVIDAD</p><h3>Desafíos recientes</h3><div id="homeChallenges" class="challenge-list"></div></section>
+      </section>
+
+      <section id="tab-ranking" class="tab-page">
+        <div class="page-heading"><p class="muted-label">COMPETICIÓN</p><h2>Ranking</h2><p>Clasificación según Elo.</p></div>
+        <div class="segmented">
+          <button class="segment active" data-ranking-mode="individual">Individual</button>
+          <button class="segment" data-ranking-mode="dobles">Dobles</button>
+        </div>
+        <div class="search-box"><span>🔎</span><input id="rankingSearch" type="search" placeholder="Buscar jugador..."></div>
+        <section class="section-card"><div id="rankingList" class="ranking-list"></div></section>
+      </section>
+
+      <section id="tab-play" class="tab-page">
+        <div class="page-heading"><p class="muted-label">COMPETIR</p><h2>Jugar</h2><p>Desafiá, jugá y registrá el resultado.</p></div>
+
+        <section class="section-card">
+          <p class="muted-label">NUEVO DESAFÍO INDIVIDUAL</p><h3>Elegí tu rival</h3>
+          <div class="search-box"><span>🔎</span><input id="challengePlayerSearch" type="search" placeholder="Nombre o @usuario..."></div>
+          <div id="challengePlayerResults" class="player-search-results"><div class="loading-row">Escribí para buscar jugadores.</div></div>
+        </section>
+
+        <section id="challengeComposer" class="section-card hidden">
+          <p class="muted-label">CONFIGURAR DESAFÍO</p>
+          <div class="selected-rival"><div><small>Rival</small><strong id="selectedRivalName">—</strong><span id="selectedRivalUsername">@usuario</span></div><button id="clearSelectedRival" class="tiny-btn">Cambiar</button></div>
+          <form id="challengeForm" class="form-grid">
+            <label>Formato<select id="challengeFormat"><option value="single">1 set</option><option value="bo3">Mejor de 3</option><option value="bo5">Mejor de 5</option></select></label>
+            <label>Fecha (opcional)<input id="challengeDate" type="date"></label>
+            <label>Hora (opcional)<input id="challengeTime" type="time"></label>
+            <label>Lugar (opcional)<input id="challengeLocation" maxlength="100"></label>
+            <button class="btn btn-start" type="submit">ENVIAR DESAFÍO</button>
+            <p id="challengeCreateStatus" class="status"></p>
+          </form>
+        </section>
+
+        <section class="section-card"><p class="muted-label">RECIBIDOS</p><h3>Desafíos pendientes</h3><div id="receivedChallenges" class="challenge-list"></div></section>
+        <section class="section-card"><p class="muted-label">ENVIADOS</p><h3>Esperando respuesta</h3><div id="sentChallenges" class="challenge-list"></div></section>
+        <section class="section-card"><p class="muted-label">PARTIDOS</p><h3>Pendientes de jugar / confirmar</h3><div id="activeMatches" class="match-list"></div></section>
+      </section>
+
+      <section id="tab-stats" class="tab-page">
+        <div class="page-heading"><p class="muted-label">RENDIMIENTO</p><h2>Estadísticas</h2><p>Tu evolución competitiva.</p></div>
+        <div class="stats-grid">
+          <article class="stat-card"><span>Win Rate</span><strong id="statWinRate">—</strong></article>
+          <article class="stat-card"><span>Partidos</span><strong id="statMatches">0</strong></article>
+          <article class="stat-card"><span>Victorias</span><strong id="statWins">0</strong></article>
+          <article class="stat-card"><span>Derrotas</span><strong id="statLosses">0</strong></article>
+        </div>
+        <section class="section-card"><p class="muted-label">RATING</p><h3>Evolución</h3><div id="ratingHistoryList" class="history-list"></div></section>
+      </section>
+
+      <section id="tab-profile" class="tab-page">
+        <div class="profile-header-card"><div id="profileAvatar" class="avatar">🏓</div><div><h2 id="profileName">Jugador</h2><p id="profileUsername">@usuario</p></div></div>
+        <div class="profile-rating-grid">
+          <article><span>🏓 Individual</span><strong id="profileIndividualRating">1000</strong></article>
+          <article><span>👥 Dobles</span><strong id="profileDoublesRating">1000</strong></article>
+        </div>
+        <section class="section-card"><p class="muted-label">PERFIL DEPORTIVO</p><div class="profile-info-list">
+          <div><span>Estilo</span><strong id="profileStyle">—</strong></div><div><span>Mano hábil</span><strong id="profileHand">—</strong></div>
+          <div><span>Edad</span><strong id="profileAge">—</strong></div><div><span>Club</span><strong id="profileClub">—</strong></div>
+        </div></section>
+        <button id="logoutButton" class="danger-btn" type="button">Cerrar sesión</button>
+      </section>
+    </section>
+
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-tab="home"><span>⌂</span><small>Inicio</small></button>
+      <button class="nav-item" data-tab="ranking"><span>🏆</span><small>Ranking</small></button>
+      <button class="nav-item play-nav" data-tab="play"><span>⚔️</span><small>Jugar</small></button>
+      <button class="nav-item" data-tab="stats"><span>📊</span><small>Estadísticas</small></button>
+      <button class="nav-item" data-tab="profile"><span>👤</span><small>Perfil</small></button>
+    </nav>
+  </div>
+
+  <!-- MATCH RESULT MODAL -->
+  <div id="matchModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button id="closeMatchModal" class="modal-close" type="button">✕</button>
+      <p class="eyebrow">RESULTADO DEL PARTIDO</p>
+      <h2 id="matchModalTitle">Jugador A vs Jugador B</h2>
+      <p id="matchModalFormat" class="subtitle compact"></p>
+      <form id="matchResultForm" class="form-grid">
+        <div id="setInputs" class="sets-grid"></div>
+        <button class="btn btn-start" type="submit">ENVIAR RESULTADO</button>
+        <p id="matchResultStatus" class="status"></p>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
