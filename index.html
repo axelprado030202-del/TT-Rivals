@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="TT Rivals — Tu juego. Tu ranking. Tu desafío.">
+  <title>TT Rivals</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <!-- WELCOME -->
+    <section id="welcomeView" class="view active">
+      <div class="panel welcome-panel">
+        <div class="brand-mark" aria-hidden="true">🏓</div>
+        <p class="eyebrow">TABLE TENNIS</p>
+        <h1>TT RIVALS</h1>
+
+        <p class="headline">
+          <span>TU JUEGO.</span>
+          <span>TU RANKING.</span>
+          <span>TU DESAFÍO.</span>
+        </p>
+
+        <p class="subtitle">
+          Jugá partidos reales. Desafiá jugadores. Construí tu ranking.
+        </p>
+
+        <div class="stack">
+          <button id="goRegister" class="btn btn-start" type="button">COMENZAR</button>
+          <button id="goLogin" class="btn btn-login" type="button">INICIAR SESIÓN</button>
+        </div>
+
+        <p id="globalStatus" class="status" aria-live="polite">Conectando con TT Rivals…</p>
+      </div>
+    </section>
+
+    <!-- REGISTER -->
+    <section id="registerView" class="view">
+      <div class="panel form-panel">
+        <button class="back-btn" data-back="welcomeView" type="button">← Volver</button>
+        <p class="eyebrow">NUEVA CUENTA</p>
+        <h2>Creá tu cuenta</h2>
+
+        <form id="registerForm" class="form-grid" novalidate>
+          <label>
+            Nombre
+            <input id="firstName" name="firstName" autocomplete="given-name" required>
+          </label>
+
+          <label>
+            Apellido
+            <input id="lastName" name="lastName" autocomplete="family-name" required>
+          </label>
+
+          <label>
+            Nombre de usuario
+            <input id="username" name="username" autocomplete="username" minlength="3" maxlength="24" required>
+            <small>Entre 3 y 24 caracteres. Letras, números y guion bajo.</small>
+          </label>
+
+          <label>
+            Correo electrónico
+            <input id="registerEmail" name="email" type="email" autocomplete="email" required>
+          </label>
+
+          <label>
+            Contraseña
+            <input id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="6" required>
+          </label>
+
+          <label>
+            Confirmar contraseña
+            <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="6" required>
+          </label>
+
+          <button class="btn btn-start" type="submit">CREAR CUENTA</button>
+          <p id="registerStatus" class="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- LOGIN -->
+    <section id="loginView" class="view">
+      <div class="panel form-panel">
+        <button class="back-btn" data-back="welcomeView" type="button">← Volver</button>
+        <p class="eyebrow">ACCESO</p>
+        <h2>Iniciar sesión</h2>
+
+        <form id="loginForm" class="form-grid" novalidate>
+          <label>
+            Correo electrónico
+            <input id="loginEmail" name="email" type="email" autocomplete="email" required>
+          </label>
+
+          <label>
+            Contraseña
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+          </label>
+
+          <button class="btn btn-login" type="submit">INICIAR SESIÓN</button>
+          <p id="loginStatus" class="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- SPORTS PROFILE -->
+    <section id="sportsProfileView" class="view">
+      <div class="panel form-panel">
+        <p class="eyebrow">PERFIL DEPORTIVO</p>
+        <h2>Completá tu perfil</h2>
+        <p class="subtitle compact">
+          Estos datos son obligatorios. La foto es opcional.
+        </p>
+
+        <form id="sportsProfileForm" class="form-grid" novalidate>
+          <label>
+            Fecha de nacimiento
+            <input id="birthDate" type="date" required>
+          </label>
+
+          <label>
+            Estilo de juego
+            <select id="playingStyle" required>
+              <option value="">Seleccioná una opción</option>
+              <option value="ofensivo">Ofensivo</option>
+              <option value="defensivo">Defensivo</option>
+              <option value="allround">Allround</option>
+            </select>
+          </label>
+
+          <label>
+            Mano hábil
+            <select id="dominantHand" required>
+              <option value="">Seleccioná una opción</option>
+              <option value="diestro">Diestro</option>
+              <option value="zurdo">Zurdo</option>
+              <option value="ambidiestro">Ambidiestro</option>
+            </select>
+          </label>
+
+          <label>
+            Club
+            <select id="clubName" required>
+              <option value="">Seleccioná una opción</option>
+              <option value="N/A">N/A — No pertenezco a un club</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </label>
+
+          <label id="customClubWrap" class="hidden">
+            Nombre del club
+            <input id="customClubName" type="text" maxlength="80">
+          </label>
+
+          <label>
+            Foto de perfil (opcional)
+            <input id="profilePhotoUrl" type="url" placeholder="https://...">
+            <small>En esta V3 usamos una URL opcional. Más adelante agregaremos subida de archivos.</small>
+          </label>
+
+          <button class="btn btn-start" type="submit">COMPLETAR PERFIL</button>
+          <p id="sportsStatus" class="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- HOME -->
+    <section id="homeView" class="view">
+      <div class="panel home-panel">
+        <div class="home-top">
+          <div>
+            <p class="eyebrow">TT RIVALS</p>
+            <h2 id="homeGreeting">Bienvenido</h2>
+          </div>
+          <button id="logoutButton" class="small-btn" type="button">Cerrar sesión</button>
+        </div>
+
+        <div class="rating-grid">
+          <article class="rating-card">
+            <span>🏓 Individual</span>
+            <strong id="individualRating">1000</strong>
+          </article>
+
+          <article class="rating-card">
+            <span>👥 Dobles</span>
+            <strong id="doublesRating">1000</strong>
+          </article>
+        </div>
+
+        <div class="info-card">
+          <p><strong>Usuario:</strong> <span id="homeUsername">—</span></p>
+          <p><strong>Estilo:</strong> <span id="homeStyle">—</span></p>
+          <p><strong>Mano:</strong> <span id="homeHand">—</span></p>
+          <p><strong>Club:</strong> <span id="homeClub">—</span></p>
+        </div>
+
+        <p class="subtitle compact">
+          Esta es la primera pantalla funcional. En la próxima versión agregaremos navegación, ranking, desafíos y estadísticas.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
