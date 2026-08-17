@@ -214,6 +214,43 @@
           <button type="button" data-go-tab="ranking">Ver temporada →</button>
         </section>
 
+
+        <section class="v28-progression-panel section-card">
+          <div class="v28-level-head">
+            <div>
+              <p class="muted-label">PROGRESIÓN</p>
+              <h3>Cuenta nivel <span id="v28Level">1</span></h3>
+            </div>
+            <strong id="v28XpText">0 / 500 XP</strong>
+          </div>
+          <div class="v28-xp-track"><span id="v28XpBar"></span></div>
+          <div class="v28-home-tools">
+            <button id="v28QuickRival" type="button"><span>⚔</span><strong>Encontrar rival</strong><small>Rival competitivo recomendado</small></button>
+            <button id="v28CoachHome" type="button"><span>✦</span><strong>TT Coach</strong><small>Análisis inteligente de tu momento</small></button>
+          </div>
+        </section>
+
+        <section class="v28-missions section-card">
+          <div class="section-title-row">
+            <div><p class="muted-label">OBJETIVOS</p><h3>Misiones</h3></div>
+            <span class="v28-mission-reset">XP de cuenta · no altera Elo</span>
+          </div>
+          <div id="v28MissionList" class="v28-mission-list"><div class="loading-row">Cargando misiones…</div></div>
+        </section>
+
+        <section class="v28-week-event section-card">
+          <div>
+            <p class="muted-label">EVENTO ACTIVO</p>
+            <h3 id="v28EventTitle">Semana competitiva</h3>
+            <span id="v28EventDesc">Jugá y construí tu historial.</span>
+          </div>
+          <div id="v28EventBadge" class="v28-event-badge">EVENTO</div>
+        </section>
+
+        <section id="v28MatchWeek" class="v28-match-week section-card hidden"></section>
+
+        <section id="v28RivalryCard" class="v28-rivalry-card section-card hidden"></section>
+
         <section class="v15-actions">
           <button class="v15-action-card action-primary" data-go-tab="play" type="button">
             <span class="v15-action-symbol">＋</span>
@@ -645,6 +682,29 @@
           </div>
         </section>
 
+
+        <section class="section-card v28-format-section">
+          <div class="section-title-row">
+            <div><p class="muted-label">FORMATOS</p><h3>Tu rendimiento por duración</h3></div>
+            <span class="comparative-badge">1 set · Bo3 · Bo5</span>
+          </div>
+          <div id="v28FormatStats" class="v28-format-grid"></div>
+        </section>
+
+        <section class="section-card v28-strength-section">
+          <div class="section-title-row">
+            <div><p class="muted-label">MAPA COMPETITIVO</p><h3>Tus fortalezas</h3></div>
+            <span class="comparative-badge">basado en resultados</span>
+          </div>
+          <div id="v28StrengthMap" class="v28-strength-map"></div>
+        </section>
+
+        <section class="section-card v28-coach-panel">
+          <div class="v28-coach-head"><span>✦</span><div><p class="muted-label">TT COACH · BETA</p><h3>Análisis de tu momento</h3></div></div>
+          <p id="v28CoachText">Analizando tu historial competitivo…</p>
+          <button id="v28RefreshCoach" type="button">Actualizar análisis</button>
+        </section>
+
         <section class="section-card rating-evolution-card">
           <div class="rating-chart-header">
             <div>
@@ -755,6 +815,16 @@
           <div id="primaryRivalCard" class="primary-rival-card">
             <div class="loading-row">Todavía no elegiste rival principal.</div>
           </div>
+        </section>
+
+
+        <section class="section-card v28-trophy-room">
+          <div class="section-title-row">
+            <div><p class="muted-label">VITRINA</p><h3>Sala de trofeos</h3></div>
+            <span class="comparative-badge">historial permanente</span>
+          </div>
+          <div id="v28TrophyGrid" class="v28-trophy-grid"></div>
+          <button id="v28SeasonRecapButton" class="secondary-action-button" type="button">Ver resumen de temporada →</button>
         </section>
 
         <section class="section-card achievements-section">
@@ -1062,6 +1132,14 @@
     </div>
   </div>
 
+
+
+  <div id="v28SeasonRecapModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card v28-season-recap-modal">
+      <button id="v28CloseSeasonRecap" class="modal-close" type="button">✕</button>
+      <div id="v28SeasonRecapContent"></div>
+    </div>
+  </div>
 
   <div id="activityCenterModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-card activity-center-modal">
