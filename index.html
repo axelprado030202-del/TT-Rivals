@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="TT Rivals — Tu juego. Tu ranking. Tu desafío.">
+  <title>TT Rivals</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main id="authShell" class="app-shell">
+    <section id="welcomeView" class="view active">
+      <div class="panel welcome-panel">
+        <div class="brand-mark">🏓</div>
+        <p class="eyebrow">TABLE TENNIS</p>
+        <h1>TT RIVALS</h1>
+        <p class="headline"><span>TU JUEGO.</span><span>TU RANKING.</span><span>TU DESAFÍO.</span></p>
+        <p class="subtitle">Jugá partidos reales. Desafiá jugadores. Construí tu ranking.</p>
+        <div class="stack">
+          <button id="goRegister" class="btn btn-start" type="button">COMENZAR</button>
+          <button id="goLogin" class="btn btn-login" type="button">INICIAR SESIÓN</button>
+        </div>
+        <p id="globalStatus" class="status"></p>
+      </div>
+    </section>
+
+    <section id="registerView" class="view">
+      <div class="panel form-panel">
+        <button class="back-btn" data-back="welcomeView" type="button">← Volver</button>
+        <p class="eyebrow">NUEVA CUENTA</p>
+        <h2>Creá tu cuenta</h2>
+        <form id="registerForm" class="form-grid" novalidate>
+          <label>Nombre<input id="firstName" required></label>
+          <label>Apellido<input id="lastName" required></label>
+          <label>Nombre de usuario
+            <input id="username" minlength="3" maxlength="24" required>
+            <small>3–24 caracteres. Letras, números y guion bajo.</small>
+          </label>
+          <label>Correo electrónico<input id="registerEmail" type="email" required></label>
+          <label>Contraseña<input id="registerPassword" type="password" minlength="6" required></label>
+          <label>Confirmar contraseña<input id="confirmPassword" type="password" minlength="6" required></label>
+          <button class="btn btn-start" type="submit">CREAR CUENTA</button>
+          <p id="registerStatus" class="status"></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="loginView" class="view">
+      <div class="panel form-panel">
+        <button class="back-btn" data-back="welcomeView" type="button">← Volver</button>
+        <p class="eyebrow">ACCESO</p>
+        <h2>Iniciar sesión</h2>
+        <form id="loginForm" class="form-grid" novalidate>
+          <label>Correo electrónico<input id="loginEmail" type="email" required></label>
+          <label>Contraseña<input id="loginPassword" type="password" required></label>
+          <button class="btn btn-login" type="submit">INICIAR SESIÓN</button>
+          <p id="loginStatus" class="status"></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="sportsProfileView" class="view">
+      <div class="panel form-panel">
+        <p class="eyebrow">PERFIL DEPORTIVO</p>
+        <h2>Completá tu perfil</h2>
+        <form id="sportsProfileForm" class="form-grid" novalidate>
+          <label>Fecha de nacimiento<input id="birthDate" type="date" required></label>
+          <label>Estilo de juego
+            <select id="playingStyle" required>
+              <option value="">Seleccioná</option><option value="ofensivo">Ofensivo</option>
+              <option value="defensivo">Defensivo</option><option value="allround">Allround</option>
+            </select>
+          </label>
+          <label>Mano hábil
+            <select id="dominantHand" required>
+              <option value="">Seleccioná</option><option value="diestro">Diestro</option>
+              <option value="zurdo">Zurdo</option><option value="ambidiestro">Ambidiestro</option>
+            </select>
+          </label>
+          <label>Club
+            <select id="clubName" required>
+              <option value="">Seleccioná</option><option value="N/A">N/A — No pertenezco a un club</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </label>
+          <label id="customClubWrap" class="hidden">Nombre del club<input id="customClubName" maxlength="80"></label>
+          <div class="onboarding-photo-field">
+            <span class="onboarding-photo-label">Foto de perfil <small>(opcional)</small></span>
+
+            <button id="onboardingPhotoPicker" class="onboarding-photo-picker" type="button" aria-label="Añadir foto de perfil">
+              <span id="onboardingPhotoPreview" class="onboarding-photo-preview">
+                <span class="onboarding-photo-plus">+</span>
+              </span>
+              <strong>Añadir foto</strong>
+              <small>Elegí una imagen desde tu dispositivo</small>
+            </button>
+
+            <input id="onboardingPhotoFileInput" class="hidden" type="file" accept="image/jpeg,image/png,image/webp">
+            <button id="clearOnboardingPhoto" class="clear-onboarding-photo hidden" type="button">Quitar foto seleccionada</button>
+          </div>
+          <button class="btn btn-start" type="submit">COMPLETAR PERFIL</button>
+          <p id="sportsStatus" class="status"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <div id="mainApp" class="main-app hidden">
+    <header class="topbar">
+      <div><p class="eyebrow top-eyebrow">TT RIVALS</p><h2 id="topGreeting">Hola</h2></div>
+      <button id="notificationButton" class="icon-btn" type="button">🔔<span id="notificationBadge" class="badge">0</span></button>
+    </header>
+
+    <div id="liveNotificationStack" class="live-notification-stack hidden" aria-live="polite"></div>
+
+    <section class="content-area">
+      <section id="tab-home" class="tab-page active">
+        <div class="v15-home-layout">
+          <section class="v15-player-hero">
+            <div class="v15-player-identity">
+              <div class="home-avatar-wrap">
+                <div id="homeAvatar" class="home-avatar v15-avatar" data-has-photo="false">
+                  <img id="homeAvatarImg" src="" alt="Foto del jugador">
+                  <span id="homeAvatarFallback">A</span>
+                </div>
+
+                <button id="profilePhotoMenuButton" class="profile-photo-plus" type="button" aria-label="Opciones de foto">+</button>
+
+                <div id="profilePhotoMenu" class="profile-photo-menu hidden">
+                  <button id="addProfilePhotoButton" type="button">
+                    <span>📷</span><div><strong>Añadir foto</strong><small>Elegir una imagen del dispositivo</small></div>
+                  </button>
+                  <button id="removeProfilePhotoButton" type="button">
+                    <span>👤</span><div><strong>Quitar foto</strong><small>Ocultarla sin borrar el archivo</small></div>
+                  </button>
+                  <button id="deleteProfilePhotoButton" class="photo-danger" type="button">
+                    <span>🗑️</span><div><strong>Eliminar foto</strong><small>Borrarla definitivamente</small></div>
+                  </button>
+                </div>
+                <input id="profilePhotoFileInput" class="hidden" type="file" accept="image/png,image/jpeg,image/webp">
+              </div>
+
+              <div class="v15-player-copy">
+                <p class="muted-label">TU PERFIL COMPETITIVO</p>
+                <div id="homeRankBadge" class="home-rank-badge rank-bronce">
+                  <img id="homeRankIconSmall" class="home-rank-badge-icon" src="assets/ranks/bronce.png" alt="Rango Bronce">
+                  <h3 id="homeCategory" class="rank-name">Bronce</h3>
+                </div>
+                <p id="homeUsername" class="profile-handle">@usuario</p>
+              </div>
+            </div>
+
+            <div class="v15-hero-rating">
+              <span>RATING INDIVIDUAL</span>
+              <strong id="homeIndividualRating">1000</strong>
+              <small id="homeIndividualRank" class="rank-mini">Bronce</small>
+            </div>
+
+            <div class="v15-rank-progress">
+              <div class="v15-rank-progress-top">
+                <span id="homeRankPosition">Ranking global: —</span>
+                <span id="homeNextRankText">Próximo rango: —</span>
+              </div>
+              <div class="v15-progress-track"><span id="homeRankProgressBar"></span></div>
+            </div>
+
+            <button id="openRankTableHome" class="v15-rank-link" type="button">
+              <span>Ver tabla de rangos</span><b>→</b>
+            </button>
+          </section>
+
+          <section class="v15-dashboard-stats" aria-label="Resumen competitivo">
+            <article class="v15-metric-card metric-streak">
+              <span class="v15-metric-icon">🔥</span>
+              <small>Racha actual</small>
+              <strong id="homeCurrentStreak">0</strong>
+              <span>victorias seguidas</span>
+            </article>
+            <article class="v15-metric-card">
+              <span class="v15-metric-icon">🏆</span>
+              <small>Mejor racha</small>
+              <strong id="homeMaxStreak">0</strong>
+              <span>récord personal</span>
+            </article>
+            <article class="v15-metric-card">
+              <span class="v15-metric-icon">★</span>
+              <small>Reputación</small>
+              <strong id="homeReputation">—</strong>
+              <span id="homeReviewCount">sin valoraciones</span>
+            </article>
+            <article class="v15-metric-card">
+              <span class="v15-metric-icon">◆</span>
+              <small>Logros</small>
+              <strong id="homeAchievementCount">0</strong>
+              <span id="homeAchievementTotal">de 0 desbloqueados</span>
+            </article>
+          </section>
+        </div>
+
+        <section class="v15-actions">
+          <button class="v15-action-card action-primary" data-go-tab="play" type="button">
+            <span class="v15-action-symbol">＋</span>
+            <div><strong>Nuevo desafío</strong><small>Buscá un rival y empezá a competir</small></div>
+            <b>→</b>
+          </button>
+          <button class="v15-action-card" data-go-tab="tournaments" type="button">
+            <span class="v15-action-symbol">♛</span>
+            <div><strong>Torneos</strong><small>Creá o seguí una competencia</small></div>
+            <b>→</b>
+          </button>
+          <button class="v15-action-card" data-go-tab="ranking" type="button">
+            <span class="v15-action-symbol">#</span>
+            <div><strong>Ranking</strong><small>Descubrí tu posición global</small></div>
+            <b>→</b>
+          </button>
+        </section>
+
+        <section class="v15-home-footer-grid">
+          <article class="v15-mini-panel">
+            <div>
+              <p class="muted-label">DOBLES</p>
+              <strong id="homeDoublesRating">1000 Elo</strong>
+              <small id="homeDoublesRank" class="rank-mini">Bronce</small>
+            </div>
+            <span>2VS2</span>
+          </article>
+          <article class="v15-mini-panel v15-next-objective">
+            <div>
+              <p class="muted-label">PRÓXIMO OBJETIVO</p>
+              <strong id="homeObjectiveTitle">Subir de rango</strong>
+              <small id="homeObjectiveDetail">Seguí compitiendo para avanzar.</small>
+            </div>
+            <span>◎</span>
+          </article>
+        </section>
+      </section>
+
+      <section id="tab-ranking" class="tab-page">
+        <div class="page-heading"><p class="muted-label">COMPETICIÓN</p><h2>Ranking</h2><p>Clasificación según Elo.</p></div>
+        <div class="segmented">
+          <button class="segment active" data-ranking-mode="individual">Individual</button>
+          <button class="segment" data-ranking-mode="dobles">Dobles</button>
+        </div>
+
+        <div class="ranking-scope-tabs">
+          <button class="ranking-scope active" data-ranking-scope="global" type="button">Global</button>
+          <button class="ranking-scope" data-ranking-scope="following" type="button">Siguiendo</button>
+          <button class="ranking-scope" data-ranking-scope="feed" type="button">Actividad</button>
+        </div>
+
+        <div id="rankingSearchBox" class="search-box"><span>🔎</span><input id="rankingSearch" type="search" placeholder="Buscar jugador..."></div>
+        <section id="rankingListSection" class="section-card"><div id="rankingList" class="ranking-list"></div></section>
+
+        <section id="followingFeedSection" class="section-card hidden">
+          <div class="following-feed-head">
+            <div><p class="muted-label">SIGUIENDO</p><h3>Actividad competitiva</h3></div>
+            <span>Últimos partidos de los jugadores que seguís</span>
+          </div>
+          <div id="followingFeedList" class="following-feed-list"></div>
+        </section>
+      </section>
+
+      <section id="tab-play" class="tab-page">
+        <div class="page-heading"><p class="muted-label">COMPETIR</p><h2>Jugar</h2><p>Desafiá, jugá y registrá el resultado.</p></div>
+        <button class="tournament-banner" data-go-tab="tournaments" type="button">
+          <span>🏆</span>
+          <span><strong>TORNEOS</strong><small>Crear, inscribir jugadores y llevar posiciones</small></span>
+          <b>→</b>
+        </button>
+
+
+        <section class="section-card">
+          <p class="muted-label">NUEVO DESAFÍO INDIVIDUAL</p><h3>Elegí tu rival</h3>
+          <div class="search-box"><span>🔎</span><input id="challengePlayerSearch" type="search" placeholder="Nombre o @usuario..."></div>
+          <div id="challengePlayerResults" class="player-search-results"><div class="loading-row">Escribí para buscar jugadores.</div></div>
+        </section>
+
+        <section id="challengeComposer" class="section-card hidden">
+          <p class="muted-label">CONFIGURAR DESAFÍO</p>
+          <div class="selected-rival"><div><small>Rival</small><strong id="selectedRivalName">—</strong><span id="selectedRivalUsername">@usuario</span></div><button id="clearSelectedRival" class="tiny-btn">Cambiar</button></div>
+          <form id="challengeForm" class="form-grid">
+            <div class="challenge-match-type">
+              <span class="challenge-type-label">Tipo de partido</span>
+              <div class="challenge-type-grid">
+                <button class="challenge-type-option active" data-challenge-type="ranked" type="button">
+                  <span>R</span><div><strong>Con ranking</strong><small>El resultado modifica el Elo</small></div>
+                </button>
+                <button class="challenge-type-option casual" data-challenge-type="casual" type="button">
+                  <span>C</span><div><strong>Casual</strong><small>Se registra, pero no modifica el Elo</small></div>
+                </button>
+              </div>
+              <input id="challengeMatchType" type="hidden" value="ranked">
+            </div>
+            <label>Formato<select id="challengeFormat"><option value="single">1 set</option><option value="bo3">Mejor de 3</option><option value="bo5">Mejor de 5</option></select></label>
+            <label>Fecha (opcional)<input id="challengeDate" type="date"></label>
+            <label>Hora (opcional)<input id="challengeTime" type="time"></label>
+            <label>Lugar (opcional)<input id="challengeLocation" maxlength="100"></label>
+            <button class="btn btn-start" type="submit">ENVIAR DESAFÍO</button>
+            <p id="challengeCreateStatus" class="status"></p>
+          </form>
+        </section>
+
+        <section class="section-card"><p class="muted-label">RECIBIDOS</p><h3>Desafíos pendientes</h3><div id="receivedChallenges" class="challenge-list"></div></section>
+        <section class="section-card"><p class="muted-label">ENVIADOS</p><h3>Esperando respuesta</h3><div id="sentChallenges" class="challenge-list"></div></section>
+        <section class="section-card"><p class="muted-label">PARTIDOS</p><h3>Pendientes de jugar / confirmar</h3><div id="activeMatches" class="match-list"></div></section>
+      </section>
+
+
+      <section id="tab-tournaments" class="tab-page">
+        <div class="page-heading">
+          <p class="muted-label">COMPETICIÓN</p>
+          <h2>🏆 Torneos</h2>
+          <p>Elegí la modalidad y armá el torneo exactamente como querés.</p>
+        </div>
+
+        <div id="tournamentModeChooser">
+          <div class="tournament-choice-grid">
+            <button class="tournament-choice-card" data-tournament-modality="individual" type="button">
+              <span>🏓</span><strong>Torneo 1vs1</strong><small>Competencia individual</small>
+            </button>
+            <button class="tournament-choice-card" data-tournament-modality="doubles" type="button">
+              <span>👥</span><strong>Torneo 2vs2</strong><small>Parejas formadas al azar</small>
+            </button>
+          </div>
+
+          <section class="section-card">
+            <p class="muted-label">TORNEOS CREADOS</p>
+            <h3>Historial y torneos activos</h3>
+            <div id="tournamentList" class="tournament-list"><div class="loading-row">Cargando torneos…</div></div>
+          </section>
+        </div>
+
+        <div id="tournamentPresetChooser" class="hidden">
+          <button id="backToTournamentModes" class="back-inline" type="button">← Modalidad</button>
+          <p class="muted-label">TIPO DE TORNEO</p>
+          <h3 id="selectedTournamentModeTitle">Torneo 1vs1</h3>
+          <div class="preset-grid">
+            <button class="preset-card" data-tournament-preset="simple" type="button">
+              <span>⚡</span><strong>Torneo Simple</strong><small>Todos los partidos a 1 set (1×11)</small>
+            </button>
+            <button class="preset-card" data-tournament-preset="intermediate" type="button">
+              <span>🔥</span><strong>Torneo Intermedio</strong><small>Todos los partidos al mejor de 3 sets</small>
+            </button>
+            <button class="preset-card" data-tournament-preset="extended" type="button">
+              <span>🏆</span><strong>Torneo Extenso</strong><small>Todos los partidos al mejor de 5 sets</small>
+            </button>
+            <button class="preset-card custom" data-tournament-preset="custom" type="button">
+              <span>⚙️</span><strong>Torneo Personalizado</strong><small>Elegís los sets de cada etapa</small>
+            </button>
+          </div>
+        </div>
+
+        <div id="tournamentBuilder" class="hidden">
+          <button id="backToTournamentPresets" class="back-inline" type="button">← Tipo de torneo</button>
+          <section class="section-card builder-card">
+            <p class="muted-label">CONFIGURACIÓN</p>
+            <h3 id="tournamentBuilderTitle">Nuevo torneo</h3>
+
+            <form id="tournamentCreateForm" class="form-grid">
+              <label>Nombre del torneo
+                <input id="tournamentName" maxlength="80" placeholder="Ej: Copa de Agosto" required>
+              </label>
+
+              <label>¿Desde dónde empieza?
+                <select id="tournamentStartStage" required>
+                  <option value="groups">Fase de grupos</option>
+                  <option value="r32">Dieciseisavos</option>
+                  <option value="r16">Octavos</option>
+                  <option value="qf">Cuartos de final</option>
+                  <option value="sf">Semifinales</option>
+                  <option value="final">Final</option>
+                </select>
+              </label>
+
+              <div id="groupOptions">
+                <div class="two-col">
+                  <label>Cantidad de grupos
+                    <input id="tournamentGroupCount" type="number" min="1" max="16" value="2">
+                  </label>
+                  <label>Clasifican por grupo
+                    <input id="tournamentQualifiers" type="number" min="1" max="8" value="2">
+                  </label>
+                </div>
+                <label>Después de grupos pasar a
+                  <select id="tournamentAfterGroupsStage">
+                    <option value="r32">Dieciseisavos</option>
+                    <option value="r16">Octavos</option>
+                    <option value="qf" selected>Cuartos de final</option>
+                    <option value="sf">Semifinales</option>
+                    <option value="final">Final</option>
+                  </select>
+                </label>
+              </div>
+
+              <div id="customSetOptions" class="hidden">
+                <p class="muted-label stage-config-label">SETS POR ETAPA</p>
+                <div class="stage-set-grid">
+                  <label>Grupos<select data-custom-stage="groups"><option value="1">1 set</option><option value="3" selected>Mejor de 3</option><option value="5">Mejor de 5</option><option value="7">Mejor de 7</option></select></label>
+                  <label>Dieciseisavos<select data-custom-stage="r32"><option value="1">1 set</option><option value="3" selected>Mejor de 3</option><option value="5">Mejor de 5</option><option value="7">Mejor de 7</option></select></label>
+                  <label>Octavos<select data-custom-stage="r16"><option value="1">1 set</option><option value="3" selected>Mejor de 3</option><option value="5">Mejor de 5</option><option value="7">Mejor de 7</option></select></label>
+                  <label>Cuartos<select data-custom-stage="qf"><option value="1">1 set</option><option value="3" selected>Mejor de 3</option><option value="5">Mejor de 5</option><option value="7">Mejor de 7</option></select></label>
+                  <label>Semifinal<select data-custom-stage="sf"><option value="1">1 set</option><option value="3" selected>Mejor de 3</option><option value="5">Mejor de 5</option><option value="7">Mejor de 7</option></select></label>
+                  <label>Final<select data-custom-stage="final"><option value="1">1 set</option><option value="3">Mejor de 3</option><option value="5" selected>Mejor de 5</option><option value="7">Mejor de 7</option><option value="9">Mejor de 9</option></select></label>
+                </div>
+              </div>
+
+              <div class="participant-counter">
+                <div>
+                  <p class="muted-label">PARTICIPANTES</p>
+                  <strong id="selectedParticipantCount">0 seleccionados</strong>
+                </div>
+                <span id="participantRequirement">Mínimo 2</span>
+              </div>
+
+              <div class="search-box">
+                <span>🔎</span>
+                <input id="tournamentPlayerSearch" type="search" placeholder="Buscar usuario para agregar...">
+              </div>
+              <div id="tournamentPlayerSearchResults" class="player-search-results"></div>
+              <div id="selectedTournamentPlayers" class="selected-player-chips"></div>
+
+              <div class="luck-box">
+                🎲 <strong>El emparejamiento será totalmente aleatorio.</strong>
+                <span>El Elo no interviene: toca toca, la suerte es loca.</span>
+              </div>
+
+              <button class="btn btn-start" type="submit">CREAR Y SORTEAR TORNEO</button>
+              <p id="tournamentCreateStatus" class="status"></p>
+            </form>
+          </section>
+        </div>
+
+        <section id="tournamentDetail" class="section-card hidden">
+          <div class="tournament-title-row">
+            <div>
+              <p class="muted-label">TORNEO</p>
+              <h3 id="tournamentDetailName">—</h3>
+              <p id="tournamentDetailMeta" class="subtle-text"></p>
+            </div>
+            <button id="closeTournamentDetail" class="tiny-btn" type="button">Cerrar</button>
+          </div>
+
+          <div id="tournamentBracket"></div>
+
+          <div id="groupCloseArea" class="hidden">
+            <button id="closeGroupStageButton" class="btn btn-login tournament-main-button" type="button">CERRAR FASE DE GRUPOS Y SORTEAR CRUCES</button>
+          </div>
+
+          <div id="finalizeTournamentArea" class="hidden">
+            <button id="finalizeTournamentButton" class="btn btn-start tournament-main-button" type="button">CERRAR TORNEO Y GENERAR TABLA FINAL</button>
+          </div>
+
+          <div id="finalStandingsArea" class="hidden">
+            <p class="muted-label tournament-subtitle">TABLA FINAL</p>
+            <div id="tournamentStandings" class="standings-wrap"></div>
+          </div>
+        </section>
+      </section>
+
+      <section id="tab-history" class="tab-page">
+        <div class="page-heading history-heading">
+          <div>
+            <p class="muted-label">COMPETICIÓN</p>
+            <h2>Historial</h2>
+            <p>Todos tus partidos, resultados y cambios de Elo.</p>
+          </div>
+          <button class="history-stats-button" data-go-tab="stats" type="button">Ver estadísticas →</button>
+        </div>
+
+        <div class="history-summary-grid">
+          <article><span>Partidos</span><strong id="historyMatchesCount">0</strong></article>
+          <article><span>Victorias</span><strong id="historyWinsCount">0</strong></article>
+          <article><span>Derrotas</span><strong id="historyLossesCount">0</strong></article>
+          <article><span>Abandonos</span><strong id="historyAbandonsCount">0</strong></article>
+        </div>
+
+        <div class="history-legend">
+          <span><i class="legend-win"></i> Victoria</span>
+          <span><i class="legend-loss"></i> Derrota</span>
+          <span><i class="legend-abandon"></i> Abandono</span>
+        </div>
+
+        <section class="section-card v15-history-shell">
+          <div id="matchHistoryList" class="v15-match-history">
+            <div class="loading-row">Cargando historial…</div>
+          </div>
+        </section>
+      </section>
+
+      <section id="tab-stats" class="tab-page">
+        <div class="page-heading"><p class="muted-label">RENDIMIENTO</p><h2>Estadísticas</h2><p>Tu evolución competitiva.</p></div>
+        <div class="stats-grid">
+          <article class="stat-card"><span>Win Rate</span><strong id="statWinRate">—</strong></article>
+          <article class="stat-card"><span>Partidos</span><strong id="statMatches">0</strong></article>
+          <article class="stat-card"><span>Victorias</span><strong id="statWins">0</strong></article>
+          <article class="stat-card"><span>Derrotas</span><strong id="statLosses">0</strong></article>
+        </div>
+
+        <section class="section-card played-matches-section">
+          <div class="played-matches-heading">
+            <div><p class="muted-label">REGISTRO</p><h3>Partidos jugados</h3></div>
+            <span>Todos los partidos confirmados</span>
+          </div>
+          <div class="played-matches-grid">
+            <article class="played-match-tile ranked"><span>Con ranking</span><strong id="statRankedMatches">0</strong><small>afectaron tu Elo</small></article>
+            <article class="played-match-tile casual"><span>Casuales</span><strong id="statCasualMatches">0</strong><small>sin puntos de ranking</small></article>
+            <article class="played-match-tile total"><span>Totales</span><strong id="statTotalMatches">0</strong><small>registro completo</small></article>
+          </div>
+        </section>
+
+        <section class="section-card rating-evolution-card">
+          <div class="rating-chart-header">
+            <div>
+              <p class="muted-label">RATING</p>
+              <h3>Evolución</h3>
+            </div>
+            <div id="ratingChartCurrent" class="chart-current-rating">— Elo</div>
+          </div>
+
+          <div id="ratingChartEmpty" class="chart-empty hidden">Jugá partidos para comenzar a construir tu gráfica.</div>
+
+          <div id="ratingChartWrap" class="rating-chart-wrap">
+            <svg id="ratingChart" class="rating-chart" viewBox="0 0 700 280" preserveAspectRatio="none" role="img" aria-label="Evolución del rating">
+              <defs>
+                <linearGradient id="ratingAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="currentColor" stop-opacity=".28"/>
+                  <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <g id="ratingChartGrid"></g>
+              <path id="ratingChartArea" class="rating-chart-area" d=""></path>
+              <path id="ratingChartLine" class="rating-chart-line" d=""></path>
+              <g id="ratingChartDots"></g>
+            </svg>
+            <div id="ratingChartTooltip" class="rating-chart-tooltip hidden"></div>
+          </div>
+
+          <div class="chart-range-row">
+            <span id="ratingChartMin">—</span>
+            <span>Historial de Elo</span>
+            <span id="ratingChartMax">—</span>
+          </div>
+
+          <div id="ratingHistoryList" class="history-list compact-history"></div>
+        </section>
+      </section>
+
+      <section id="tab-profile" class="tab-page">
+        <section class="v15-profile-hero">
+          <div id="profileAvatar" class="v15-profile-avatar">
+            <img id="profileAvatarImg" alt="Foto del jugador">
+            <span id="profileAvatarFallback">TT</span>
+          </div>
+          <div class="v15-profile-main">
+            <p class="muted-label">PERFIL DE JUGADOR</p>
+            <h2 id="profileName">Jugador</h2>
+            <p id="profileUsername">@usuario</p>
+            <div class="v15-profile-tags">
+              <span id="profileRankTag">Bronce</span>
+              <span id="profileReputationTag">★ Sin valorar</span>
+              <span id="profileStreakTag">🔥 Racha 0</span>
+            </div>
+          </div>
+        </section>
+
+        <div class="profile-rating-grid">
+          <article><span>Individual</span><strong id="profileIndividualRating">1000</strong><small id="profileIndividualRank" class="rank-mini">Bronce</small></article>
+          <article><span>Dobles</span><strong id="profileDoublesRating">1000</strong><small id="profileDoublesRank" class="rank-mini">Bronce</small></article>
+          <article><span>Mejor racha</span><strong id="profileMaxStreak">0</strong><small>victorias seguidas</small></article>
+          <article><span>Reputación</span><strong id="profileReputation">—</strong><small id="profileReviewCount">0 valoraciones</small></article>
+        </div>
+
+        <section class="section-card">
+          <p class="muted-label">PERFIL DEPORTIVO</p>
+          <div class="profile-info-list">
+            <div><span>Estilo</span><strong id="profileStyle">—</strong></div>
+            <div><span>Mano hábil</span><strong id="profileHand">—</strong></div>
+            <div><span>Edad</span><strong id="profileAge">—</strong></div>
+            <div><span>Club</span><strong id="profileClub">—</strong></div>
+          </div>
+        </section>
+
+        <section class="section-card primary-rival-section">
+          <div class="primary-rival-head">
+            <div><p class="muted-label">COMPETENCIA</p><h3>Rival principal</h3></div>
+            <small>Marcá a alguien que seguís como tu rival deportivo.</small>
+          </div>
+          <div id="primaryRivalCard" class="primary-rival-card">
+            <div class="loading-row">Todavía no elegiste rival principal.</div>
+          </div>
+        </section>
+
+        <section class="section-card achievements-section">
+          <div class="achievement-section-head">
+            <div><p class="muted-label">PROGRESO</p><h3>Logros</h3></div>
+            <div class="achievement-head-actions">
+              <strong id="profileAchievementCounter">0 / 0</strong>
+              <button id="chooseShowcaseAchievements" class="achievement-config-button" type="button">Elegir 3 placas</button>
+            </div>
+          </div>
+          <div class="showcase-preview-block">
+            <span>PLACAS DESTACADAS EN TU PERFIL</span>
+            <div id="myShowcaseAchievements" class="showcase-achievements"></div>
+          </div>
+          <div id="profileAchievements" class="achievement-grid"></div>
+        </section>
+
+        <div class="profile-secondary-actions">
+          <button id="openRankTableProfile" class="secondary-action-button" type="button">Tabla de Rangos</button>
+          <button class="secondary-action-button" data-go-tab="stats" type="button">Estadísticas</button>
+          <button class="secondary-action-button" data-go-tab="history" type="button">Historial</button>
+        </div>
+        <button id="logoutButton" class="danger-btn" type="button">Cerrar sesión</button>
+      </section>
+    </section>
+
+    <nav class="bottom-nav">
+      <div class="desktop-brand"><strong>TT RIVALS</strong><small>COMPETITIVE TABLE TENNIS</small></div>
+      <button class="nav-item active" data-tab="home"><span>⌂</span><small>Inicio</small></button>
+      <button class="nav-item" data-tab="ranking"><span>⌁</span><small>Ranking</small></button>
+      <button class="nav-item play-nav" data-tab="play"><span>＋</span><small>Jugar</small></button>
+      <button class="nav-item tournament-nav" data-tab="tournaments"><span>♛</span><small>Torneos</small></button>
+      <button class="nav-item" data-tab="history"><span>≡</span><small>Historial</small></button>
+      <button class="nav-item" data-tab="profile"><span>●</span><small>Perfil</small></button>
+    </nav>
+      <button class="nav-item active" data-tab="home"><span>⌂</span><small>Inicio</small></button>
+      <button class="nav-item" data-tab="ranking"><span>🏆</span><small>Ranking</small></button>
+      <button class="nav-item play-nav" data-tab="play"><span>⚔️</span><small>Jugar</small></button>
+      <button class="nav-item tournament-nav" data-tab="tournaments"><span>🏆</span><small>Torneos</small></button>
+      <button class="nav-item" data-tab="stats"><span>📊</span><small>Estadísticas</small></button>
+      <button class="nav-item" data-tab="profile"><span>👤</span><small>Perfil</small></button>
+    </nav>
+  </div>
+
+  <!-- MATCH RESULT MODAL -->
+  <div id="matchModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button id="closeMatchModal" class="modal-close" type="button">✕</button>
+      <p class="eyebrow">RESULTADO DEL PARTIDO</p>
+      <h2 id="matchModalTitle">Jugador A vs Jugador B</h2>
+      <p id="matchModalFormat" class="subtitle compact"></p>
+      <form id="matchResultForm" class="form-grid">
+        <div id="setInputs" class="sets-grid"></div>
+        <button class="btn btn-start" type="submit">ENVIAR RESULTADO</button>
+        <p id="matchResultStatus" class="status"></p>
+      </form>
+    </div>
+  </div>
+
+
+  <div id="tournamentMatchModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button id="closeTournamentMatchModal" class="modal-close" type="button">✕</button>
+      <p class="eyebrow">RESULTADO DEL TORNEO</p>
+      <h2 id="tournamentMatchModalTitle">Participante A vs Participante B</h2>
+      <p id="tournamentMatchModalFormat" class="subtitle compact"></p>
+      <form id="tournamentMatchResultForm" class="form-grid">
+        <div id="tournamentSetInputs" class="sets-grid"></div>
+        <button class="btn btn-start" type="submit">GUARDAR RESULTADO</button>
+        <p id="tournamentMatchResultStatus" class="status"></p>
+      </form>
+    </div>
+  </div>
+
+
+  <div id="rankTableModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card rank-modal-card">
+      <button id="closeRankTableModal" class="modal-close" type="button">✕</button>
+      <p class="eyebrow">CLASIFICACIÓN</p>
+      <h2>Tabla de Rangos</h2>
+      <p class="subtitle compact">Tu rango se actualiza automáticamente cuando tu rating alcanza el mínimo requerido.</p>
+
+      <div id="rankTableCurrent" class="current-rank-box"></div>
+      <div id="rankTierList" class="rank-tier-list">
+        <div class="loading-row">Cargando rangos…</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+
+  <!-- PLAYER REVIEW MODAL -->
+  <div id="reviewModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card v15-review-modal">
+      <button id="closeReviewModal" class="modal-close" type="button">✕</button>
+      <p class="eyebrow">EXPERIENCIA DE JUEGO</p>
+      <h2 id="reviewModalTitle">Valorá a tu rival</h2>
+      <p class="subtitle compact">La puntuación representa deportividad, respeto y experiencia general. No evalúa el nivel de juego.</p>
+      <div id="reviewStars" class="review-stars" aria-label="Valoración de 1 a 5 estrellas">
+        <button type="button" data-review-star="1">★</button>
+        <button type="button" data-review-star="2">★</button>
+        <button type="button" data-review-star="3">★</button>
+        <button type="button" data-review-star="4">★</button>
+        <button type="button" data-review-star="5">★</button>
+      </div>
+      <p id="reviewStarText" class="review-star-text">Elegí de 1 a 5 estrellas</p>
+      <button id="saveReviewButton" class="btn btn-start" type="button" disabled>GUARDAR VALORACIÓN</button>
+      <p id="reviewStatus" class="status"></p>
+    </div>
+  </div>
+
+  <!-- PUBLIC PLAYER PROFILE MODAL -->
+  <div id="playerProfileModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card v15-public-profile-modal">
+      <button id="closePlayerProfileModal" class="modal-close" type="button">✕</button>
+      <div id="publicPlayerProfileContent"></div>
+    </div>
+  </div>
+
+
+  <!-- ACHIEVEMENT INFO MODAL -->
+  <div id="achievementInfoModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card achievement-info-modal">
+      <button class="modal-close" data-close-achievement-info type="button">✕</button>
+      <div id="achievementInfoContent"></div>
+    </div>
+  </div>
+
+  <!-- SHOWCASE ACHIEVEMENT SELECTOR -->
+  <div id="showcaseAchievementModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card showcase-selector-modal">
+      <button class="modal-close" data-close-showcase-selector type="button">✕</button>
+      <p class="eyebrow">TU PERFIL</p>
+      <h2>Elegí 3 placas</h2>
+      <p class="subtitle compact">Seleccioná hasta tres logros desbloqueados para mostrarlos públicamente.</p>
+      <div id="showcaseSelectorCount" class="showcase-selector-count">0 / 3 seleccionados</div>
+      <div id="showcaseSelectorList" class="showcase-selector-list"></div>
+      <button id="saveShowcaseAchievements" class="btn btn-start" type="button">GUARDAR PLACAS</button>
+      <p id="showcaseStatus" class="status"></p>
+    </div>
+  </div>
+
+</body>
+</html>
