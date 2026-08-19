@@ -1885,7 +1885,13 @@ async function renderDisputeModalV58(){
 
 async function openDisputeModalV58(matchId,{admin=false}={}){
   if(!matchId)return;
-  $('#disputeResolutionModalV58').classList.remove('hidden');syncModalScrollLock();
+  const modal=$('#disputeResolutionModalV58');
+  if(!modal){
+    console.error('V58: falta #disputeResolutionModalV58 en index.html');
+    alert('La interfaz de resolución de disputas no está disponible. Actualizá TT Rivals a V58.0.2.');
+    return;
+  }
+  modal.classList.remove('hidden');syncModalScrollLock();
   $('#disputeSummaryV58').innerHTML='<div class="loading-row">Cargando disputa…</div>';
   setStatus($('#disputeStatusV58'),'');
   try{
