@@ -6718,13 +6718,16 @@ document.addEventListener('click',async e=>{
     const matchId=Number(confirm.dataset.confirmMatch);
     await withActionLockV60(`confirm-match:${matchId}`,confirm,async()=>{try{
       const before=getRating('individual').rating;
-      const target=(socialState.matches||[]).find(x=>Number(x.id)===matchId);
-      const won=target?.winner_id===session.user.id;
       await confirmMatchResult(matchId);
       postMatchShownIds.add(matchId);
       pendingPostMatchReviewId=matchId;
       await refreshCore();
       const after=getRating('individual').rating;
+      let confirmedMatch=(socialState.matches||[]).find(x=>Number(x.id)===matchId);
+      if(!confirmedMatch?.winner_id){
+        try{confirmedMatch=(await getMyMatches(session.user.id)).find(x=>Number(x.id)===matchId)||confirmedMatch}catch{}
+      }
+      const won=confirmedMatch?.winner_id===session.user.id;
       await showPostMatch({matchId,won,oldRating:before,newRating:after});
       setTimeout(syncModalScrollLock,0);
     }catch(err){alert(err.message)}},{loadingText:'Confirmando…',successText:'Confirmado ✓'});
