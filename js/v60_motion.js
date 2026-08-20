@@ -3,6 +3,9 @@
 */
 
 const reduceMotion=()=>window.matchMedia?.('(prefers-reduced-motion: reduce)').matches===true;
+const lightMotion=()=>reduceMotion()||
+  window.matchMedia?.('(pointer: coarse)').matches===true||
+  navigator.connection?.saveData===true;
 const numberJobs=new WeakMap();
 let rewardQueue=Promise.resolve();
 
@@ -17,11 +20,12 @@ export function initMotionV601(){
 
 export function animateTabEnterV601(tab){
   const page=document.querySelector(`#tab-${tab}`);
-  if(!page||reduceMotion())return;
+  if(!page||lightMotion())return;
   page.classList.remove('v601-tab-enter');
-  void page.offsetWidth;
-  page.classList.add('v601-tab-enter');
-  setTimeout(()=>page.classList.remove('v601-tab-enter'),520);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    page.classList.add('v601-tab-enter');
+    setTimeout(()=>page.classList.remove('v601-tab-enter'),360);
+  }));
 }
 
 export function animateNumberV601(el,target,{suffix='',duration=520,decimals=0}={}){

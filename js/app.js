@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
 import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword} from './auth.js';
 import {getMyProfile,getMyRatings,completeSportsProfile,getClubsV47,ensureClubV47,getClubsV49,getClubsV50,getClubsV51,suggestClubsV49,suggestClubsV50,suggestClubsV51,ensureClubV49,ensureClubV51,setMyClubV49,setMyClubV51,getMyClubV49,getMyClubV51,adminListClubsV49,adminListClubsV51,adminMergeClubsV49,adminMergeClubsV51,adminRenameClubV49,adminCreateClubV51,adminUpdateClubV51,getRanking,searchPlayers,getRatingHistory,getRankTiers,setProfilePhotoUrl,uploadProfilePhoto,deleteProfilePhotoByUrl} from './profile.js';
-import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges} from './challenges.js?v=1.0.1-p7.3';
+import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges} from './challenges.js?v=1.0.1-p7.3.1';
 import {getMyMatches,submitMatchResult,confirmMatchResult,disputeMatchResult,getMyDurationStatsV59,adminListMatchIntegrityV59} from './matches.js';
 import {createTournamentV8,getTournamentsV8,getTournamentEntriesV8,getTournamentMembersV8,getTournamentGamesV8,getTournamentStandingsV8,getTournamentStandingsV31,submitTournamentGameResultV8,closeGroupStageV8,finalizeTournamentV8,searchTournamentUsersV8,getTournamentParticipantProfilesV8,createTournamentV30,getMyTournamentHistoryV30,searchActiveTournamentsV30,joinTournamentV30,leaveTournamentV30,startTournamentV30,getTournamentLobbyV30} from './tournaments.js';
 import {getReviewsForUser,getReviewsAuthoredByUser,submitPlayerReview,getPlayerProfile,getPlayerRatings,followPlayer,unfollowPlayer,getFollowingIds,getFollowingRanking,getPublicPlayerCard,getFollowingFeed,setPrimaryRival,clearPrimaryRival,getMyPrimaryRival,getShowcaseAchievements,setShowcaseAchievements,getPlayerReliabilityV34} from './social.js';
@@ -14,7 +14,7 @@ import {getPublicAdminFlagV37,getPublicAdminIdsV38} from './v36_live.js';
 import {getFrameFitsV44,saveFrameFitV44,resetFrameFitV44,subscribeAvatarLiveV44} from './v44_avatar_fit.js';
 import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,submitTeamTournamentMatchResultV32,createTeamTiebreakV32,finalizeTeamTournamentDrawV32,finalizeTeamTournamentV33,listMyTeamTournamentHistoryV33} from './team_tournaments.js';
 import {setupTrainingTimerV53} from './training.js';
-import {createCompetitionLiveSyncV55} from './v55_competition_live.js';
+import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.3.1';
 import {getMyStatsV56} from './v56_stats.js';
 import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js';
 import {APP_VERSION,APP_BUILD} from './version.js';
@@ -23,7 +23,7 @@ import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
 import {getCompetitiveProgressV72} from './v72_progress.js';
 import {getHistorySeasonsV60} from './v60_history.js';
-import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,animatePostMatchV601,celebrateRewardV601} from './v60_motion.js';
+import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,animatePostMatchV601,celebrateRewardV601} from './v60_motion.js?v=1.0.1-p7.3.1';
 import {
   registerCurrentInstallationV58,
   getMyProtectionV58,
@@ -1908,13 +1908,16 @@ function activateTab(tab){
   if(tab==='admin'&&!canUseAdminUIV101()){
     tab='home';
   }
+  const previousTab=document.body.dataset.activeTabV101||'home';
   document.body.dataset.activeTabV101=tab||'home';
-  // V23: recupera el scroll si algún flujo anterior ocultó un modal sin limpiarlo.
-  if(!$$('.modal').some(m=>!m.classList.contains('hidden')))lockPageScroll(false);
-  $$('.tab-page').forEach(p=>p.classList.toggle('active',p.id===`tab-${tab}`));
-  $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  animateTabEnterV601(tab);
-  window.scrollTo({top:0,behavior:'smooth'});
+  // La pestaña se pinta antes de iniciar consultas o renderizados secundarios.
+  if(!$('.modal').some(m=>!m.classList.contains('hidden')))lockPageScroll(false);
+  $('.tab-page').forEach(p=>p.classList.toggle('active',p.id===`tab-${tab}`));
+  $('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  if(previousTab!==tab)animateTabEnterV601(tab);
+  if(window.scrollY>0)window.scrollTo({top:0,behavior:'auto'});
+
+  requestAnimationFrame(()=>{
   if(tab==='ranking')loadRanking();
   if(tab==='play'){showPlayModeV62(null);loadChallenges();loadMatches()}
   if(tab==='home'){loadHomeDashboard();loadNearbyPlayersV35(false).catch(()=>{});}
@@ -1954,6 +1957,7 @@ function activateTab(tab){
   }
   if(tab==='ranking')loadChampionsHall();
   if(tab==='stats')renderStatsModeV56();
+  });
 }
 
 async function loadRanking(){
@@ -2856,12 +2860,21 @@ async function handleConfirmedMatchV55(matchRow){
   pendingPostMatchReviewId=id;
 
   try{
-    // Actualiza Elo, historial, socialState y la copia del partido ANTES
-    // de abrir el modal. Así "Valorar rival" funciona para ambos lados.
-    await refreshCompetitionExperienceV55();
+    // Feedback inmediato: el usuario ve el resultado mientras los paneles
+    // secundarios (ranking, historial y estadísticas) se actualizan detrás.
+    const modal=$('#postMatchModal');
+    const content=$('#postMatchContent');
+    if(content)content.innerHTML='<div class="v71-result-shell"><main class="v71-result-body"><section class="v71-coach"><span>✦</span><div><small>RESULTADO CONFIRMADO</small><p>Actualizando Elo y preparando el resumen…</p></div></section></main></div>';
+    modal?.classList.remove('hidden');
+    syncModalScrollLock();
 
-    const fresh=(socialState.matches||[]).find(x=>Number(x.id)===id)||matchRow;
-    const won=fresh?.winner_id===session.user.id;
+    const current=(socialState.matches||[]).filter(x=>Number(x.id)!==id);
+    socialState.matches=[matchRow,...current];
+    const won=matchRow?.winner_id===session.user.id;
+
+    const backgroundRefresh=refreshCompetitionExperienceV55().catch(err=>{
+      console.warn('V55 actualización competitiva en segundo plano:',err);
+    });
 
     await showPostMatch({
       matchId:id,
@@ -2869,6 +2882,9 @@ async function handleConfirmedMatchV55(matchRow){
       oldRating:null,
       newRating:null
     });
+
+    // No bloquea el cartel ni la navegación.
+    backgroundRefresh.then(()=>loadActivityCenter().catch(()=>{}));
   }catch(err){
     console.error('V55 post-match live',err);
     // Si algo excepcional falló, permitimos reintentar mediante polling.
