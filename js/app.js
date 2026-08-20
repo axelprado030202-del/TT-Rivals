@@ -190,6 +190,7 @@ const stopTrainingTimerV53=setupTrainingTimerV53();
 
 let liveMatchStatusSnapshot=new Map(),liveMatchStatusPrimed=false,postMatchShownIds=new Set(),pendingPostMatchReviewId=null;
 let pendingRematchV744=null,rematchOutcomeTimerV744=null;
+let incomingRematchV745=null;
 let v60State={challenges:[],matches:[],matchSets:new Map(),recommended:[],activityItems:[],activityFilter:'attention',historyModality:'all',historySeason:'all',historyDateFrom:'',historyDateTo:'',historySort:'recent',recentPresence:new Map(),historySeasons:[],adminCategory:'disputes',lastDiagnostics:null,metricsDays:7,lastProductMetrics:null};
 let presenceHeartbeatV60=null,activityLoadPromiseV60=null,achievementUnlockPrimedV60=false,titleUnlockPrimedV60=false,missionUnlockPrimedV60=false;
 let lastUnlockedAchievementsV60=new Set(),lastUnlockedTitlesV60=new Set(),lastCompletedMissionsV60=new Set();
@@ -2270,10 +2271,67 @@ function handleRematchOutcomeV744(challenge){
   return true;
 }
 
+
+function closeIncomingRematchV745(){
+  const modal=$('#incomingRematchModalV745');
+  modal?.classList.add('hidden');
+  if(modal)delete modal.dataset.challengeId;
+  incomingRematchV745=null;
+  syncModalScrollLock();
+}
+
+function postMatchIsOpenV745(){
+  const modal=$('#postMatchModal');
+  return !!modal&&!modal.classList.contains('hidden')&&!!pendingPostMatchReviewId;
+}
+
+function showIncomingRematchV745(challenge){
+  const modal=$('#incomingRematchModalV745');
+  if(!modal)return false;
+  incomingRematchV745=challenge;
+  modal.dataset.challengeId=String(challenge.id);
+  const opponent=challenge.challenger;
+  const name=[opponent?.first_name,opponent?.last_name].filter(Boolean).join(' ')||'Tu rival';
+  const copy=$('#incomingRematchCopyV745');
+  if(copy)copy.textContent=name+' quiere jugar otra vez.';
+  modal.querySelectorAll('[data-rematch-response-v745]').forEach(button=>{
+    button.dataset.id=String(challenge.id);
+    button.disabled=false;
+  });
+  const status=$('#incomingRematchStatusV745');
+  if(status){status.textContent='';status.className='v745-rematch-status'}
+  modal.classList.remove('hidden');
+  syncModalScrollLock();
+  return true;
+}
+
+function handleIncomingRematchV745(challenge){
+  if(!session?.user||!challenge?.id)return false;
+  const status=String(challenge.status||'').toLowerCase();
+  const currentId=Number(incomingRematchV745?.id||0);
+  const challengeId=Number(challenge.id);
+
+  if(currentId===challengeId&&status!=='pending'){
+    closeIncomingRematchV745();
+    if(status==='accepted')closePostMatchForRematchV744();
+    return true;
+  }
+
+  if(status!=='pending')return false;
+  if(String(challenge.challenged_id)!==String(session.user.id))return false;
+  if(!challenge.source_match_id||Number(challenge.source_match_id)!==Number(pendingPostMatchReviewId))return false;
+  if(!postMatchIsOpenV745())return false;
+  if(currentId===challengeId)return true;
+  return showIncomingRematchV745(challenge);
+}
+
 async function loadChallenges(){
   if(!session)return;
   const rows=await getMyChallenges(session.user.id);
-  rows.forEach(handleRematchOutcomeV744);
+  rows.forEach(challenge=>{
+    handleRematchOutcomeV744(challenge);
+    handleIncomingRematchV745(challenge);
+  });
   const rec=rows.filter(r=>r.challenged_id===session.user.id&&r.status==='pending'),
     sen=rows.filter(r=>r.challenger_id===session.user.id&&r.status==='pending');
   v60State.challenges=rows;renderHomePriorityV60();
@@ -3135,7 +3193,9 @@ function startLiveNotificationStream(){
     userId:uid,
 
     onChallengeChange:payload=>{
-      handleRematchOutcomeV744(payload?.new||payload?.old);
+      const changedChallenge=payload?.new||payload?.old;
+      handleRematchOutcomeV744(changedChallenge);
+      handleIncomingRematchV745(changedChallenge);
       invalidateChallengesCacheV60(uid);
       invalidateTabLoadsV74('play','home');
       scheduleLiveRefreshV55('challenges',async()=>{
@@ -4361,6 +4421,7 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
   $('#postMatchModal').classList.remove('hidden');
   animatePostMatchV601($('#postMatchModal'),{won,positive:delta>0,protectedElo:!!summary?.protection_used,hasRewards:!!highlightHtml});
   syncModalScrollLock();
+  loadChallenges().catch(err=>console.warn('P7.4.5 revancha entrante:',err));
   const telemetryOpponentId=m?(m.player1_id===session.user.id?m.player2_id:m.player1_id):null;
   recordProductEventV70('post_match_opened',{matchId,opponentId:telemetryOpponentId,metadata:{match_type:summary?.match_type||m?.match_type||'ranked',match_format:format,ui_version:'p7.1'}}).catch(()=>{});
 }
@@ -6928,6 +6989,29 @@ document.addEventListener('click',async e=>{
     openTeamTournamentBuilderV32();
     return;
   }
+  const rematchResponse=e.target.closest('[data-rematch-response-v745]');
+  if(rematchResponse){
+    const id=Number(rematchResponse.dataset.id);
+    const response=rematchResponse.dataset.rematchResponseV745;
+    const status=$('#incomingRematchStatusV745');
+    await withActionLockV60(`rematch-response-v745:${id}:${response}`,rematchResponse,async()=>{
+      try{
+        await respondToChallenge(id,response);
+        closeIncomingRematchV745();
+        if(response==='accepted')closePostMatchForRematchV744();
+        await Promise.all([loadChallenges(),loadMatches(),loadLiveNotifications(),loadActivityCenter()]);
+        recoverPageScrollIfIdle();
+      }catch(err){
+        if(status){status.textContent=friendly(err.message);status.className='v745-rematch-status error'}
+        else alert(friendly(err.message));
+        throw err;
+      }
+    },{
+      loadingText:response==='accepted'?'Aceptando revancha…':'Declinando…',
+      successText:response==='accepted'?'Revancha aceptada ✓':'Revancha declinada'
+    }).catch(()=>{});
+    return;
+  }
   const resp=e.target.closest('[data-response]');if(resp){
     const id=Number(resp.dataset.id),response=resp.dataset.response;
     await withActionLockV60(`challenge-response:${id}:${response}`,resp,async()=>{try{await respondToChallenge(id,response);await Promise.all([loadChallenges(),loadMatches(),loadLiveNotifications(),loadActivityCenter()]);recoverPageScrollIfIdle()}catch(err){alert(err.message)}},{loadingText:response==='accepted'?'Aceptando…':'Procesando…',successText:response==='accepted'?'Partido listo ✓':'Listo ✓'});
@@ -7957,9 +8041,10 @@ $('#teamTiebreakFormV32').onsubmit=async e=>{
 };
 
 $('#v28CloseSeasonRecap').onclick=()=>{$('#v28SeasonRecapModal').classList.add('hidden');syncModalScrollLock()};
-$('#closePostMatch').onclick=()=>{$('#postMatchModal').classList.add('hidden');pendingPostMatchReviewId=null;clearPendingRematchV744();syncModalScrollLock()};
+$('#closePostMatch').onclick=()=>{closeIncomingRematchV745();$('#postMatchModal').classList.add('hidden');pendingPostMatchReviewId=null;clearPendingRematchV744();syncModalScrollLock()};
 document.addEventListener('click',e=>{
   if(e.target.closest('[data-close-post-match]')){
+    closeIncomingRematchV745();
     $('#postMatchModal').classList.add('hidden');syncModalScrollLock();
     clearPendingRematchV744();
     const reviewId=pendingPostMatchReviewId;
@@ -7968,7 +8053,7 @@ document.addEventListener('click',e=>{
   }
 });
 ['seasonHistoryModal','matchDetailModal','postMatchModal'].forEach(id=>{
-  const m=$('#'+id);if(m)m.addEventListener('click',e=>{if(e.target===m){m.classList.add('hidden');if(id==='postMatchModal')clearPendingRematchV744();syncModalScrollLock()}});
+  const m=$('#'+id);if(m)m.addEventListener('click',e=>{if(e.target===m){m.classList.add('hidden');if(id==='postMatchModal'){closeIncomingRematchV745();clearPendingRematchV744()}syncModalScrollLock()}});
 });
 $('#openRankTableHome').onclick=openRankTable;
 $('#openRankTableProfile').onclick=openRankTable;
