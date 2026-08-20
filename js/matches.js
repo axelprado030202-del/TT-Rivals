@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
-import {createRequestCacheV60} from './v60_runtime.js';
+import {createRequestCacheV60} from './v60_runtime.js?v=1.0.1-p7.4';
 
-const matchesCacheV60=createRequestCacheV60(1400);
+const matchesCacheV60=createRequestCacheV60(30000);
 
 export async function getMyMatches(userId,{force=false}={}){
   return matchesCacheV60.run(userId,async()=>{

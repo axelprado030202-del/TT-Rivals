@@ -1,19 +1,9 @@
 import {supabase} from './supabase.js';
 
 /*
-  TT RIVALS V55 — SINCRONIZACIÓN COMPETITIVA CENTRAL
-
-  Realtime inmediato:
-  - desafíos: ambos lados (envía / recibe)
-  - partidos 1vs1
-  - Elo / historial de Elo
-  - valoraciones
-  - torneos 1vs1 / 2vs2
-  - torneos por equipos
-
-  Además incluye polling de respaldo mientras la app está visible.
-  Si Realtime se desconecta temporalmente, el estado termina convergiendo
-  igualmente sin que el usuario tenga que recargar la página.
+  TT RIVALS P7.4 — SINCRONIZACIÓN COMPETITIVA EFICIENTE
+  Tres canales compartidos reemplazan decenas de canales independientes.
+  El polling existe únicamente mientras Realtime está desconectado.
 */
 
 export function createCompetitionLiveSyncV55({
@@ -26,128 +16,118 @@ export function createCompetitionLiveSyncV55({
   onTeamTournamentChange,
   onV58Change,
   onFallbackPoll,
-  pollMs=5000
+  pollMs=15000
 }={}){
   const uid=String(userId||'');
-  let channels=[];
+  const channels=[];
+  const statuses=new Map();
   let pollTimer=null;
   let visibilityHandler=null;
   let started=false;
 
   const token=()=>`${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
 
-  function keep(channel){
-    channels.push(channel);
-    return channel;
-  }
-
-  function subscribeFiltered(table,column,callback){
-    const ch=supabase
-      .channel(`v55-${table}-${column}-${uid}-${token()}`)
-      .on('postgres_changes',{
-        event:'*',
-        schema:'public',
-        table,
-        filter:`${column}=eq.${uid}`
-      },payload=>callback?.(payload))
-      .subscribe();
-    keep(ch);
-  }
-
-  function subscribeTable(table,callback){
-    const ch=supabase
-      .channel(`v55-${table}-${token()}`)
-      .on('postgres_changes',{
-        event:'*',
-        schema:'public',
-        table
-      },payload=>callback?.(payload))
-      .subscribe();
-    keep(ch);
-  }
-
   function runPoll(){
     if(document.visibilityState==='hidden')return;
-    Promise.resolve(onFallbackPoll?.()).catch(err=>{
-      console.warn('V55 polling competitivo:',err);
-    });
+    Promise.resolve(onFallbackPoll?.()).catch(err=>console.warn('P7.4 polling de respaldo:',err));
+  }
+
+  function startFallback(){
+    if(!started||pollTimer)return;
+    runPoll();
+    pollTimer=setInterval(runPoll,Math.max(10000,Number(pollMs)||15000));
+    document.body.dataset.realtimeV74='fallback';
+  }
+
+  function stopFallback(){
+    if(pollTimer){clearInterval(pollTimer);pollTimer=null}
+    if(started)document.body.dataset.realtimeV74='connected';
+  }
+
+  function handleStatus(name,status){
+    if(!started)return;
+    statuses.set(name,status);
+    if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){
+      startFallback();
+      return;
+    }
+    const allConnected=channels.length>0&&channels.every(item=>statuses.get(item.name)==='SUBSCRIBED');
+    if(allConnected)stopFallback();
+  }
+
+  function createChannel(name,specs){
+    let channel=supabase.channel(`v74-${name}-${uid}-${token()}`);
+    for(const spec of specs){
+      const filter=spec.column?`${spec.column}=eq.${uid}`:undefined;
+      const config={event:'*',schema:'public',table:spec.table};
+      if(filter)config.filter=filter;
+      channel=channel.on('postgres_changes',config,payload=>spec.callback?.(payload));
+    }
+    const item={name,channel};
+    channels.push(item);
+    channel.subscribe(status=>handleStatus(name,status));
   }
 
   function start(){
     if(started||!uid)return;
     started=true;
+    document.body.dataset.realtimeV74='connecting';
 
-    // DESAFÍOS: el bug anterior escuchaba solamente challenged_id.
-    // Ahora ambos participantes reciben cualquier cambio.
-    subscribeFiltered('challenges','challenger_id',onChallengeChange);
-    subscribeFiltered('challenges','challenged_id',onChallengeChange);
+    createChannel('competition',[
+      {table:'challenges',column:'challenger_id',callback:onChallengeChange},
+      {table:'challenges',column:'challenged_id',callback:onChallengeChange},
+      {table:'matches',column:'player1_id',callback:onMatchChange},
+      {table:'matches',column:'player2_id',callback:onMatchChange},
+      {table:'ratings',column:'user_id',callback:onRatingChange},
+      {table:'rating_history',column:'user_id',callback:onRatingChange},
+      {table:'player_reviews',column:'reviewer_id',callback:onReviewChange},
+      {table:'player_reviews',column:'reviewed_id',callback:onReviewChange}
+    ]);
 
-    // PARTIDOS 1vs1: INSERT + UPDATE + DELETE para ambos participantes.
-    subscribeFiltered('matches','player1_id',onMatchChange);
-    subscribeFiltered('matches','player2_id',onMatchChange);
+    createChannel('tournaments',[
+      {table:'tournaments_v8',callback:onTournamentChange},
+      {table:'tournament_entries_v8',callback:onTournamentChange},
+      {table:'tournament_entry_members_v8',callback:onTournamentChange},
+      {table:'tournament_games_v8',callback:onTournamentChange},
+      {table:'team_tournaments_v32',callback:onTeamTournamentChange},
+      {table:'team_tournament_players_v32',callback:onTeamTournamentChange},
+      {table:'team_tournament_matches_v32',callback:onTeamTournamentChange}
+    ]);
 
-    // Elo propio. Fundamental para torneos y cualquier proceso que modifique rating.
-    subscribeFiltered('ratings','user_id',onRatingChange);
-    subscribeFiltered('rating_history','user_id',onRatingChange);
-
-    // Valoraciones: refresca tanto al autor como a quien la recibe.
-    subscribeFiltered('player_reviews','reviewer_id',onReviewChange);
-    subscribeFiltered('player_reviews','reviewed_id',onReviewChange);
-
-    // Torneos individuales y dobles.
-    [
-      'tournaments_v8',
-      'tournament_entries_v8',
-      'tournament_entry_members_v8',
-      'tournament_games_v8'
-    ].forEach(table=>subscribeTable(table,onTournamentChange));
-
-    // Torneos por equipos.
-    [
-      'team_tournaments_v32',
-      'team_tournament_players_v32',
-      'team_tournament_matches_v32'
-    ].forEach(table=>subscribeTable(table,onTeamTournamentChange));
-
-    // V58: disputas, protección, títulos, menciones y notificaciones.
-    subscribeFiltered('notifications_v58','user_id',onV58Change);
-    subscribeFiltered('protection_wallet_v58','user_id',onV58Change);
-    subscribeFiltered('player_title_unlocks_v58','user_id',onV58Change);
-    subscribeFiltered('player_equipped_title_v58','user_id',onV58Change);
-    // Versión 1.0: marcos otorgados manualmente (por ejemplo TESTER) aparecen sin recargar.
-    subscribeFiltered('player_frame_unlocks','user_id',onV58Change);
-    subscribeFiltered('review_tags_v58','reviewer_id',onV58Change);
-    subscribeFiltered('review_tags_v58','reviewed_id',onV58Change);
-    subscribeTable('match_disputes_v58',onV58Change);
-    subscribeTable('dispute_arbiter_proposals_v58',onV58Change);
-
-    pollTimer=setInterval(runPoll,Math.max(2500,Number(pollMs)||5000));
+    createChannel('experience',[
+      {table:'notifications_v58',column:'user_id',callback:onV58Change},
+      {table:'protection_wallet_v58',column:'user_id',callback:onV58Change},
+      {table:'player_title_unlocks_v58',column:'user_id',callback:onV58Change},
+      {table:'player_equipped_title_v58',column:'user_id',callback:onV58Change},
+      {table:'player_frame_unlocks',column:'user_id',callback:onV58Change},
+      {table:'review_tags_v58',column:'reviewer_id',callback:onV58Change},
+      {table:'review_tags_v58',column:'reviewed_id',callback:onV58Change},
+      {table:'match_disputes_v58',callback:onV58Change},
+      {table:'dispute_arbiter_proposals_v58',callback:onV58Change}
+    ]);
 
     visibilityHandler=()=>{
-      if(document.visibilityState==='visible')runPoll();
+      if(document.visibilityState==='visible'&&pollTimer)runPoll();
     };
     document.addEventListener('visibilitychange',visibilityHandler);
   }
 
   async function stop(){
     started=false;
-
-    if(pollTimer){
-      clearInterval(pollTimer);
-      pollTimer=null;
-    }
-
-    if(visibilityHandler){
-      document.removeEventListener('visibilitychange',visibilityHandler);
-      visibilityHandler=null;
-    }
-
-    const pending=channels;
-    channels=[];
-    for(const channel of pending){
-      try{await supabase.removeChannel(channel)}catch{}
+    stopFallback();
+    delete document.body.dataset.realtimeV74;
+    if(visibilityHandler){document.removeEventListener('visibilitychange',visibilityHandler);visibilityHandler=null}
+    const pending=channels.splice(0);
+    statuses.clear();
+    for(const item of pending){
+      try{await supabase.removeChannel(item.channel)}catch{}
     }
   }
 
-  return {start,stop,runPoll};
+  return {
+    start,
+    stop,
+    runPoll,
+    getStatus:()=>({channels:Object.fromEntries(statuses),fallback:!!pollTimer})
+  };
 }

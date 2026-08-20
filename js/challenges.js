@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
-import {createRequestCacheV60} from './v60_runtime.js';
-const challengesCacheV60=createRequestCacheV60(1200);
+import {createRequestCacheV60} from './v60_runtime.js?v=1.0.1-p7.4';
+const challengesCacheV60=createRequestCacheV60(30000);
 export async function createChallenge(x){const {data,error}=await supabase.from('challenges').insert({challenger_id:x.challengerId,challenged_id:x.challengedId,modality:'individual',match_format:x.format,match_type:x.matchType||'ranked',scheduled_date:x.scheduledDate||null,scheduled_time:x.scheduledTime||null,location:x.location||null,status:'pending'}).select().single();if(error)throw error;challengesCacheV60.clear();return data;}
 export async function respondToChallenge(challengeId,action){const {data,error}=await supabase.rpc('respond_to_challenge',{p_challenge_id:challengeId,p_action:action});if(error)throw error;challengesCacheV60.clear();return data;}
 export async function cancelChallenge(challengeId){const {data,error}=await supabase.rpc('cancel_challenge',{p_challenge_id:challengeId});if(error)throw error;challengesCacheV60.clear();return data;}

@@ -1,8 +1,8 @@
 import { supabase } from './supabase.js';
 import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword} from './auth.js?v=1.0.1-p7.3.2';
 import {getMyProfile,getMyRatings,completeSportsProfile,getClubsV47,ensureClubV47,getClubsV49,getClubsV50,getClubsV51,suggestClubsV49,suggestClubsV50,suggestClubsV51,ensureClubV49,ensureClubV51,setMyClubV49,setMyClubV51,getMyClubV49,getMyClubV51,adminListClubsV49,adminListClubsV51,adminMergeClubsV49,adminMergeClubsV51,adminRenameClubV49,adminCreateClubV51,adminUpdateClubV51,getRanking,searchPlayers,getRatingHistory,getRankTiers,setProfilePhotoUrl,uploadProfilePhoto,deleteProfilePhotoByUrl} from './profile.js';
-import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges} from './challenges.js?v=1.0.1-p7.3.1';
-import {getMyMatches,submitMatchResult,confirmMatchResult,disputeMatchResult,getMyDurationStatsV59,adminListMatchIntegrityV59} from './matches.js';
+import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges,invalidateChallengesCacheV60} from './challenges.js?v=1.0.1-p7.4';
+import {getMyMatches,submitMatchResult,confirmMatchResult,disputeMatchResult,getMyDurationStatsV59,adminListMatchIntegrityV59,invalidateMatchesCacheV60} from './matches.js?v=1.0.1-p7.4';
 import {createTournamentV8,getTournamentsV8,getTournamentEntriesV8,getTournamentMembersV8,getTournamentGamesV8,getTournamentStandingsV8,getTournamentStandingsV31,submitTournamentGameResultV8,closeGroupStageV8,finalizeTournamentV8,searchTournamentUsersV8,getTournamentParticipantProfilesV8,createTournamentV30,getMyTournamentHistoryV30,searchActiveTournamentsV30,joinTournamentV30,leaveTournamentV30,startTournamentV30,getTournamentLobbyV30} from './tournaments.js';
 import {getReviewsForUser,getReviewsAuthoredByUser,submitPlayerReview,getPlayerProfile,getPlayerRatings,followPlayer,unfollowPlayer,getFollowingIds,getFollowingRanking,getPublicPlayerCard,getFollowingFeed,setPrimaryRival,clearPrimaryRival,getMyPrimaryRival,getShowcaseAchievements,setShowcaseAchievements,getPlayerReliabilityV34} from './social.js';
 import {getPreferences,updatePreferences,getFrames,equipFrame,getSeasonDashboard,getSeasonHistory,getRecommendedRivals,getPlayerPercentiles,getPublicProfilePreferences} from './preferences.js';
@@ -14,16 +14,17 @@ import {getPublicAdminFlagV37,getPublicAdminIdsV38} from './v36_live.js';
 import {getFrameFitsV44,saveFrameFitV44,resetFrameFitV44,subscribeAvatarLiveV44} from './v44_avatar_fit.js';
 import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,submitTeamTournamentMatchResultV32,createTeamTiebreakV32,finalizeTeamTournamentDrawV32,finalizeTeamTournamentV33,listMyTeamTournamentHistoryV33} from './team_tournaments.js';
 import {setupTrainingTimerV53} from './training.js';
-import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.3.1';
+import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
 import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js';
 import {APP_VERSION,APP_BUILD} from './version.js';
-import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js';
+import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
 import {getCompetitiveProgressV72} from './v72_progress.js';
 import {getHistorySeasonsV60} from './v60_history.js';
 import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,animatePostMatchV601,celebrateRewardV601} from './v60_motion.js?v=1.0.1-p7.3.1';
+import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.1-p7.4';
 import {
   registerCurrentInstallationV58,
   getMyProtectionV58,
@@ -1861,17 +1862,19 @@ async function loadApp(uid,p=null){
       startUniversalPlayerObserverV38();
       startAvatarLiveSyncV44();
 
-      // Primero cargamos/primamos estados. Después abrimos Realtime.
-      await Promise.all([
-        loadRanking(),loadChallenges(),loadMatches(),loadHistory(),loadHomeDashboard(),
-        loadHistoryPage(),loadLiveNotifications(),loadRecommendedRivals(),loadChampionsHall(),
-        loadStatsModeV56(false),loadDurationStatsV59(),loadV28Experience()
-      ]);
-
+      // P7.4: sólo el estado competitivo esencial se carga al iniciar.
+      // El resto se solicita al abrir su pestaña.
+      await Promise.all([loadChallenges(),loadMatches(),loadLiveNotifications()]);
       lastRatingSignatureV55=JSON.stringify(
         ratings.map(r=>[r.modality,r.rating,r.matches_played,r.wins,r.losses])
       );
       startLiveNotificationStream();
+
+      const hydrateHome=()=>runTabLoadV74('home',()=>Promise.all([
+        loadHomeDashboard(),loadRecommendedRivals(),loadV28Experience()
+      ]),{ttl:20000});
+      if('requestIdleCallback' in window)requestIdleCallback(hydrateHome,{timeout:1800});
+      else setTimeout(hydrateHome,350);
     }catch(err){
       console.error('Carga secundaria V58:',err);
       // La app permanece visible; el usuario puede reintentar navegando.
@@ -1904,59 +1907,107 @@ async function route(prefetchedSession=undefined){
   await loadApp(session.user.id,p);
   closeBootScreenV572();
 }
-function activateTab(tab){
-  if(tab==='admin'&&!canUseAdminUIV101()){
-    tab='home';
-  }
+const tabLoadStateV74=new Map();
+
+function invalidateTabLoadsV74(...tabs){
+  for(const tab of tabs)tabLoadStateV74.delete(tab);
+}
+
+function runTabLoadV74(tab,loader,{ttl=30000}={}){
+  const now=Date.now();
+  const current=tabLoadStateV74.get(tab);
+  if(current?.promise)return current.promise;
+  if(current?.loadedAt&&now-current.loadedAt<ttl)return Promise.resolve(current.value);
+
+  const promise=Promise.resolve()
+    .then(loader)
+    .then(value=>{
+      tabLoadStateV74.set(tab,{loadedAt:Date.now(),value,promise:null});
+      return value;
+    })
+    .catch(err=>{
+      tabLoadStateV74.delete(tab);
+      console.warn(`P7.4 carga de ${tab}:`,err);
+      return null;
+    });
+  tabLoadStateV74.set(tab,{loadedAt:current?.loadedAt||0,value:current?.value,promise});
+  return promise;
+}
+
+function recordTabSwitchV74(tab,startedAt,source){
+  requestAnimationFrame(()=>{
+    const ms=Math.round((performance.now()-startedAt)*10)/10;
+    const rows=window.__TT_V74_PERF__||[];
+    rows.push({tab,source,ms,at:new Date().toISOString()});
+    window.__TT_V74_PERF__=rows.slice(-30);
+    document.body.dataset.lastTabSwitchMsV74=String(ms);
+  });
+}
+
+function activateTab(tab,{source='tap'}={}){
+  const startedAt=performance.now();
+  if(tab==='admin'&&!canUseAdminUIV101())tab='home';
+
   const previousTab=document.body.dataset.activeTabV101||'home';
   document.body.dataset.activeTabV101=tab||'home';
-  // La pestaña se pinta antes de iniciar consultas o renderizados secundarios.
   if(!$$('.modal').some(m=>!m.classList.contains('hidden')))lockPageScroll(false);
-  $$('.tab-page').forEach(p=>p.classList.toggle('active',p.id===`tab-${tab}`));
-  $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  $$('.tab-page').forEach(page=>page.classList.toggle('active',page.id===`tab-${tab}`));
+  $$$$('.nav-item').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));
   if(previousTab!==tab)animateTabEnterV601(tab);
   if(window.scrollY>0)window.scrollTo({top:0,behavior:'auto'});
+  recordTabSwitchV74(tab,startedAt,source);
+
+  // Render local inmediato. Las consultas se deduplican y respetan TTL.
+  if(tab==='play')showPlayModeV62(null);
+  if(tab==='profile'){
+    renderAchievements();renderPrimaryRival();renderProfileSeasonCards();
+    renderEquippedTitle();renderIdentityShowcase();
+  }
+  if(tab==='settings'){populateSettingsUI();renderFrameGallery()}
+  if(tab==='admin'){setupAdminFrameLabV44();setupAdminPanelsV60()}
+  if(tab==='stats')renderStatsModeV56();
 
   requestAnimationFrame(()=>{
-  if(tab==='ranking')loadRanking();
-  if(tab==='play'){showPlayModeV62(null);loadChallenges();loadMatches()}
-  if(tab==='home'){loadHomeDashboard();loadNearbyPlayersV35(false).catch(()=>{});}
-  if(tab==='history')loadHistoryPage();
-  if(tab==='stats'){
-    loadHistory();
-    loadStatsModeV56(false);
-    loadDurationStatsV59();
-  }
-  if(tab==='profile'){renderAchievements();renderPrimaryRival();renderProfileSeasonCards();renderEquippedTitle();renderIdentityShowcase();ensureV63Module().then(mod=>mod.loadOwnPalmaresV63?.()).catch(()=>{});ensureV100Module().then(mod=>mod.loadOwnSportsIdentityV100?.()).catch(()=>{});}
-  if(tab==='tournaments'){loadTournamentHubV30();}
-  if(tab==='training'){
-    // El cronómetro sigue corriendo aunque el usuario navegue por otras secciones.
-    // Entrar a esta pestaña sólo muestra su estado actual.
-  }
-  if(tab==='ai')ensureAiModuleV612().then(mod=>mod.refreshAiV61?.()).catch(()=>{});
-  if(tab==='places')ensureV100Module().then(mod=>mod.loadPlacesV100?.()).catch(err=>console.warn('Dónde practicar:',err));
-  if(tab==='settings'){
-    populateSettingsUI();
-    renderFrameGallery();
-    loadLegalStatusV57();
-    loadSettingsClubV49().catch(err=>console.warn('Club settings V49:',err));
-    loadV35Flags().then(()=>{renderFrameGallery();renderAchievements();});
-  }
-  if(tab==='admin'){
-    setupAdminFrameLabV44();
-    setupAdminPanelsV60();
-    if(v35Flags?.is_test_admin){
-      loadAdminClubsV49().catch(err=>console.warn('Admin clubes V49:',err));
-      loadAdminLegalConfigV57();
-      loadAdminDisputesV58();
-      loadAdminLinkedAccountsV58();
-      loadAdminIntegrityV59();
-      loadAdminReviewTagsV58();
-      ensureV100Module().then(mod=>mod.loadAdminCommunityV100?.()).catch(err=>console.warn('Admin comunidad 1.0:',err));
-    }
-  }
-  if(tab==='ranking')loadChampionsHall();
-  if(tab==='stats')renderStatsModeV56();
+    if(tab==='home')runTabLoadV74('home',()=>Promise.all([
+      loadHomeDashboard(),loadNearbyPlayersV35(false),loadRecommendedRivals(),loadV28Experience()
+    ]),{ttl:20000});
+
+    if(tab==='ranking')runTabLoadV74('ranking',()=>Promise.all([
+      loadRanking(),loadChampionsHall()
+    ]),{ttl:30000});
+
+    if(tab==='play')runTabLoadV74('play',()=>Promise.all([
+      loadChallenges(),loadMatches()
+    ]),{ttl:15000});
+
+    if(tab==='tournaments')runTabLoadV74('tournaments',()=>loadTournamentHubV30(),{ttl:30000});
+
+    if(tab==='history')runTabLoadV74('history',()=>loadHistoryPage(),{ttl:30000});
+
+    if(tab==='stats')runTabLoadV74('stats',()=>Promise.all([
+      loadHistory(),loadStatsModeV56(false),loadDurationStatsV59()
+    ]),{ttl:30000});
+
+    if(tab==='profile')runTabLoadV74('profile',()=>Promise.all([
+      ensureV63Module().then(mod=>mod.loadOwnPalmaresV63?.()),
+      ensureV100Module().then(mod=>mod.loadOwnSportsIdentityV100?.())
+    ]),{ttl:60000});
+
+    if(tab==='ai')runTabLoadV74('ai',()=>ensureAiModuleV612().then(mod=>mod.refreshAiV61?.()),{ttl:30000});
+
+    if(tab==='places')runTabLoadV74('places',()=>ensureV100Module().then(mod=>mod.loadPlacesV100?.()),{ttl:30000});
+
+    if(tab==='settings')runTabLoadV74('settings',()=>Promise.all([
+      loadLegalStatusV57(),
+      loadSettingsClubV49(),
+      loadV35Flags().then(()=>{renderFrameGallery();renderAchievements()})
+    ]),{ttl:30000});
+
+    if(tab==='admin'&&v35Flags?.is_test_admin)runTabLoadV74('admin',()=>Promise.all([
+      loadAdminClubsV49(),loadAdminLegalConfigV57(),loadAdminDisputesV58(),
+      loadAdminLinkedAccountsV58(),loadAdminIntegrityV59(),loadAdminReviewTagsV58(),
+      ensureV100Module().then(mod=>mod.loadAdminCommunityV100?.())
+    ]),{ttl:15000});
   });
 }
 
@@ -2872,9 +2923,13 @@ async function handleConfirmedMatchV55(matchRow){
     socialState.matches=[matchRow,...current];
     const won=matchRow?.winner_id===session.user.id;
 
-    const backgroundRefresh=refreshCompetitionExperienceV55().catch(err=>{
-      console.warn('V55 actualización competitiva en segundo plano:',err);
-    });
+    invalidateMatchesCacheV60(session.user.id);
+    invalidateChallengesCacheV60(session.user.id);
+    invalidateTabLoadsV74('home','ranking','play','history','stats','profile');
+    const backgroundRefresh=Promise.all([
+      loadMatches(),
+      refreshRatingViewsV55()
+    ]).catch(err=>console.warn('P7.4 actualización posterior al partido:',err));
 
     await showPostMatch({
       matchId:id,
@@ -2893,21 +2948,38 @@ async function handleConfirmedMatchV55(matchRow){
   }
 }
 
+async function refreshVisibleRatingViewsV74(){
+  const active=document.body.dataset.activeTabV101||'home';
+  if(active==='home')await loadHomeDashboard();
+  else if(active==='ranking')await loadRanking();
+  else if(active==='history')await loadHistoryPage();
+  else if(active==='stats')await Promise.all([loadHistory(),loadStatsModeV56(true)]);
+  else if(active==='profile'){
+    renderProfileSeasonCards();
+    renderIdentityShowcase();
+  }
+}
+
 async function refreshRatingViewsV55(){
   if(!session?.user)return;
-  await refreshCompetitionExperienceV55();
+  ratings=await getMyRatings(session.user.id);
+  lastRatingSignatureV55=JSON.stringify(
+    ratings.map(r=>[r.modality,r.rating,r.matches_played,r.wins,r.losses])
+  );
+  invalidateTabLoadsV74('home','ranking','history','stats','profile');
+  await refreshVisibleRatingViewsV74();
 }
 
 async function refreshReviewViewsV55(){
   if(!session?.user)return;
-
-  // Reputación + historial + placas pueden depender de valoraciones.
   await loadSocialState();
-  populate();
-  await Promise.all([
-    loadHomeDashboard(),
-    loadHistoryPage()
-  ]);
+  invalidateTabLoadsV74('home','history','profile');
+  const active=document.body.dataset.activeTabV101||'home';
+  if(active==='home')await loadHomeDashboard();
+  if(active==='history')await loadHistoryPage();
+  if(active==='profile'){
+    renderAchievements();renderPrimaryRival();renderIdentityShowcase();
+  }
 }
 
 async function refreshSelectedTournamentV55(){
@@ -2967,7 +3039,9 @@ async function fallbackCompetitionPollV55(){
 
     if(lastRatingSignatureV55&&signature!==lastRatingSignatureV55){
       ratings=latest;
-      await refreshCompetitionExperienceV55();
+      lastRatingSignatureV55=signature;
+      invalidateTabLoadsV74('home','ranking','history','stats','profile');
+      await refreshVisibleRatingViewsV74();
     }else if(!lastRatingSignatureV55){
       lastRatingSignatureV55=signature;
     }
@@ -3005,40 +3079,56 @@ function startLiveNotificationStream(){
     userId:uid,
 
     onChallengeChange:()=>{
-      scheduleLiveRefreshV55('duels',refreshDuelViewsV55,70);
+      invalidateChallengesCacheV60(uid);
+      invalidateTabLoadsV74('play','home');
+      scheduleLiveRefreshV55('challenges',async()=>{
+        await loadChallenges();
+        await loadLiveNotifications();
+      },40);
     },
 
-    onMatchChange:()=>{
-      scheduleLiveRefreshV55('duels',refreshDuelViewsV55,70);
-      scheduleLiveRefreshV55('stats-v56',()=>loadStatsModeV56(true),120);
+    onMatchChange:payload=>{
+      invalidateMatchesCacheV60(uid);
+      invalidateTabLoadsV74('play','history','stats','home');
+      const changed=payload?.new;
+      if(changed?.id){
+        const previous=(socialState.matches||[]).find(x=>Number(x.id)===Number(changed.id));
+        socialState.matches=[
+          {...(previous||{}),...changed},
+          ...(socialState.matches||[]).filter(x=>Number(x.id)!==Number(changed.id))
+        ];
+      }
+      scheduleLiveRefreshV55('matches',async()=>{
+        await loadMatches();
+        await loadLiveNotifications();
+      },40);
+      if(changed?.result_status==='confirmed')handleConfirmedMatchV55(changed);
+      if(document.body.dataset.activeTabV101==='stats'){
+        scheduleLiveRefreshV55('stats-v56',()=>loadStatsModeV56(true),80);
+      }
     },
 
     onRatingChange:()=>{
-      scheduleLiveRefreshV55('rating',refreshRatingViewsV55,140);
+      invalidateTabLoadsV74('home','ranking','history','stats','profile');
+      scheduleLiveRefreshV55('rating',refreshRatingViewsV55,60);
     },
 
     onReviewChange:()=>{
-      scheduleLiveRefreshV55('reviews',refreshReviewViewsV55,130);
+      scheduleLiveRefreshV55('reviews',refreshReviewViewsV55,80);
     },
 
     onTournamentChange:()=>{
-      scheduleLiveRefreshV55('tournaments',async()=>{
-        await refreshSelectedTournamentV55();
-        await loadStatsModeV56(true);
-        await refreshOwnCompetitiveTitlesV58().catch(()=>[]);
-        titleState=await getPlayerTitles(session.user.id).catch(()=>titleState);
-        await refreshRatingViewsV55();
-      },110);
+      invalidateTabLoadsV74('tournaments','stats','profile');
+      if(document.body.dataset.activeTabV101==='tournaments'){
+        scheduleLiveRefreshV55('tournaments',refreshSelectedTournamentV55,80);
+      }
     },
 
     onTeamTournamentChange:()=>{
-      scheduleLiveRefreshV55('team-tournaments',async()=>{
-        await refreshSelectedTeamTournamentV55();
-        await loadStatsModeV56(true);
-        await refreshOwnCompetitiveTitlesV58().catch(()=>[]);
-        titleState=await getPlayerTitles(session.user.id).catch(()=>titleState);
-        await refreshRatingViewsV55();
-      },110);
+      invalidateTabLoadsV74('tournaments','stats','profile');
+      if(document.body.dataset.activeTabV101==='tournaments'){
+        scheduleLiveRefreshV55('team-tournaments',refreshSelectedTeamTournamentV55,80);
+      }
     },
 
     onV58Change:()=>{
@@ -3046,17 +3136,17 @@ function startLiveNotificationStream(){
         await loadV58Core({refreshTitles:true});
         titleState=await getPlayerTitles(session.user.id).catch(()=>titleState);
         frameState=await getFrames(session.user.id).catch(()=>frameState);
-        renderEquippedTitle();
-        renderFrameGallery();
-        renderOwnAvatarsV44();
-        await Promise.all([loadLiveNotifications(),loadMatches()]);
+        renderEquippedTitle();renderFrameGallery();renderOwnAvatarsV44();
+        await loadLiveNotifications();
         if(!$('#disputeResolutionModalV58')?.classList.contains('hidden'))await refreshOpenDisputeV58();
-        if(v35Flags?.is_test_admin){await loadAdminDisputesV58();await loadAdminLinkedAccountsV58();await loadAdminReviewTagsV58()}
-      },100);
+        if(v35Flags?.is_test_admin&&document.body.dataset.activeTabV101==='admin'){
+          await Promise.all([loadAdminDisputesV58(),loadAdminLinkedAccountsV58(),loadAdminReviewTagsV58()]);
+        }
+      },80);
     },
 
     onFallbackPoll:fallbackCompetitionPollV55,
-    pollMs:5000
+    pollMs:15000
   });
 
   competitionLiveSyncV55.start();
@@ -6178,6 +6268,12 @@ $('#sportsProfileForm').onsubmit=async e=>{
 };
 
 $$('.nav-item').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));$$('[data-go-tab]').forEach(b=>b.onclick=()=>activateTab(b.dataset.goTab));
+installSwipeNavigationV74({
+  root:$('#mainApp'),
+  getActiveTab:()=>document.body.dataset.activeTabV101||'home',
+  activateTab,
+  tabs:['home','ranking','play','training','tournaments','history','profile']
+});
 
 $$('[data-open-legal-v57]').forEach(button=>{
   button.addEventListener('click',()=>openLegalModalV57(button.dataset.openLegalV57));
