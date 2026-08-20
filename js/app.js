@@ -1911,9 +1911,9 @@ function activateTab(tab){
   const previousTab=document.body.dataset.activeTabV101||'home';
   document.body.dataset.activeTabV101=tab||'home';
   // La pestaña se pinta antes de iniciar consultas o renderizados secundarios.
-  if(!$('.modal').some(m=>!m.classList.contains('hidden')))lockPageScroll(false);
-  $('.tab-page').forEach(p=>p.classList.toggle('active',p.id===`tab-${tab}`));
-  $('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  if(!$$('.modal').some(m=>!m.classList.contains('hidden')))lockPageScroll(false);
+  $$('.tab-page').forEach(p=>p.classList.toggle('active',p.id===`tab-${tab}`));
+  $$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   if(previousTab!==tab)animateTabEnterV601(tab);
   if(window.scrollY>0)window.scrollTo({top:0,behavior:'auto'});
 
@@ -7997,7 +7997,14 @@ setupPwaV573().catch(err=>{recordClientErrorV60(err,'pwa-v60');console.error('PW
   }catch(e){
     console.error(e);
     showView('welcomeView');
-    setStatus($('#globalStatus'),'Hubo un problema al comprobar la sesión. Podés iniciar sesión nuevamente.','error');
+    const sessionFailure=/sesión|session|auth|token|jwt/i.test(String(e?.message||''));
+    setStatus(
+      $('#globalStatus'),
+      sessionFailure
+        ?'No pudimos recuperar la sesión. Probá nuevamente en unos segundos.'
+        :'La aplicación no pudo terminar de cargar. Actualizá la página para reintentar.',
+      'error'
+    );
     closeBootScreenV572();
   }
 })();
