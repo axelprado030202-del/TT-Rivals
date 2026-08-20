@@ -1,0 +1,43 @@
+{
+  "id": "./",
+  "name": "TT Rivals",
+  "short_name": "TT Rivals",
+  "description": "Competí, entrená y evolucioná en tenis de mesa con ranking, desafíos, torneos y TT Rivals Intelligence.",
+  "lang": "es-UY",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "background_color": "#07101e",
+  "theme_color": "#081425",
+  "orientation": "portrait-primary",
+  "categories": [
+    "sports",
+    "games"
+  ],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "assets/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/pwa/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
