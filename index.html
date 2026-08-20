@@ -1902,19 +1902,19 @@
           </div>
         </section>
 
-        <section class="section-card">
+        <section class="section-card" data-admin-panel-v60="multi" aria-labelledby="adminLinkedTitleV58">
           <div class="section-title-row">
             <div>
               <p class="muted-label">INTEGRIDAD COMPETITIVA</p>
-              <h3>🔗 Anti-multicuenta</h3>
-              <p>Revisá cuentas detectadas desde una misma instalación y gestioná excepciones legítimas.</p>
+              <h3 id="adminLinkedTitleV58">🔗 Cuentas vinculadas por dispositivo</h3>
+              <p>Detecta cuentas que comparten instalación o dispositivo y permite gestionar excepciones legítimas.</p>
             </div>
             <button id="adminRefreshLinkedV58" type="button">Actualizar</button>
           </div>
           <div id="adminLinkedAccountsV58" class="admin-linked-list-v58">
             <div class="loading-row">Analizando instalaciones…</div>
           </div>
-          <p id="adminLinkedStatusV58" class="status"></p>
+          <p id="adminLinkedStatusV58" class="status" aria-live="polite"></p>
         </section>
 
         <section class="section-card v59-admin-integrity-card">
