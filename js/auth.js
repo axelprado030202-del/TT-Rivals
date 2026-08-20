@@ -19,7 +19,7 @@ export const signUpUser=({
 });
 export const signInUser=({email,password})=>supabase.auth.signInWithPassword({email,password});
 export const signOutUser=()=>supabase.auth.signOut();
-function decodeStoredAuthV732(raw){
+function decodeStoredAuthV741(raw){
   try{
     let value=String(raw||'');
     if(value.startsWith('base64-')){
@@ -33,42 +33,92 @@ function decodeStoredAuthV732(raw){
   }catch{return null}
 }
 
-function getStoredSessionV732(){
+function getStoredSessionV741(){
   try{
     const preferred='sb-yfwuwrpfpzhpddgkjvty-auth-token';
     const keys=[preferred,...Array.from({length:localStorage.length},(_,i)=>localStorage.key(i))]
       .filter((key,index,all)=>key&&/^sb-.*-auth-token$/.test(key)&&all.indexOf(key)===index);
     for(const key of keys){
-      const candidate=decodeStoredAuthV732(localStorage.getItem(key));
-      if(candidate?.user&&candidate?.access_token&&candidate?.refresh_token)return candidate;
+      const candidate=decodeStoredAuthV741(localStorage.getItem(key));
+      if(candidate?.access_token&&candidate?.refresh_token)return candidate;
     }
   }catch{}
   return null;
 }
 
-export async function getSession({timeoutMs=8000}={}){
-  // Supabase puede demorar al recuperar el bloqueo de Auth al reabrir una PWA.
-  // La sesión local permite pintar la app inmediatamente; el SDK la valida
-  // y renueva en segundo plano antes de las operaciones protegidas.
-  const stored=getStoredSessionV732();
-  if(stored){
-    supabase.auth.getSession().catch(()=>{});
-    return stored;
-  }
-
+function withAuthTimeoutV741(promise,ms,message){
   let timer=null;
   const timeout=new Promise((_,reject)=>{
-    timer=setTimeout(()=>reject(new Error('La comprobación de sesión tardó demasiado.')),timeoutMs);
+    timer=setTimeout(()=>reject(new Error(message)),Math.max(1000,Number(ms)||1000));
   });
-  try{
-    const {data,error}=await Promise.race([supabase.auth.getSession(),timeout]);
-    if(error)throw error;
-    return data.session;
-  }finally{
-    if(timer)clearTimeout(timer);
-  }
+  return Promise.race([promise,timeout]).finally(()=>{if(timer)clearTimeout(timer)});
 }
 
+function waitForInitialSessionV741(waitMs=4000){
+  return new Promise(resolve=>{
+    let finished=false;
+    let timer=null;
+    let subscription=null;
+    const finish=(seen,session)=>{
+      if(finished)return;
+      finished=true;
+      if(timer)clearTimeout(timer);
+      queueMicrotask(()=>subscription?.unsubscribe?.());
+      resolve({seen,session:session||null});
+    };
+    const listener=supabase.auth.onAuthStateChange((event,session)=>{
+      if(['INITIAL_SESSION','SIGNED_IN','TOKEN_REFRESHED'].includes(event)){
+        finish(true,session);
+      }
+    });
+    subscription=listener?.data?.subscription||null;
+    timer=setTimeout(()=>finish(false,null),Math.max(500,Number(waitMs)||4000));
+  });
+}
+
+export async function getSession({timeoutMs=18000}={}){
+  // P7.4.1: el SDK debe adoptar la sesión antes de que la app consulte
+  // perfil o rating. Nunca se entrega directamente el JSON de localStorage.
+  const started=Date.now();
+  const initial=await waitForInitialSessionV741(Math.min(4500,timeoutMs));
+  if(initial.seen)return initial.session;
+
+  let lastError=null;
+  const remaining=()=>Math.max(2500,timeoutMs-(Date.now()-started));
+
+  try{
+    const {data,error}=await withAuthTimeoutV741(
+      supabase.auth.getSession(),
+      remaining(),
+      'Supabase demoró al recuperar la sesión.'
+    );
+    if(error)throw error;
+    if(data?.session)return data.session;
+  }catch(error){
+    lastError=error;
+  }
+
+  const stored=getStoredSessionV741();
+  if(stored?.access_token&&stored?.refresh_token){
+    try{
+      const {data,error}=await withAuthTimeoutV741(
+        supabase.auth.setSession({
+          access_token:stored.access_token,
+          refresh_token:stored.refresh_token
+        }),
+        remaining(),
+        'Supabase demoró al restaurar la sesión.'
+      );
+      if(error)throw error;
+      if(data?.session)return data.session;
+    }catch(error){
+      lastError=error;
+    }
+  }
+
+  if(lastError&&stored)throw lastError;
+  return null;
+}
 
 // V53 — recuperación segura de cuenta.
 // Supabase no expone la contraseña actual; se envía un enlace de recuperación

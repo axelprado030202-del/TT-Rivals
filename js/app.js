@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword} from './auth.js?v=1.0.1-p7.3.2';
+import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword} from './auth.js?v=1.0.1-p7.4.1';
 import {getMyProfile,getMyRatings,completeSportsProfile,getClubsV47,ensureClubV47,getClubsV49,getClubsV50,getClubsV51,suggestClubsV49,suggestClubsV50,suggestClubsV51,ensureClubV49,ensureClubV51,setMyClubV49,setMyClubV51,getMyClubV49,getMyClubV51,adminListClubsV49,adminListClubsV51,adminMergeClubsV49,adminMergeClubsV51,adminRenameClubV49,adminCreateClubV51,adminUpdateClubV51,getRanking,searchPlayers,getRatingHistory,getRankTiers,setProfilePhotoUrl,uploadProfilePhoto,deleteProfilePhotoByUrl} from './profile.js';
 import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges,invalidateChallengesCacheV60} from './challenges.js?v=1.0.1-p7.4';
 import {getMyMatches,submitMatchResult,confirmMatchResult,disputeMatchResult,getMyDurationStatsV59,adminListMatchIntegrityV59,invalidateMatchesCacheV60} from './matches.js?v=1.0.1-p7.4';
@@ -8067,42 +8067,59 @@ startMatchClocksV59();
 initMotionV601();
 setupPwaV573().catch(err=>{recordClientErrorV60(err,'pwa-v60');console.error('PWA V60:',err)});
 
+async function bootApplicationV741(){
+  const recoveryHint=new URLSearchParams(window.location.search).get('recovery')==='1';
+
+  document.body.dataset.ttBootStage='session';
+  setBootMessageV572('Comprobando sesión…');
+  const startupSession=await getSession({timeoutMs:18000});
+
+  if(recoveryHint){
+    if(startupSession?.user){
+      session=startupSession;
+      showPasswordRecoveryViewV53(startupSession);
+      closeBootScreenV572();
+      return;
+    }
+    await new Promise(resolve=>setTimeout(resolve,300));
+    if(passwordRecoveryActiveV53){
+      closeBootScreenV572();
+      return;
+    }
+  }
+
+  await route(startupSession);
+}
+
 (async()=>{
-  try{
-    const recoveryHint=new URLSearchParams(window.location.search).get('recovery')==='1';
-
-    document.body.dataset.ttBootStage='session';
-    setBootMessageV572('Comprobando sesión…');
-    const startupSession=await getSession({timeoutMs:8000});
-
-    if(recoveryHint){
-      if(startupSession?.user){
-        session=startupSession;
-        showPasswordRecoveryViewV53(startupSession);
-        closeBootScreenV572();
-        return;
-      }
-      await new Promise(resolve=>setTimeout(resolve,300));
-      if(passwordRecoveryActiveV53){
-        closeBootScreenV572();
-        return;
+  let finalError=null;
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      await bootApplicationV741();
+      return;
+    }catch(error){
+      finalError=error;
+      console.warn(`P7.4.1 inicio intento ${attempt+1}:`,error);
+      if(attempt===0){
+        setBootMessageV572('Reconectando con tu cuenta…');
+        stopLiveNotificationStream();
+        session=null;profile=null;ratings=[];
+        await new Promise(resolve=>setTimeout(resolve,700));
       }
     }
-
-    await route(startupSession);
-  }catch(e){
-    console.error(e);
-    showView('welcomeView');
-    const sessionFailure=/sesión|session|auth|token|jwt/i.test(String(e?.message||''));
-    setStatus(
-      $('#globalStatus'),
-      sessionFailure
-        ?'No pudimos recuperar la sesión. Probá nuevamente en unos segundos.'
-        :'La aplicación no pudo terminar de cargar. Actualizá la página para reintentar.',
-      'error'
-    );
-    closeBootScreenV572();
   }
+
+  console.error(finalError);
+  showView('welcomeView');
+  const detail=String(finalError?.message||'Error desconocido')
+    .replace(/https?:\/\/\S+/g,'servidor')
+    .slice(0,140);
+  setStatus(
+    $('#globalStatus'),
+    `No pudimos completar el inicio después de dos intentos. Detalle: ${detail}`,
+    'error'
+  );
+  closeBootScreenV572();
 })();
 
 
