@@ -1,0 +1,80 @@
+/* ============================================================
+   TT RIVALS 1.0.1 — UI MOTION FX 2
+   Corrección de capas + rendimiento.
+   ============================================================ */
+
+/* Fondo premium existente: base, siempre detrás. */
+.tt-dynamic-bg-v101{z-index:0!important}
+
+/* Canvas nuevo: encima del fondo base y debajo de toda la interfaz. */
+.tt-motion-backdrop-p6{
+  position:fixed;
+  inset:0;
+  z-index:1!important;
+  width:100vw;
+  height:100dvh;
+  pointer-events:none;
+  user-select:none;
+  opacity:0;
+  transition:opacity .25s ease;
+  contain:strict;
+}
+body.tt-motion-visible-p6 .tt-motion-backdrop-p6{opacity:.96}
+
+/* Toda la aplicación queda por encima del efecto. */
+.app-shell,.main-app{position:relative;z-index:2!important}
+
+/* Pausamos animaciones antiguas en las secciones con FX nuevos.
+   El degradado base permanece, pero evitamos trabajo duplicado de GPU/CPU. */
+body[data-active-tab-v101="home"] .tt-dynamic-bg-v101 .tt-bg-v101,
+body[data-active-tab-v101="play"] .tt-dynamic-bg-v101 .tt-bg-v101,
+body[data-active-tab-v101="tournaments"] .tt-dynamic-bg-v101 .tt-bg-v101,
+body[data-active-tab-v101="ranking"] .tt-dynamic-bg-v101 .tt-bg-v101,
+body[data-active-tab-v101="admin"] .tt-dynamic-bg-v101 .tt-bg-v101{
+  animation-play-state:paused!important;
+}
+body[data-active-tab-v101="home"] .tt-ping-arc,
+body[data-active-tab-v101="home"] .tt-ping-ball,
+body[data-active-tab-v101="home"] .tt-ping-impact{opacity:0!important}
+
+/* Personalidad del fondo base sin tapar el canvas. */
+body[data-active-tab-v101="home"] .tt-dynamic-bg-v101,
+body[data-active-tab-v101="play"] .tt-dynamic-bg-v101,
+body[data-active-tab-v101="tournaments"] .tt-dynamic-bg-v101{
+  filter:saturate(.9) brightness(.82)!important;
+}
+body[data-active-tab-v101="ranking"] .tt-dynamic-bg-v101{
+  filter:saturate(.8) brightness(.72)!important;
+}
+body[data-active-tab-v101="admin"] .tt-dynamic-bg-v101{
+  background:
+    radial-gradient(circle at 18% 16%,rgba(0,105,44,.16),transparent 34%),
+    radial-gradient(circle at 84% 72%,rgba(0,68,38,.12),transparent 37%),
+    linear-gradient(145deg,#020704 0%,#030b08 48%,#020508 100%)!important;
+  filter:none!important;
+}
+
+/* Velo muy tenue: integra Matrix sin convertir la UI en verde. */
+body[data-active-tab-v101="admin"] #tab-admin::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,255,96,.018),transparent 32%,rgba(0,255,96,.012));
+}
+
+/* En Ranking las ondas deben poder verse en zonas vacías. */
+body[data-active-tab-v101="ranking"] #tab-ranking,
+body[data-active-tab-v101="home"] #tab-home,
+body[data-active-tab-v101="play"] #tab-play,
+body[data-active-tab-v101="tournaments"] #tab-tournaments,
+body[data-active-tab-v101="admin"] #tab-admin{position:relative}
+
+@media(max-width:899px){
+  .tt-motion-backdrop-p6{height:100dvh;opacity:.86}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .tt-motion-backdrop-p6{transition:none;opacity:.42!important}
+}
