@@ -20,7 +20,8 @@ import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js';
 import {APP_VERSION,APP_BUILD} from './version.js';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
-import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';\nimport {getCompetitiveProgressV72} from './v72_progress.js';
+import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
+import {getCompetitiveProgressV72} from './v72_progress.js';
 import {getHistorySeasonsV60} from './v60_history.js';
 import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,animatePostMatchV601,celebrateRewardV601} from './v60_motion.js';
 import {
