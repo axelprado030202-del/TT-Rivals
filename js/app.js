@@ -24,7 +24,7 @@ import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js'
 import {getCompetitiveProgressV72} from './v72_progress.js';
 import {getHistorySeasonsV60} from './v60_history.js';
 import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,animatePostMatchV601,celebrateRewardV601} from './v60_motion.js?v=1.0.1-p7.3.1';
-import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.1-p7.4';
+import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.1-p7.4.3';
 import {
   registerCurrentInstallationV58,
   getMyProtectionV58,
@@ -6272,7 +6272,7 @@ installSwipeNavigationV74({
   root:$('#mainApp'),
   getActiveTab:()=>document.body.dataset.activeTabV101||'home',
   activateTab,
-  tabs:['home','ranking','play','training','tournaments','history','profile']
+  tabs:['home','ranking','tournaments','play','training','history','profile']
 });
 
 $$('[data-open-legal-v57]').forEach(button=>{
