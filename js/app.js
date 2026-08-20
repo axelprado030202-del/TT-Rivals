@@ -20,7 +20,7 @@ import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js';
 import {APP_VERSION,APP_BUILD} from './version.js';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
-import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
+import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';\nimport {getCompetitiveProgressV72} from './v72_progress.js';
 import {getHistorySeasonsV60} from './v60_history.js';
 import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,animatePostMatchV601,celebrateRewardV601} from './v60_motion.js';
 import {
@@ -3566,6 +3566,43 @@ async function renderProfileSeasonCards(){
     const s=await getPublicPlayerSeasons(session.user.id);
     box.innerHTML=seasonCardHtml(s.last_season,'ÚLTIMA TEMPORADA')+seasonCardHtml(s.best_season,'MEJOR TEMPORADA');
   }catch(err){box.innerHTML='<div class="compact-empty">No se pudieron cargar las temporadas.</div>'}
+}
+
+async function loadCompetitiveProgressV72(){
+  const box=$('#competitiveProgressV72');if(!box||!session?.user||statsModeV56!=='competitive')return;
+  box.innerHTML='<div class="loading-row">Calculando tu progreso…</div>';
+  try{
+    const p=await getCompetitiveProgressV72();
+    const signed=n=>`${Number(n)>=0?'+':''}${Number(n)}`;
+    const trendLabel=p.trend==='up'?'EN ASCENSO':p.trend==='down'?'EN RECUPERACIÓN':'ESTABLE';
+    const deltaClass=n=>Number(n)>0?'v72-positive':Number(n)<0?'v72-negative':'';
+    box.innerHTML=`
+      <div class="v72-progress-head">
+        <div><p class="muted-label">P7.2 · PROGRESO</p><h3>Tu momento competitivo</h3></div>
+        <div class="v72-momentum ${p.trend}"><small>ÚLTIMOS 7 DÍAS</small><strong>${trendLabel}</strong></div>
+      </div>
+      <div class="v72-progress-hero">
+        <section class="v72-rank-panel">
+          <div class="v72-rank-copy"><div><small>RANGO ACTUAL</small><strong>${esc(p.rank)}</strong></div><div><small>ELO</small><b>${p.rating}</b></div></div>
+          <div class="v72-rank-track" role="progressbar" aria-label="Progreso hacia ${esc(p.nextRank||'el rango máximo')}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p.progress)}"><i style="width:${p.progress}%"></i></div>
+          <p>${p.nextRank?`${p.toNext} Elo para <strong>${esc(p.nextRank)}</strong>`:'Alcanzaste el rango máximo'}</p>
+        </section>
+        <section class="v72-record-panel">
+          <div><small>MÁXIMO HISTÓRICO</small><strong>${p.maxElo}</strong><em>Elo</em></div>
+          <div><small>POSICIÓN ACTUAL</small><strong>${p.position?`#${p.position}`:'—'}</strong><em>${p.bestPosition?`mejor conocida #${p.bestPosition}`:'ranking global'}</em></div>
+        </section>
+      </div>
+      <div class="v72-progress-grid">
+        <article><span>Variación 7 días</span><strong class="${deltaClass(p.delta7)}">${signed(p.delta7)}</strong><small>Elo acumulado</small></article>
+        <article><span>Variación 30 días</span><strong class="${deltaClass(p.delta30)}">${signed(p.delta30)}</strong><small>Elo acumulado</small></article>
+        <article><span>Racha actual</span><strong>${p.currentStreak}</strong><small>victorias seguidas</small></article>
+        <article><span>Mejor racha</span><strong>${p.bestStreak}</strong><small>récord personal</small></article>
+      </div>
+      <section class="v72-milestone"><span>${esc(p.milestone.icon)}</span><div><small>${esc(p.milestone.label)}</small><strong>${esc(p.milestone.title)}</strong><p>${esc(p.milestone.detail)}</p></div></section>`;
+  }catch(err){
+    console.error('P7.2 progreso',err);
+    box.innerHTML='<div class="v72-progress-error">No se pudo calcular el progreso en este momento.</div>';
+  }
 }
 
 async function loadPersonalRecords(){
