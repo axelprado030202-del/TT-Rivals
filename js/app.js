@@ -20,6 +20,7 @@ import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js';
 import {APP_VERSION,APP_BUILD} from './version.js';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
+import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
 import {getHistorySeasonsV60} from './v60_history.js';
 import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,animatePostMatchV601,celebrateRewardV601} from './v60_motion.js';
 import {
@@ -186,7 +187,7 @@ let passwordRecoveryActiveV53=false,recoveryProfileV53=null;
 const stopTrainingTimerV53=setupTrainingTimerV53();
 
 let liveMatchStatusSnapshot=new Map(),liveMatchStatusPrimed=false,postMatchShownIds=new Set(),pendingPostMatchReviewId=null;
-let v60State={challenges:[],matches:[],matchSets:new Map(),recommended:[],activityItems:[],activityFilter:'attention',historyModality:'all',historySeason:'all',historyDateFrom:'',historyDateTo:'',historySort:'recent',recentPresence:new Map(),historySeasons:[],adminCategory:'disputes',lastDiagnostics:null};
+let v60State={challenges:[],matches:[],matchSets:new Map(),recommended:[],activityItems:[],activityFilter:'attention',historyModality:'all',historySeason:'all',historyDateFrom:'',historyDateTo:'',historySort:'recent',recentPresence:new Map(),historySeasons:[],adminCategory:'disputes',lastDiagnostics:null,metricsDays:7,lastProductMetrics:null};
 let presenceHeartbeatV60=null,activityLoadPromiseV60=null,achievementUnlockPrimedV60=false,titleUnlockPrimedV60=false,missionUnlockPrimedV60=false;
 let lastUnlockedAchievementsV60=new Set(),lastUnlockedTitlesV60=new Set(),lastCompletedMissionsV60=new Set();
 let recentRewardsV60=[];
@@ -2506,6 +2507,68 @@ async function loadAdminIntegrityV59(){
 }
 
 
+
+function metricNumberV70(value,digits=0){
+  const n=Number(value||0);
+  return Number.isFinite(n)?n.toLocaleString('es-UY',{minimumFractionDigits:digits,maximumFractionDigits:digits}):'0';
+}
+function renderAdminProductMetricsV70(data={}){
+  const grid=$('#adminMetricsGridV70'),funnel=$('#adminMetricsFunnelV70'),trend=$('#adminMetricsTrendV70');
+  if(!grid||!funnel||!trend)return;
+  const active=Number(data.active_competitive_players||0);
+  const verified=Number(data.verified_matches||0);
+  const ranked=Number(data.ranked_verified_matches||0);
+  const casual=Number(data.casual_verified_matches||0);
+  const sent=Number(data.challenges_sent||0);
+  const accepted=Number(data.challenges_accepted||0);
+  const submitted=Number(data.results_submitted||0);
+  const perPlayer=Number(data.verified_matches_per_active_player||0);
+  const acceptance=Number(data.challenge_acceptance_rate||0);
+  const confirmation=Number(data.confirmation_rate||0);
+  const rematches=Number(data.rematch_requests||0);
+  const pairs=Number(data.different_rival_pairs||0);
+  grid.innerHTML=`
+    <article class="v70-metric primary"><span>Partidos / jugador</span><strong>${metricNumberV70(perPlayer,2)}</strong><small>ranked verificados por jugador competitivo activo</small></article>
+    <article class="v70-metric"><span>Jugadores activos</span><strong>${metricNumberV70(active)}</strong><small>con al menos un ranked verificado</small></article>
+    <article class="v70-metric"><span>Partidos verificados</span><strong>${metricNumberV70(verified)}</strong><small>${metricNumberV70(ranked)} ranked · ${metricNumberV70(casual)} casuales</small></article>
+    <article class="v70-metric"><span>Pares de rivales</span><strong>${metricNumberV70(pairs)}</strong><small>enfrentamientos distintos confirmados</small></article>
+    <article class="v70-metric"><span>Desafíos enviados</span><strong>${metricNumberV70(sent)}</strong><small>${metricNumberV70(acceptance,1)}% de aceptación en la ventana</small></article>
+    <article class="v70-metric"><span>Resultados cargados</span><strong>${metricNumberV70(submitted)}</strong><small>${metricNumberV70(confirmation,1)}% terminaron confirmados</small></article>
+    <article class="v70-metric"><span>Revanchas</span><strong>${metricNumberV70(rematches)}</strong><small>solicitudes desde un partido finalizado</small></article>
+    <article class="v70-metric"><span>Integridad</span><strong>${metricNumberV70(data.disputes||0)}</strong><small>${metricNumberV70(data.annulled_matches||0)} anulados en la ventana</small></article>`;
+
+  const steps=[['Desafíos enviados',sent],['Aceptados',accepted],['Resultados cargados',submitted],['Partidos verificados',verified]];
+  const max=Math.max(1,...steps.map(x=>Number(x[1]||0)));
+  funnel.innerHTML=`<div class="v70-funnel-head"><strong>Embudo competitivo</strong><small>${metricNumberV70(acceptance,1)}% aceptación · ${metricNumberV70(confirmation,1)}% confirmación</small></div>${steps.map(([label,value])=>`<div class="v70-funnel-row"><span>${esc(label)}</span><div class="v70-funnel-track"><i style="width:${Math.max(3,Math.min(100,(Number(value||0)/max)*100))}%"></i></div><b>${metricNumberV70(value)}</b></div>`).join('')}`;
+
+  const daily=Array.isArray(data.daily)?data.daily:[];
+  const maxDaily=Math.max(1,...daily.map(x=>Number(x.verified_matches||0)));
+  trend.innerHTML=`<div class="v70-trend-head"><strong>Partidos verificados por día</strong><small>${data.days||v60State.metricsDays} días</small></div><div class="v70-bars">${daily.map(x=>{const n=Number(x.verified_matches||0);const h=Math.max(4,(n/maxDaily)*100);const label=new Date(`${x.date}T12:00:00`).toLocaleDateString('es-UY',{day:'2-digit',month:'2-digit'});return `<div class="v70-bar" data-tip="${esc(label)} · ${n} verificados"><i style="height:${h}%"></i></div>`}).join('')}</div>`;
+
+  if($('#adminCountMetricsV70'))$('#adminCountMetricsV70').textContent=`${verified} verificados`;
+}
+async function loadAdminProductMetricsV70(days=v60State.metricsDays||7){
+  if(!v35Flags?.is_test_admin)return;
+  const grid=$('#adminMetricsGridV70');if(!grid)return;
+  const clean=Math.max(1,Math.min(90,Number(days)||7));
+  v60State.metricsDays=clean;
+  if($('#adminMetricsRangeV70'))$('#adminMetricsRangeV70').value=String(clean);
+  grid.innerHTML='<div class="loading-row">Calculando actividad competitiva…</div>';
+  try{
+    const data=await getAdminProductMetricsV70(clean);
+    v60State.lastProductMetrics=data;
+    renderAdminProductMetricsV70(data);
+    const started=data.telemetry_started_at?new Date(data.telemetry_started_at).toLocaleString('es-UY'):'sin eventos todavía';
+    setStatus($('#adminMetricsStatusV70'),`Ventana de ${clean} días · instrumentación P7 activa desde ${started}.`,'ok');
+  }catch(err){
+    recordClientErrorV60(err,'admin-product-metrics-v70');
+    grid.innerHTML=`<div class="compact-empty">${esc(err.message||'No se pudieron cargar las métricas P7.')}</div>`;
+    if($('#adminMetricsFunnelV70'))$('#adminMetricsFunnelV70').innerHTML='';
+    if($('#adminMetricsTrendV70'))$('#adminMetricsTrendV70').innerHTML='';
+    setStatus($('#adminMetricsStatusV70'),'Si todavía no ejecutaste el SQL P7.0, instalalo primero en Supabase.','error');
+  }
+}
+
 function setupAdminPanelsV60(){
   const admin=$('#tab-admin');if(!admin)return;
   const map=[
@@ -2521,12 +2584,13 @@ function setupAdminPanelsV60(){
   setAdminCategoryV60(v60State.adminCategory||'disputes');
 }
 function setAdminCategoryV60(category='disputes'){
-  const allowed=new Set(['disputes','integrity','multi','users','suspicious','community','system']);
+  const allowed=new Set(['disputes','integrity','multi','users','suspicious','community','metrics','system']);
   const clean=allowed.has(category)?category:'disputes';
   v60State.adminCategory=clean;
   $$('[data-admin-category-v60]').forEach(b=>b.classList.toggle('active',b.dataset.adminCategoryV60===clean));
   $$('[data-admin-panel-v60]').forEach(panel=>panel.classList.toggle('hidden',panel.dataset.adminPanelV60!==clean));
   if(clean==='system'&&v35Flags?.is_test_admin)runAdminDiagnosticsV60().catch(()=>{});
+  if(clean==='metrics'&&v35Flags?.is_test_admin)loadAdminProductMetricsV70().catch(()=>{});
 }
 
 let adminUserSearchTimerV60=null;
@@ -4043,6 +4107,8 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
   $('#postMatchModal').classList.remove('hidden');
   animatePostMatchV601($('#postMatchModal'),{won,positive:Number(delta)>0,protectedElo:!!summary?.protection_used,hasRewards:rewards.length>0});
   syncModalScrollLock();
+  const telemetryOpponentId=m?(m.player1_id===session.user.id?m.player2_id:m.player1_id):null;
+  recordProductEventV70('post_match_opened',{matchId,opponentId:telemetryOpponentId,metadata:{match_type:summary?.match_type||m?.match_type||'ranked',match_format:format}}).catch(()=>{});
 }
 
 async function requestRematch(matchId,button){
@@ -4056,7 +4122,7 @@ async function requestRematch(matchId,button){
   button.disabled=true;
   button.textContent='Enviando…';
   try{
-    await createChallenge({
+    const rematchChallenge=await createChallenge({
       challengerId:session.user.id,
       challengedId:opponentId,
       format:m.match_format||'bo3',
@@ -4065,6 +4131,7 @@ async function requestRematch(matchId,button){
       scheduledTime:null,
       location:null
     });
+    recordProductEventV70('rematch_requested',{matchId,challengeId:rematchChallenge?.id||null,opponentId,metadata:{match_type:m.match_type||'ranked',match_format:m.match_format||'bo3'}}).catch(()=>{});
     button.textContent='✓ Revancha enviada';
     await loadChallenges();
   }catch(err){
@@ -7738,6 +7805,8 @@ $$('[data-activity-filter-v60]').forEach(button=>button.addEventListener('click'
   renderActivityCenterV60();
 }));
 $$('[data-admin-category-v60]').forEach(button=>button.addEventListener('click',()=>setAdminCategoryV60(button.dataset.adminCategoryV60)));
+$('#adminRefreshMetricsV70')?.addEventListener('click',()=>loadAdminProductMetricsV70(Number($('#adminMetricsRangeV70')?.value||7)));
+$('#adminMetricsRangeV70')?.addEventListener('change',e=>loadAdminProductMetricsV70(Number(e.target.value||7)));
 $('#adminUserSearchV60')?.addEventListener('input',()=>{
   clearTimeout(adminUserSearchTimerV60);
   adminUserSearchTimerV60=setTimeout(searchAdminUsersV60,220);

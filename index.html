@@ -22,8 +22,9 @@
   <link rel="stylesheet" href="css/v101_ui_rework.css?v=1.0.1-p6.1">
   <link rel="stylesheet" href="css/v101_premium.css?v=1.0.1-p6.1">
   <link rel="stylesheet" href="css/v101_motion_fx.css?v=1.0.1-p6.1">
+  <link rel="stylesheet" href="css/v70_metrics.css?v=1.0.1-p7.0">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p6.1-visual-performance-controls" data-active-tab-v101="home" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.0-product-metrics" data-active-tab-v101="home" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -1842,7 +1843,23 @@
           <button data-admin-category-v60="users" type="button"><span>👤</span><strong>Usuarios</strong><small>Buscar perfiles</small></button>
           <button data-admin-category-v60="suspicious" type="button"><span>⏱</span><strong>Partidos sospechosos</strong><small id="adminCountSuspiciousV60">0 alertas</small></button>
           <button data-admin-category-v60="community" type="button"><span>🏓</span><strong>Comunidad</strong><small>Clubes, lugares y testers</small></button>
+          <button data-admin-category-v60="metrics" type="button"><span>▥</span><strong>Métricas</strong><small id="adminCountMetricsV70">P7 · producto</small></button>
           <button data-admin-category-v60="system" type="button"><span>⚙</span><strong>Sistema</strong><small>Diagnóstico y herramientas</small></button>
+        </section>
+
+        <section id="adminProductMetricsV70" class="section-card v70-metrics-card" data-admin-panel-v60="metrics">
+          <div class="section-title-row">
+            <div><p class="muted-label">P7 · PRODUCTO</p><h3>Ritmo competitivo real</h3><p>Desafíos, confirmaciones y partidos verificados registrados desde el backend.</p></div>
+            <div class="v70-metrics-toolbar">
+              <select id="adminMetricsRangeV70" aria-label="Período de métricas"><option value="7">7 días</option><option value="30">30 días</option><option value="90">90 días</option></select>
+              <button id="adminRefreshMetricsV70" type="button">Actualizar</button>
+            </div>
+          </div>
+          <div class="v70-metrics-note"><span>◎</span><div><strong>Métrica principal: partidos ranked verificados por jugador activo</strong><small>Los eventos competitivos principales se registran con triggers de Supabase. Un error de telemetría no puede bloquear un desafío ni un partido.</small></div></div>
+          <div id="adminMetricsGridV70" class="v70-metrics-grid"><div class="loading-row">Abrí Métricas para cargar el panel.</div></div>
+          <div id="adminMetricsFunnelV70" class="v70-funnel"></div>
+          <div id="adminMetricsTrendV70" class="v70-trend"></div>
+          <p id="adminMetricsStatusV70" class="status"></p>
         </section>
 
         <section id="adminUsersV60" class="section-card v60-admin-users" data-admin-panel-v60="users">
@@ -2814,7 +2831,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=1.0.1-p6.1"></script>
+  <script type="module" src="js/app.js?v=1.0.1-p7.0"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>

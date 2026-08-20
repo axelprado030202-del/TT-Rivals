@@ -1,0 +1,20 @@
+/* TT Rivals P7.0 — métricas de producto (Admin) */
+.v70-metrics-card{display:grid;gap:16px}
+.v70-metrics-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.v70-metrics-toolbar select,.v70-metrics-toolbar button{min-height:38px}
+.v70-metrics-note{display:flex;gap:10px;align-items:flex-start;padding:11px 13px;border:1px solid rgba(56,189,248,.13);border-radius:12px;background:rgba(14,165,233,.04)}
+.v70-metrics-note span{font-size:1rem}.v70-metrics-note strong,.v70-metrics-note small{display:block}.v70-metrics-note small{margin-top:3px;color:var(--muted);line-height:1.45}
+.v70-metrics-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.v70-metric{padding:13px;border:1px solid rgba(148,163,184,.10);border-radius:14px;background:rgba(2,6,23,.18)}
+.v70-metric span{display:block;color:var(--muted);font-size:.62rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.v70-metric strong{display:block;margin-top:6px;font-size:1.28rem;line-height:1}.v70-metric small{display:block;margin-top:6px;color:var(--muted);font-size:.64rem;line-height:1.35}
+.v70-metric.primary{border-color:rgba(34,211,238,.25);background:linear-gradient(145deg,rgba(34,211,238,.08),rgba(99,102,241,.03))}
+.v70-funnel{display:grid;gap:9px;padding:14px;border:1px solid rgba(148,163,184,.10);border-radius:14px;background:rgba(2,6,23,.14)}
+.v70-funnel-head{display:flex;justify-content:space-between;gap:12px;align-items:end}.v70-funnel-head strong{font-size:.82rem}.v70-funnel-head small{color:var(--muted);font-size:.62rem}
+.v70-funnel-row{display:grid;grid-template-columns:135px 1fr 58px;gap:10px;align-items:center}.v70-funnel-row span{font-size:.65rem;color:var(--muted)}.v70-funnel-row b{text-align:right;font-size:.72rem}.v70-funnel-track{height:8px;border-radius:999px;background:rgba(148,163,184,.09);overflow:hidden}.v70-funnel-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#22d3ee,#6366f1)}
+.v70-trend{display:grid;gap:10px;padding:14px;border:1px solid rgba(148,163,184,.10);border-radius:14px;background:rgba(2,6,23,.14)}
+.v70-trend-head{display:flex;justify-content:space-between;gap:12px}.v70-trend-head strong{font-size:.82rem}.v70-trend-head small{color:var(--muted);font-size:.62rem}
+.v70-bars{display:flex;align-items:end;gap:5px;height:82px;overflow:hidden}.v70-bar{flex:1;min-width:4px;display:flex;align-items:end;height:100%;position:relative}.v70-bar i{width:100%;min-height:3px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#22d3ee,#6366f1);opacity:.82}.v70-bar:hover::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 5px);transform:translateX(-50%);z-index:5;white-space:nowrap;padding:4px 6px;border-radius:7px;background:#020617;color:#e2e8f0;font-size:.56rem;box-shadow:0 8px 24px rgba(0,0,0,.28)}
+body[data-theme="light"] .v70-metric,body[data-theme="light"] .v70-funnel,body[data-theme="light"] .v70-trend{background:rgba(255,255,255,.72)}
+@media(max-width:900px){.v70-metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.v70-metrics-grid{grid-template-columns:1fr 1fr}.v70-funnel-row{grid-template-columns:100px 1fr 46px;gap:7px}.v70-metric{padding:11px}.v70-metric strong{font-size:1.1rem}}

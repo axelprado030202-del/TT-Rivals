@@ -1,0 +1,26 @@
+TT RIVALS — P7.0 INSTRUMENTACIÓN Y MÉTRICAS
+Build: v1.0.1-p7.0-product-metrics
+
+QUÉ AGREGA
+- Registro autoritativo de eventos de desafíos y partidos desde Supabase.
+- Métrica principal: partidos ranked verificados por jugador competitivo activo.
+- Panel Admin > Métricas con ventanas de 7, 30 y 90 días.
+- Embudo: desafío enviado > aceptado > resultado cargado > partido verificado.
+- Tendencia diaria de partidos verificados.
+- Métricas de revanchas y apertura de postpartido (telemetría de experiencia, sin impacto competitivo).
+- La telemetría está aislada: si falla, NO puede bloquear un desafío, resultado o confirmación.
+
+ORDEN DE INSTALACIÓN
+1. Guardar una copia de la versión actual de TT Rivals.
+2. En Supabase > SQL Editor ejecutar:
+   SQL_TT_RIVALS_1_0_1_P7_0_METRICAS.sql
+3. Subir a GitHub los archivos del PATCH respetando carpetas y reemplazando los existentes.
+4. Esperar a que GitHub Pages termine el deployment.
+5. Abrir TT Rivals y entrar con la cuenta Admin.
+6. Ir a Admin > Métricas.
+
+IMPORTANTE
+- Las métricas P7 empiezan a registrarse desde que se ejecuta el SQL P7.0.
+- No se modificó la fórmula Elo en esta fase.
+- No se cambió la lógica de validación competitiva.
+- El número visible de la app sigue siendo 1.0.1; P7.0 es el build interno de desarrollo.
