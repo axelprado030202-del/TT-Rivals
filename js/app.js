@@ -1952,7 +1952,7 @@ function activateTab(tab,{source='tap'}={}){
   document.body.dataset.activeTabV101=tab||'home';
   if(!$$('.modal').some(m=>!m.classList.contains('hidden')))lockPageScroll(false);
   $$('.tab-page').forEach(page=>page.classList.toggle('active',page.id===`tab-${tab}`));
-  $$$$('.nav-item').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));
+  $$('.nav-item').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));
   if(previousTab!==tab)animateTabEnterV601(tab);
   if(window.scrollY>0)window.scrollTo({top:0,behavior:'auto'});
   recordTabSwitchV74(tab,startedAt,source);
