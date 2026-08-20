@@ -4043,9 +4043,6 @@ async function openMatchDetail(matchId){
 async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Rival'}){
   if(!matchId)return;
 
-  // V55: el modal de valoración depende de socialState.matches.
-  // Si este cambio llegó por Realtime a quien NO confirmó el resultado,
-  // garantizamos que la copia local ya contiene el partido confirmado.
   if(!(socialState.matches||[]).some(x=>Number(x.id)===Number(matchId))){
     try{socialState.matches=await getMyMatches(session.user.id)}catch{}
   }
@@ -4056,59 +4053,112 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
   if(!m){
     try{m=(await getMyMatches(session.user.id)).find(x=>Number(x.id)===Number(matchId))||null}catch(e){}
   }
+  if(!rankTiers.length){
+    try{rankTiers=await getRankTiers()}catch{}
+  }
+
   const isCasual=(summary?.match_type||m?.match_type)==='casual';
-  const delta=summary?.rating_change ?? ((newRating??0)-(oldRating??0));
-  const current=summary?.current_rating ?? newRating ?? getRating('individual').rating;
-  const previous=summary?.previous_rating ?? oldRating ?? current;
+  const delta=Number(summary?.rating_change ?? ((newRating??0)-(oldRating??0)));
+  const current=Number(summary?.current_rating ?? newRating ?? getRating('individual').rating);
+  const previous=Number(summary?.previous_rating ?? oldRating ?? current);
   const rank=summary?.current_rank||rankForRating(current);
-  const toNext=summary?.to_next_rank ?? summary?.next_rank_remaining;
-  const nextRank=summary?.next_rank ?? summary?.next_rank_name;
   const pos=summary?.position;
-  const newBest=summary?.is_new_best ?? summary?.personal_best;
+  const newBest=!!(summary?.is_new_best ?? summary?.personal_best);
+  const bestRating=Number(summary?.best_rating??summary?.best_after??current);
   const format=summary?.match_format||m?.match_format||'bo3';
   const formatLabel=format==='bo5'?'Mejor de 5':format==='bo3'?'Mejor de 3':'1 set';
-  const weightLabel=format==='bo5'?'Mayor peso competitivo':format==='bo3'?'Peso competitivo estándar':'Menor peso competitivo';
-  const effectiveK=summary?.effective_k ?? (format==='bo5'?80:format==='bo3'?52:24);
   const other=m?(m.player1_id===session.user.id?m.player2:m.player1):null;
+  const opponent=other?.first_name||opponentName||'Rival';
   const mySets=m?(m.player1_id===session.user.id?Number(m.player1_sets||0):Number(m.player2_sets||0)):null;
   const otherSets=m?(m.player1_id===session.user.id?Number(m.player2_sets||0):Number(m.player1_sets||0)):null;
+
+  const tierIndex=Math.max(0,rankTiers.findIndex(t=>t.name===rank));
+  const tier=rankTiers[tierIndex]||null;
+  const nextTier=rankTiers[tierIndex+1]||null;
+  const nextRank=summary?.next_rank ?? summary?.next_rank_name ?? nextTier?.name ?? null;
+  const toNext=Number(summary?.to_next_rank ?? summary?.next_rank_remaining ?? (nextTier?Math.max(0,Number(nextTier.min_rating)-current):0));
+  const tierMin=Number(tier?.min_rating??current);
+  const nextMin=Number(nextTier?.min_rating??current);
+  const rankProgress=nextTier&&nextMin>tierMin
+    ?Math.max(0,Math.min(100,((current-tierMin)/(nextMin-tierMin))*100))
+    :100;
+
   const rewards=recentRewardsV60.filter(x=>Date.now()-Number(x.at||0)<45000).slice(-4);
-  const rewardHtml=rewards.length?`<section class="v60-post-rewards"><div class="v60-post-rewards-head"><span>✦</span><div><small>PROGRESO CONSEGUIDO</small><strong>${rewards.length===1?'Nueva recompensa':'Nuevas recompensas'}</strong></div></div>${rewards.map(r=>`<article><span>${esc(r.icon||'✦')}</span><div><strong>${esc(r.name)}</strong><small>${esc(r.kicker||r.detail||'Desbloqueado')}</small></div></article>`).join('')}</section>`:'';
   const streakMult=Number(summary?.streak_boost_multiplier||1);
-  const ownStreakMult=Number(summary?.streak_multiplier||1);
   const breakerMult=Number(summary?.streak_breaker_multiplier||1);
-  const streakBoostHtml=won&&!isCasual&&streakMult>1?`<div class="post-streak-boost-v101 ${breakerMult>=2?'breaker':''}"><span>${breakerMult>=2?'⚡':'🔥'}</span><div><small>${breakerMult>=2?'ROMPISTE UNA RACHA':'BONUS DE RACHA'}</small><strong>x${streakMult.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')} en la ganancia de Elo</strong><p>${breakerMult>=2?`Tu rival llegaba con ${Number(summary?.loser_streak_before||0)} victorias seguidas. `:''}${ownStreakMult>1?`Tu racha propia también activa x${ownStreakMult.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')}. `:''}Ganancia base +${Number(summary?.base_winner_gain||0)} → +${Number(summary?.boosted_winner_gain||delta||0)} Elo. La pérdida del rival no se multiplica.</p></div></div>`:'';
+  let highlightHtml='';
+  if(newBest&&!isCasual){
+    highlightHtml=`<section class="v71-highlight record"><span>✦</span><div><small>NUEVO RÉCORD PERSONAL</small><strong>${bestRating} Elo</strong><p>Superaste tu mejor marca histórica.</p></div></section>`;
+  }else if(summary?.protection_used){
+    highlightHtml=`<section class="v71-highlight shield"><span>🛡️</span><div><small>PROTECCIÓN ACTIVADA</small><strong>Tu Elo quedó protegido</strong><p>El escudo evitó una pérdida de ${Number(summary.protected_elo||0)} Elo.</p></div></section>`;
+  }else if(won&&!isCasual&&streakMult>1){
+    highlightHtml=`<section class="v71-highlight streak"><span>${breakerMult>=2?'⚡':'🔥'}</span><div><small>${breakerMult>=2?'RACHA CORTADA':'BONUS DE RACHA'}</small><strong>Multiplicador x${streakMult.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')}</strong><p>${breakerMult>=2?'Terminaste la racha de tu rival.':'Tu rendimiento consecutivo aumentó la ganancia.'}</p></div></section>`;
+  }else if(rewards.length){
+    const reward=rewards[rewards.length-1];
+    highlightHtml=`<section class="v71-highlight reward"><span>${esc(reward.icon||'✦')}</span><div><small>PROGRESO CONSEGUIDO</small><strong>${esc(reward.name)}</strong><p>${esc(reward.kicker||reward.detail||'Nueva recompensa desbloqueada.')}</p></div></section>`;
+  }
+
+  const resultLabel=isCasual?'PARTIDO CASUAL':won?'VICTORIA':'DERROTA';
+  const eloLabel=isCasual?'Sin cambio de Elo':summary?.protection_used?'0 Elo':`${delta>=0?'+':''}${delta} Elo`;
+  const resultClass=isCasual?'casual':won?'victory':'defeat';
 
   $('#postMatchContent').innerHTML=`
-    <div class="post-match-result ${won?'victory':'defeat'}">
-      <span>${won?'VICTORIA':'PARTIDO CONFIRMADO'}</span>
-      <h2>${isCasual?'Sin cambio de Elo':summary?.protection_used?'0 Elo · PROTEGIDO':`${Number(delta)>=0?'+':''}${delta} Elo`}</h2>
-      <p>${isCasual?'Partido casual':`${previous} → <strong>${current}</strong>`}</p>
-      <div class="post-match-format-chip"><b>${formatLabel}</b><span>${isCasual?'Sin ranking':`${weightLabel} · K${effectiveK}`}</span></div>
-    </div>
-    ${m?`<div class="v60-post-score"><div><span>VOS</span><strong>${mySets??0}</strong></div><b>–</b><div><span>${esc(other?.first_name||opponentName||'Rival')}</span><strong>${otherSets??0}</strong></div></div>`:''}
-    ${!isCasual?`<div class="post-match-progress-grid">
-      <article><span>Rango</span><strong>${esc(rank)}</strong><small>${nextRank?`${toNext} Elo para ${esc(nextRank)}`:'Rango máximo'}</small></article>
-      <article><span>Ranking</span><strong>${pos?`#${pos}`:'—'}</strong><small>posición actual</small></article>
-      <article><span>Marca personal</span><strong>${newBest?'NUEVO RÉCORD':'En progreso'}</strong><small>${summary?.best_rating??summary?.best_after??current} Elo máximo</small></article>
-    </div>`:''}
-    ${newBest&&!isCasual?`<div class="post-new-record"><span>✦</span><div><strong>Nuevo máximo histórico</strong><small>Acabás de elevar tu mejor Elo personal.</small></div></div>`:''}
-    ${streakBoostHtml}
-    ${summary?.protection_used?`<div class="post-protection-used-v58"><span>🛡️</span><div><strong>Protección de Elo utilizada</strong><small>Tu escudo evitó una pérdida de ${Number(summary.protected_elo||0)} Elo.</small></div></div>`:''}
-    ${Number(summary?.protection_earned||0)>0?`<div class="post-protection-earned-v58"><span>+${Number(summary.protection_earned)} puntos de protección</span><small>Por completar este rival ranked.</small></div>`:''}
-    ${!isCasual?`<div class="post-protection-progress-v58"><span>${summary?.protection_shield?'🛡️ Protección lista':`${Number(summary?.protection_points||0)} / 100 protección`}</span><div><i style="width:${summary?.protection_shield?100:Math.max(0,Math.min(100,Number(summary?.protection_points||0)))}%"></i></div></div>`:''}
-    ${m?.duration_seconds!==null&&m?.duration_seconds!==undefined?`<div class="post-match-duration-v59"><span>⏱</span><div><strong>${formatDurationV59(m.duration_seconds)} de duración oficial</strong><small>Resultado cargado en ${formatDurationV59(m.gameplay_seconds??m.duration_seconds)}</small></div></div>`:''}
-    ${rewardHtml}
-    <div class="v28-post-coach"><span>✦</span><div><strong>TT Coach</strong><small>${esc(buildV28CoachText())}</small></div></div>
-    <div class="post-match-actions post-match-actions-v27">
-      <button class="btn post-rematch-btn" data-rematch="${matchId}" type="button">↻ REVANCHA · ${formatLabel.toUpperCase()}</button>
-      <button class="btn btn-start" type="button" data-close-post-match>CONTINUAR</button>
+    <div class="v71-result-shell ${resultClass}">
+      <header class="v71-result-hero">
+        <div class="v71-result-kicker"><span></span>${resultLabel}<span></span></div>
+        <h2 id="postMatchTitleV71">${isCasual?'PARTIDO COMPLETADO':won?'GANASTE':'ESTA VEZ NO'}</h2>
+        ${m?`<div class="v71-score" aria-label="Resultado final: ${mySets??0} a ${otherSets??0}">
+          <div><small>VOS</small><strong>${mySets??0}</strong></div>
+          <span>—</span>
+          <div><small>${esc(opponent)}</small><strong>${otherSets??0}</strong></div>
+        </div>`:''}
+        <div class="v71-format"><span>${formatLabel}</span><span>${isCasual?'Casual':'Ranked'}</span></div>
+      </header>
+
+      <main class="v71-result-body">
+        <section class="v71-elo-card ${isCasual?'is-casual':''}">
+          <div class="v71-elo-change">
+            <small>${isCasual?'RESULTADO REGISTRADO':'CAMBIO DE ELO'}</small>
+            <strong>${eloLabel}</strong>
+          </div>
+          ${!isCasual?`<div class="v71-elo-journey" aria-label="Elo anterior ${previous}, Elo actual ${current}">
+            <span><small>ANTES</small><b>${previous}</b></span>
+            <i>→</i>
+            <span class="current"><small>AHORA</small><b>${current}</b></span>
+          </div>`:`<p>Este partido cuenta en tu historial sin modificar el ranking.</p>`}
+        </section>
+
+        ${!isCasual?`<section class="v71-rank-card">
+          <div class="v71-rank-head">
+            <div><small>RANGO ACTUAL</small><strong>${esc(rank)}</strong></div>
+            <div class="v71-position"><small>POSICIÓN</small><strong>${pos?`#${pos}`:'—'}</strong></div>
+          </div>
+          <div class="v71-rank-track" role="progressbar" aria-label="Progreso hacia ${esc(nextRank||'el rango máximo')}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(rankProgress)}"><i style="width:${rankProgress}%"></i></div>
+          <p>${nextRank?`${toNext} Elo para <strong>${esc(nextRank)}</strong>`:'Alcanzaste el rango máximo'}</p>
+        </section>`:''}
+
+        ${highlightHtml}
+
+        <div class="v71-match-meta">
+          ${m?.duration_seconds!==null&&m?.duration_seconds!==undefined?`<span>⏱ ${formatDurationV59(m.duration_seconds)}</span>`:''}
+          ${!isCasual&&Number(summary?.protection_earned||0)>0?`<span>🛡 +${Number(summary.protection_earned)} protección</span>`:''}
+          ${!isCasual?`<span>Máximo: ${bestRating} Elo</span>`:''}
+        </div>
+
+        <section class="v71-coach"><span>✦</span><div><small>TT COACH</small><p>${esc(buildV28CoachText())}</p></div></section>
+
+        <div class="v71-actions">
+          <button class="btn btn-start v71-rematch" data-rematch="${matchId}" type="button">↻ ${won?'OFRECER':'PEDIR'} REVANCHA</button>
+          <button class="btn v71-continue" type="button" data-close-post-match>CONTINUAR</button>
+        </div>
+      </main>
     </div>`;
+
   $('#postMatchModal').classList.remove('hidden');
-  animatePostMatchV601($('#postMatchModal'),{won,positive:Number(delta)>0,protectedElo:!!summary?.protection_used,hasRewards:rewards.length>0});
+  animatePostMatchV601($('#postMatchModal'),{won,positive:delta>0,protectedElo:!!summary?.protection_used,hasRewards:!!highlightHtml});
   syncModalScrollLock();
   const telemetryOpponentId=m?(m.player1_id===session.user.id?m.player2_id:m.player1_id):null;
-  recordProductEventV70('post_match_opened',{matchId,opponentId:telemetryOpponentId,metadata:{match_type:summary?.match_type||m?.match_type||'ranked',match_format:format}}).catch(()=>{});
+  recordProductEventV70('post_match_opened',{matchId,opponentId:telemetryOpponentId,metadata:{match_type:summary?.match_type||m?.match_type||'ranked',match_format:format,ui_version:'p7.1'}}).catch(()=>{});
 }
 
 async function requestRematch(matchId,button){
