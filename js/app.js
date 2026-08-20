@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
 import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword} from './auth.js';
 import {getMyProfile,getMyRatings,completeSportsProfile,getClubsV47,ensureClubV47,getClubsV49,getClubsV50,getClubsV51,suggestClubsV49,suggestClubsV50,suggestClubsV51,ensureClubV49,ensureClubV51,setMyClubV49,setMyClubV51,getMyClubV49,getMyClubV51,adminListClubsV49,adminListClubsV51,adminMergeClubsV49,adminMergeClubsV51,adminRenameClubV49,adminCreateClubV51,adminUpdateClubV51,getRanking,searchPlayers,getRatingHistory,getRankTiers,setProfilePhotoUrl,uploadProfilePhoto,deleteProfilePhotoByUrl} from './profile.js';
-import {createChallenge,respondToChallenge,cancelChallenge,getMyChallenges} from './challenges.js';
+import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges} from './challenges.js?v=1.0.1-p7.3';
 import {getMyMatches,submitMatchResult,confirmMatchResult,disputeMatchResult,getMyDurationStatsV59,adminListMatchIntegrityV59} from './matches.js';
 import {createTournamentV8,getTournamentsV8,getTournamentEntriesV8,getTournamentMembersV8,getTournamentGamesV8,getTournamentStandingsV8,getTournamentStandingsV31,submitTournamentGameResultV8,closeGroupStageV8,finalizeTournamentV8,searchTournamentUsersV8,getTournamentParticipantProfilesV8,createTournamentV30,getMyTournamentHistoryV30,searchActiveTournamentsV30,joinTournamentV30,leaveTournamentV30,startTournamentV30,getTournamentLobbyV30} from './tournaments.js';
 import {getReviewsForUser,getReviewsAuthoredByUser,submitPlayerReview,getPlayerProfile,getPlayerRatings,followPlayer,unfollowPlayer,getFollowingIds,getFollowingRanking,getPublicPlayerCard,getFollowingFeed,setPrimaryRival,clearPrimaryRival,getMyPrimaryRival,getShowcaseAchievements,setShowcaseAchievements,getPlayerReliabilityV34} from './social.js';
@@ -2153,8 +2153,9 @@ function chCard(c,kind){
     actions=`<div class="challenge-actions"><button class="accept-btn" data-response="accepted" data-id="${c.id}">Aceptar</button><button class="reject-btn" data-response="rejected" data-id="${c.id}">Declinar</button></div>`;
   }
   if(kind==='sent'&&c.status==='pending')actions=`<div class="challenge-actions"><button class="cancel-btn" data-cancel-challenge="${c.id}">Cancelar</button></div>`;
-  return `<div class="challenge-row"><div class="challenge-meta">
-    <strong>${esc(other?.first_name)} ${esc(other?.last_name)}</strong>
+  const rematch=!!c.source_match_id;
+  return `<div class="challenge-row ${rematch?'is-rematch-v73':''}"><div class="challenge-meta">
+    <strong>${rematch?'<span class="v73-rematch-badge">↻ REVANCHA</span>':''}${esc(other?.first_name)} ${esc(other?.last_name)}</strong>
     <small>@${esc(other?.username)} · ${fmt} · <b class="inline-match-mode ${matchTypeClass(c.match_type)}">${matchTypeLabel(c.match_type)}</b></small>
     <span class="challenge-status ${c.status==='accepted'?'status-accepted':'status-pending'}">${c.status}</span>
   </div>${actions}</div>`;
@@ -4189,6 +4190,7 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
         <div class="v71-actions">
           <button class="btn btn-start v71-rematch" data-rematch="${matchId}" type="button">↻ ${won?'OFRECER':'PEDIR'} REVANCHA</button>
           <button class="btn v71-continue" type="button" data-close-post-match>CONTINUAR</button>
+          <p class="v73-rematch-status" data-rematch-status-v73="${matchId}" aria-live="polite"></p>
         </div>
       </main>
     </div>`;
@@ -4203,15 +4205,20 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
 async function requestRematch(matchId,button){
   let m=(socialState.matches||[]).find(x=>Number(x.id)===Number(matchId));
   if(!m){
-    try{m=(await getMyMatches(session.user.id)).find(x=>Number(x.id)===Number(matchId))||null}catch(e){}
+    try{m=(await getMyMatches(session.user.id)).find(x=>Number(x.id)===Number(matchId))||null}catch{}
   }
   if(!m)return alert('No se pudo recuperar el partido para crear la revancha.');
+
   const opponentId=m.player1_id===session.user.id?m.player2_id:m.player1_id;
+  const status=$(`[data-rematch-status-v73="${matchId}"]`);
   const old=button.textContent;
   button.disabled=true;
-  button.textContent='Enviando…';
+  button.textContent='Enviando revancha…';
+  button.classList.remove('is-pending');
+  if(status){status.className='v73-rematch-status';status.textContent='Comprobando desafíos pendientes…'}
+
   try{
-    const rematchChallenge=await createChallenge({
+    const result=await createRematchChallengeV73(matchId,{
       challengerId:session.user.id,
       challengedId:opponentId,
       format:m.match_format||'bo3',
@@ -4220,13 +4227,33 @@ async function requestRematch(matchId,button){
       scheduledTime:null,
       location:null
     });
-    recordProductEventV70('rematch_requested',{matchId,challengeId:rematchChallenge?.id||null,opponentId,metadata:{match_type:m.match_type||'ranked',match_format:m.match_format||'bo3'}}).catch(()=>{});
-    button.textContent='✓ Revancha enviada';
-    await loadChallenges();
+    const challenge=result.challenge;
+    recordProductEventV70('rematch_requested',{
+      matchId,
+      challengeId:challenge?.id||null,
+      opponentId,
+      metadata:{
+        match_type:m.match_type||'ranked',
+        match_format:m.match_format||'bo3',
+        reused:!!result.reused,
+        backend_v73:!!result.backend
+      }
+    }).catch(()=>{});
+
+    button.textContent=result.reused?'✓ REVANCHA YA PENDIENTE':'✓ REVANCHA ENVIADA';
+    button.classList.add('is-pending');
+    if(status){
+      status.className='v73-rematch-status success';
+      status.textContent=result.reused
+        ?'Ya existe una solicitud pendiente entre ustedes.'
+        :'El rival recibió un desafío vinculado a este partido.';
+    }
+    await Promise.all([loadChallenges(),loadActivityCenter()]);
   }catch(err){
     button.disabled=false;
     button.textContent=old;
-    alert(friendly(err.message));
+    if(status){status.className='v73-rematch-status error';status.textContent=friendly(err.message)}
+    else alert(friendly(err.message));
   }
 }
 
