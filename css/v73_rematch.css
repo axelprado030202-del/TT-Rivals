@@ -5,3 +5,5 @@
 .v71-rematch.is-pending{border-color:rgba(64,219,151,.32);background:linear-gradient(135deg,#138e5d,#20b97b);box-shadow:0 12px 32px rgba(22,181,116,.2)}
 .challenge-row.is-rematch-v73{position:relative;border-color:rgba(60,213,145,.2);background:linear-gradient(100deg,rgba(31,190,120,.07),rgba(255,255,255,.02))}
 .challenge-row.is-rematch-v73:before{content:"";position:absolute;inset:8px auto 8px 0;width:2px;border-radius:2px;background:#38d991}
+
+.v71-rematch.is-declined{border-color:rgba(255,91,116,.34)!important;background:rgba(255,91,116,.12)!important;color:#ff879a!important;box-shadow:none!important}

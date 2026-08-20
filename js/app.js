@@ -189,6 +189,7 @@ let passwordRecoveryActiveV53=false,recoveryProfileV53=null;
 const stopTrainingTimerV53=setupTrainingTimerV53();
 
 let liveMatchStatusSnapshot=new Map(),liveMatchStatusPrimed=false,postMatchShownIds=new Set(),pendingPostMatchReviewId=null;
+let pendingRematchV744=null,rematchOutcomeTimerV744=null;
 let v60State={challenges:[],matches:[],matchSets:new Map(),recommended:[],activityItems:[],activityFilter:'attention',historyModality:'all',historySeason:'all',historyDateFrom:'',historyDateTo:'',historySort:'recent',recentPresence:new Map(),historySeasons:[],adminCategory:'disputes',lastDiagnostics:null,metricsDays:7,lastProductMetrics:null};
 let presenceHeartbeatV60=null,activityLoadPromiseV60=null,achievementUnlockPrimedV60=false,titleUnlockPrimedV60=false,missionUnlockPrimedV60=false;
 let lastUnlockedAchievementsV60=new Set(),lastUnlockedTitlesV60=new Set(),lastCompletedMissionsV60=new Set();
@@ -2215,10 +2216,65 @@ function chCard(c,kind){
     <span class="challenge-status ${c.status==='accepted'?'status-accepted':'status-pending'}">${c.status}</span>
   </div>${actions}</div>`;
 }
+function clearPendingRematchV744(){
+  pendingRematchV744=null;
+  if(rematchOutcomeTimerV744){
+    clearTimeout(rematchOutcomeTimerV744);
+    rematchOutcomeTimerV744=null;
+  }
+}
+
+function closePostMatchForRematchV744(){
+  $('#postMatchModal')?.classList.add('hidden');
+  pendingPostMatchReviewId=null;
+  clearPendingRematchV744();
+  syncModalScrollLock();
+}
+
+function handleRematchOutcomeV744(challenge){
+  if(!pendingRematchV744||!challenge?.id)return false;
+  if(Number(challenge.id)!==Number(pendingRematchV744.challengeId))return false;
+
+  const outcome=String(challenge.status||'').toLowerCase();
+  if(!['accepted','rejected','declined','cancelled'].includes(outcome))return false;
+
+  const matchId=pendingRematchV744.matchId;
+  const status=$(`[data-rematch-status-v73="${matchId}"]`);
+  const button=$(`[data-rematch="${matchId}"]`);
+
+  if(outcome==='accepted'){
+    if(status){
+      status.className='v73-rematch-status success';
+      status.textContent='Revancha aceptada. Preparando el nuevo partido…';
+    }
+    if(button)button.textContent='✓ REVANCHA ACEPTADA';
+    rematchOutcomeTimerV744=setTimeout(closePostMatchForRematchV744,280);
+    return true;
+  }
+
+  if(outcome==='rejected'||outcome==='declined'){
+    if(status){
+      status.className='v73-rematch-status error';
+      status.textContent='El rival declinó la revancha.';
+    }
+    if(button){
+      button.textContent='✕ REVANCHA DECLINADA';
+      button.classList.remove('is-pending');
+      button.classList.add('is-declined');
+    }
+    rematchOutcomeTimerV744=setTimeout(closePostMatchForRematchV744,1150);
+    return true;
+  }
+
+  closePostMatchForRematchV744();
+  return true;
+}
+
 async function loadChallenges(){
   if(!session)return;
-  const rows=await getMyChallenges(session.user.id),
-    rec=rows.filter(r=>r.challenged_id===session.user.id&&r.status==='pending'),
+  const rows=await getMyChallenges(session.user.id);
+  rows.forEach(handleRematchOutcomeV744);
+  const rec=rows.filter(r=>r.challenged_id===session.user.id&&r.status==='pending'),
     sen=rows.filter(r=>r.challenger_id===session.user.id&&r.status==='pending');
   v60State.challenges=rows;renderHomePriorityV60();
   $('#receivedChallenges').innerHTML=rec.length?rec.map(r=>chCard(r,'received')).join(''):'<div class="compact-empty">Sin desafíos recibidos</div>';
@@ -3078,7 +3134,8 @@ function startLiveNotificationStream(){
   competitionLiveSyncV55=createCompetitionLiveSyncV55({
     userId:uid,
 
-    onChallengeChange:()=>{
+    onChallengeChange:payload=>{
+      handleRematchOutcomeV744(payload?.new||payload?.old);
       invalidateChallengesCacheV60(uid);
       invalidateTabLoadsV74('play','home');
       scheduleLiveRefreshV55('challenges',async()=>{
@@ -4334,6 +4391,9 @@ async function requestRematch(matchId,button){
       location:null
     });
     const challenge=result.challenge;
+    if(challenge?.id){
+      pendingRematchV744={challengeId:Number(challenge.id),matchId:Number(matchId)};
+    }
     recordProductEventV70('rematch_requested',{
       matchId,
       challengeId:challenge?.id||null,
@@ -7897,17 +7957,18 @@ $('#teamTiebreakFormV32').onsubmit=async e=>{
 };
 
 $('#v28CloseSeasonRecap').onclick=()=>{$('#v28SeasonRecapModal').classList.add('hidden');syncModalScrollLock()};
-$('#closePostMatch').onclick=()=>{$('#postMatchModal').classList.add('hidden');pendingPostMatchReviewId=null;syncModalScrollLock()};
+$('#closePostMatch').onclick=()=>{$('#postMatchModal').classList.add('hidden');pendingPostMatchReviewId=null;clearPendingRematchV744();syncModalScrollLock()};
 document.addEventListener('click',e=>{
   if(e.target.closest('[data-close-post-match]')){
     $('#postMatchModal').classList.add('hidden');syncModalScrollLock();
+    clearPendingRematchV744();
     const reviewId=pendingPostMatchReviewId;
     pendingPostMatchReviewId=null;
     if(reviewId)setTimeout(()=>openReviewModal(reviewId),80);
   }
 });
 ['seasonHistoryModal','matchDetailModal','postMatchModal'].forEach(id=>{
-  const m=$('#'+id);if(m)m.addEventListener('click',e=>{if(e.target===m){m.classList.add('hidden');syncModalScrollLock()}});
+  const m=$('#'+id);if(m)m.addEventListener('click',e=>{if(e.target===m){m.classList.add('hidden');if(id==='postMatchModal')clearPendingRematchV744();syncModalScrollLock()}});
 });
 $('#openRankTableHome').onclick=openRankTable;
 $('#openRankTableProfile').onclick=openRankTable;
