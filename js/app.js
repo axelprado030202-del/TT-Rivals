@@ -3400,6 +3400,7 @@ function renderModeRecordsV56(){
     if(kicker)kicker.textContent='HISTORIA PERSONAL';
     if(title)title.textContent='Récords competitivos';
     loadPersonalRecords();
+    loadCompetitiveProgressV72();
     return;
   }
 
