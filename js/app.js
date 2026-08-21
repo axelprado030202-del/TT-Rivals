@@ -87,6 +87,45 @@ async function ensureAiModuleV612(){
   return aiModulePromiseV612;
 }
 
+// P7.4R — Rivalidades se carga de forma aislada.
+// Si la interfaz o el SQL todavía no están disponibles, el núcleo sigue funcionando.
+let rivalriesModuleV74=null;
+let rivalriesModulePromiseV74=null;
+async function ensureRivalriesV74(){
+  if(rivalriesModuleV74)return rivalriesModuleV74;
+  if(!rivalriesModulePromiseV74){
+    rivalriesModulePromiseV74=import(`./v74_rivalries.js?v=${encodeURIComponent(APP_VERSION)}`)
+      .then(mod=>{
+        rivalriesModuleV74=mod;
+        mod.initRivalriesV74?.();
+        return mod;
+      })
+      .catch(error=>{
+        rivalriesModulePromiseV74=null;
+        recordClientErrorV60(error,'v74-rivalries');
+        console.warn('P7.4 Rivalidades:',error);
+        throw error;
+      });
+  }
+  return rivalriesModulePromiseV74;
+}
+async function getPlayerCompetitiveStreaksV74(playerId){
+  const mod=await ensureRivalriesV74();
+  return mod.getPlayerCompetitiveStreaksV74?.(playerId);
+}
+async function getCompetitiveRivalryV74(opponentId){
+  const mod=await ensureRivalriesV74();
+  return mod.getCompetitiveRivalryV74?.(opponentId);
+}
+async function loadRivalriesV74(force=false){
+  const mod=await ensureRivalriesV74();
+  return mod.loadRivalriesV74?.(force);
+}
+function invalidateRivalriesV74(){rivalriesModuleV74?.invalidateRivalriesV74?.()}
+function initRivalriesV74(){
+  ensureRivalriesV74().catch(()=>{});
+}
+
 // V62 — Dobles se carga de forma aislada. Un problema en el flujo 2vs2
 // nunca debe impedir que el núcleo 1vs1 de TT Rivals arranque.
 let doublesModuleV62=null;
@@ -161,7 +200,7 @@ let onboardingCropV47={naturalWidth:0,naturalHeight:0,zoom:1,x:0,y:0,baseScale:1
 let availableClubsV47=[];
 let availableClubsV49=[],myClubV49={club_id:null,name:'N/A'},adminClubsV49=[];
 let clubSuggestionTimerV49=null;
-let socialState={matches:[],ratingHistory:[],reviewsReceived:[],reviewsAuthored:[],streak:{current:0,max:0},achievements:[]};
+let socialState={matches:[],ratingHistory:[],reviewsReceived:[],reviewsAuthored:[],streak:{current:0,max:0},competitiveStreaks:null,achievements:[]};
 let reviewTargetMatch=null,selectedReviewStars=0,reviewStarsLockedV62=false;
 let competitionLiveSyncV55=null;
 let liveRefreshTimersV55=new Map(),competitionRefreshPromiseV55=null;
@@ -1527,9 +1566,9 @@ function populate(){
   if($('#profileRankTag'))$('#profileRankTag').textContent=currentRank;
   if($('#profileReputationTag'))$('#profileReputationTag').textContent=rep.count?`★ ${rep.average.toFixed(1)}`:'★ Sin valorar';
   if($('#profileStreakTag')){
-    const streak=Number(socialState.streak.current||0),mult=streakBoostForNextWinV101(streak);
-    $('#profileStreakTag').textContent=`🔥 Racha ${streak}${mult>1?` · próxima x${String(mult).replace('.00','')}`:''}`;
-    $('#profileStreakTag').title=mult>1?`Tu próxima victoria ranked recibe x${mult} en la ganancia positiva de Elo.`:'El boost de Elo empieza al buscar la 6.ª victoria consecutiva ranked.';
+    const streak=Number(socialState.streak.current||0);
+    $('#profileStreakTag').textContent=`🔥 Racha competitiva ${streak}`;
+    $('#profileStreakTag').title='Cuenta partidos individuales oficiales con Elo. Las casuales no suman ni cortan la racha.';
   }
   if($('#profileMaxStreak'))$('#profileMaxStreak').textContent=socialState.streak.max;
   if($('#profileReputation'))$('#profileReputation').textContent=rep.count?rep.average.toFixed(1):'—';
@@ -1564,7 +1603,7 @@ function populate(){
 }
 async function loadSocialState(){
   if(!session?.user)return;
-  const [matches,history,reviewsReceived,reviewsAuthored,follows,rivalId,showcaseIds,reliability]=await Promise.all([
+  const [matches,history,reviewsReceived,reviewsAuthored,follows,rivalId,showcaseIds,reliability,competitiveStreaks]=await Promise.all([
     getMyMatches(session.user.id),
     getRatingHistory(session.user.id),
     getReviewsForUser(session.user.id).catch(()=>[]),
@@ -1572,13 +1611,21 @@ async function loadSocialState(){
     getFollowingIds(session.user.id).catch(()=>[]),
     getMyPrimaryRival(session.user.id).catch(()=>null),
     getShowcaseAchievements(session.user.id).catch(()=>[]),
-    getPlayerReliabilityV34(session.user.id).catch(()=>({reliability:100,completed_matches:0,abandoned_matches:0,total_matches:0,provisional:true,label:'Jugador fiable'}))
+    getPlayerReliabilityV34(session.user.id).catch(()=>({reliability:100,completed_matches:0,abandoned_matches:0,total_matches:0,provisional:true,label:'Jugador fiable'})),
+    getPlayerCompetitiveStreaksV74(session.user.id).catch(()=>null)
   ]);
   socialState.matches=matches;
   socialState.ratingHistory=history;
   socialState.reviewsReceived=reviewsReceived;
   socialState.reviewsAuthored=reviewsAuthored;
-  socialState.streak=computeStreaks(matches,session.user.id);
+  const fallbackStreak=computeStreaks(matches,session.user.id);
+  const officialIndividual=competitiveStreaks?.individual||null;
+  socialState.competitiveStreaks=competitiveStreaks||{individual:{current:fallbackStreak.current,best:fallbackStreak.max,played:0},doubles:{current:0,best:0,played:0}};
+  socialState.streak={
+    current:Number(officialIndividual?.current??fallbackStreak.current),
+    max:Number(officialIndividual?.best??fallbackStreak.max)
+  };
+  invalidateRivalriesV74();
   followingIds=follows.map(x=>x.followed_id);
   socialState.achievements=buildAchievements({
     matches,
@@ -1992,7 +2039,8 @@ function activateTab(tab,{source='tap'}={}){
 
     if(tab==='profile')runTabLoadV74('profile',()=>Promise.all([
       ensureV63Module().then(mod=>mod.loadOwnPalmaresV63?.()),
-      ensureV100Module().then(mod=>mod.loadOwnSportsIdentityV100?.())
+      ensureV100Module().then(mod=>mod.loadOwnSportsIdentityV100?.()),
+      loadRivalriesV74()
     ]),{ttl:60000});
 
     if(tab==='ai')runTabLoadV74('ai',()=>ensureAiModuleV612().then(mod=>mod.refreshAiV61?.()),{ttl:30000});
@@ -3347,10 +3395,8 @@ async function loadHomeDashboard(){
   if($('#homeMaxStreak'))animateNumberV601($('#homeMaxStreak'),streak.max,{duration:430});
   const streakCaption=$('#homeCurrentStreak')?.nextElementSibling;
   if(streakCaption){
-    const st=Number(streak.current||0);
-    const nextBoost=st>=12?3:st===11?2.75:st===10?2.5:st===9?2.25:st===8?2:st===7?1.75:st===6?1.5:st===5?1.25:1;
-    streakCaption.textContent=st>=5?`victorias seguidas · próxima x${nextBoost}`:'victorias seguidas';
-    streakCaption.classList.toggle('has-elo-boost',st>=5);
+    streakCaption.textContent='victorias oficiales con Elo';
+    streakCaption.classList.remove('has-elo-boost');
   }
   if($('#homeReputation'))$('#homeReputation').textContent=rep.count?rep.average.toFixed(1):'—';
   if($('#homeReviewCount'))$('#homeReviewCount').textContent=rep.count?`${rep.count} ${rep.count===1?'valoración':'valoraciones'}`:'sin valoraciones';
@@ -3821,8 +3867,8 @@ async function loadCompetitiveProgressV72(){
       <div class="v72-progress-grid">
         <article><span>Variación 7 días</span><strong class="${deltaClass(p.delta7)}">${signed(p.delta7)}</strong><small>Elo acumulado</small></article>
         <article><span>Variación 30 días</span><strong class="${deltaClass(p.delta30)}">${signed(p.delta30)}</strong><small>Elo acumulado</small></article>
-        <article><span>Racha actual</span><strong>${p.currentStreak}</strong><small>victorias seguidas</small></article>
-        <article><span>Mejor racha</span><strong>${p.bestStreak}</strong><small>récord personal</small></article>
+        <article><span>Racha competitiva</span><strong>${p.currentStreak}</strong><small>individual · sin casuales</small></article>
+        <article><span>Mejor racha oficial</span><strong>${p.bestStreak}</strong><small>récord competitivo</small></article>
       </div>
       <section class="v72-milestone"><span>${esc(p.milestone.icon)}</span><div><small>${esc(p.milestone.label)}</small><strong>${esc(p.milestone.title)}</strong><p>${esc(p.milestone.detail)}</p></div></section>`;
   }catch(err){
@@ -4556,17 +4602,18 @@ async function openPublicPlayerProfile(userId){
   box.innerHTML='<div class="loading-row">Cargando perfil…</div>';
 
   try{
-    const [p,showcaseIds,publicPrefs,cosmetics,seasons,records,h2hAdvanced,publicTitles,reliability,adminFlagV37]=await Promise.all([
+    const [p,showcaseIds,publicPrefs,cosmetics,seasons,records,h2hAdvanced,publicTitles,reliability,adminFlagV37,publicStreaks]=await Promise.all([
       getPublicPlayerCard(userId),
       getShowcaseAchievements(userId).catch(()=>[]),
       getPublicProfilePreferences(userId).catch(()=>({})),
       getPublicProfilePreferences(userId).catch(()=>({})),
       getPublicPlayerSeasons(userId).catch(()=>({})),
       getPlayerRecords(userId).catch(()=>({})),
-      userId===session.user.id?Promise.resolve(null):getH2HAdvanced(userId).catch(()=>null),
+      userId===session.user.id?Promise.resolve(null):getCompetitiveRivalryV74(userId).catch(()=>null),
       getPlayerTitles(userId).catch(()=>({equipped:null,items:[]})),
       getPlayerReliabilityV34(userId).catch(()=>({reliability:100,completed_matches:0,abandoned_matches:0,total_matches:0,provisional:true,label:'Jugador fiable'})),
-      getPublicAdminFlagV37(userId).catch(()=>false)
+      getPublicAdminFlagV37(userId).catch(()=>false),
+      getPlayerCompetitiveStreaksV74(userId).catch(()=>null)
     ]);
 
     await refreshPresenceV60([p.id]).catch(()=>{});
@@ -4578,7 +4625,7 @@ async function openPublicPlayerProfile(userId){
     const publicAchievements=achievementDefinitions({
       totalMatches:p.total_matches,
       wins:p.wins,
-      maxStreak:p.max_streak,
+      maxStreak:publicStreaks?.individual?.best??p.max_streak,
       maxElo:p.max_elo,
       casualMatches:p.casual_matches,
       rankedMatches:p.ranked_matches,
@@ -4607,7 +4654,7 @@ async function openPublicPlayerProfile(userId){
             <div class="public-profile-chips">
               <span>${esc(rank)}</span>
               <span>${rep}</span>
-              <span>🔥 Racha ${p.current_streak}</span>
+              <span>🔥 Racha competitiva ${publicStreaks?.individual?.current??p.current_streak}</span>
             </div>
           </div>
         </div>
@@ -4654,7 +4701,7 @@ async function openPublicPlayerProfile(userId){
             <article><span>Totales</span><strong>${p.total_matches}</strong></article>
             <article><span>Victorias</span><strong>${p.wins}</strong></article>
             <article><span>Derrotas</span><strong>${p.losses}</strong></article>
-            <article><span>Mejor racha</span><strong>${p.max_streak}</strong></article>
+            <article><span>Mejor racha oficial</span><strong>${publicStreaks?.individual?.best??p.max_streak}</strong></article>
           </div>
         </section>
 
@@ -4684,22 +4731,22 @@ async function openPublicPlayerProfile(userId){
           <section class="public-h2h-v20">
             <div class="public-h2h-title"><p class="muted-label">CARA A CARA</p><span>${h2hAdvanced?.total||0} enfrentamientos</span></div>
             <div class="h2h-scoreboard">
-              <strong>Vos <b>${h2hAdvanced?.me_wins||0}</b></strong>
-              <div><span>SETS</span><b>${h2hAdvanced?.me_sets||0} – ${h2hAdvanced?.them_sets||0}</b></div>
-              <strong><b>${h2hAdvanced?.them_wins||0}</b> ${esc(p.first_name)}</strong>
+              <strong>Vos <b>${h2hAdvanced?.wins||0}</b></strong>
+              <div><span>SETS OFICIALES</span><b>${h2hAdvanced?.my_sets||0} – ${h2hAdvanced?.opponent_sets||0}</b></div>
+              <strong><b>${h2hAdvanced?.losses||0}</b> ${esc(p.first_name)}</strong>
             </div>
             <div class="h2h-details">
-              <span>Tu mejor racha <b>${h2hAdvanced?.best_streak||0}</b></span>
+              <span>Tu mejor racha ante este rival <b>${h2hAdvanced?.best_win_streak||0}</b></span>
               <span>Elo neto <b class="${Number(h2hAdvanced?.net_elo||0)>=0?'positive':'negative'}">${Number(h2hAdvanced?.net_elo||0)>=0?'+':''}${h2hAdvanced?.net_elo||0}</b></span>
             </div>
             <div class="h2h-recent">
-              ${(h2hAdvanced?.recent||[]).length?(h2hAdvanced.recent||[]).map(x=>`<span class="${x.won?'win':'loss'}" title="${x.me_sets}-${x.them_sets}">${x.won?'V':'D'}</span>`).join(''):'<small>Todavía no jugaron entre ustedes.</small>'}
+              ${(h2hAdvanced?.recent||[]).length?(h2hAdvanced.recent||[]).map(x=>`<span class="${x.won?'win':'loss'}" title="${x.my_sets}-${x.opponent_sets}">${x.won?'V':'D'}</span>`).join(''):'<small>Todavía no jugaron partidos competitivos verificados.</small>'}
             </div>
           </section>
 
           <div class="public-profile-actions-v17">
             <button class="btn btn-start" type="button" data-public-challenge="${p.id}" data-name="${esc(p.first_name)} ${esc(p.last_name)}" data-user="${esc(p.username)}">DESAFIAR</button>
-            ${p.is_following?`<button class="primary-rival-button ${p.is_primary_rival?'active':''}" data-primary-rival="${p.id}" data-is-primary="${p.is_primary_rival?'1':'0'}" type="button">${p.is_primary_rival?'⚔ Rival principal ✓':'⚔ Marcar como rival'}</button>`:''}
+            ${p.is_following?`<button class="primary-rival-button ${p.is_primary_rival?'active':''}" data-primary-rival="${p.id}" data-is-primary="${p.is_primary_rival?'1':'0'}" type="button">${p.is_primary_rival?'★ Rival favorito ✓':'☆ Marcar como favorito'}</button>`:''}
           </div>
         `:''}
       </section>
@@ -8198,7 +8245,10 @@ $('#notificationButton').onclick=async()=>{
   await loadActivityCenter();
 };
 $('#logoutButton').onclick=async()=>{stopTrainingTimerV53?.();stopLiveNotificationStream();presenceHeartbeatV60?.stop?.();await presenceManagerV35?.stop?.();await signOutUser();session=null;profile=null;ratings=[];showView('welcomeView')};
-window.addEventListener('tt-v62-doubles-confirmed',()=>refreshCore().catch(err=>console.warn('Refresh dobles V62:',err)));
+window.addEventListener('tt-v62-doubles-confirmed',()=>{
+  invalidateRivalriesV74();
+  Promise.all([refreshCore(),loadRivalriesV74(true)]).catch(err=>console.warn('Refresh dobles V62:',err));
+});
 
 supabase.auth.onAuthStateChange((event,nextSession)=>{
   if(event==='PASSWORD_RECOVERY'){
@@ -8211,6 +8261,7 @@ installRapidClickGuardV60();
 setupAdminPanelsV60();
 startMatchClocksV59();
 initMotionV601();
+initRivalriesV74();
 setupPwaV573().catch(err=>{recordClientErrorV60(err,'pwa-v60');console.error('PWA V60:',err)});
 
 async function bootApplicationV741(){
@@ -8271,8 +8322,8 @@ async function bootApplicationV741(){
 
 // TT Rivals 1.0.1 Premium P4 — ayuda contextual de métricas de Inicio.
 const METRIC_INFO_V101={
-  streak:{icon:'🔥',eyebrow:'RACHA ACTUAL',title:'Tu impulso competitivo',body:`<p>La racha cuenta tus <strong>victorias ranked consecutivas</strong>. Una derrota corta la racha.</p><div class="metric-info-benefit-v101"><strong>Bonus de Elo por racha</strong><span>6.ª victoria x1.25 · 7.ª x1.50 · 8.ª x1.75 · 9.ª x2 · 10.ª x2.25 · 11.ª x2.50 · 12.ª x2.75 · 13.ª y siguientes x3.</span></div><p class="metric-info-note-v101">Si derrotás a un rival con una racha activa de 5+ victorias, tu ganancia puede recibir un bonus x2. El rival pierde únicamente su Elo normal. Los bonus nunca superan x3.</p>`},
-  'best-streak':{icon:'🏆',eyebrow:'MEJOR RACHA',title:'Tu récord personal',body:`<p>Muestra la mayor cantidad de <strong>victorias consecutivas</strong> que alcanzaste en tu historial competitivo.</p><div class="metric-info-benefit-v101"><strong>Es un récord histórico</strong><span>No baja cuando perdés. Tu racha actual puede volver a superarlo en cualquier momento.</span></div>`},
+  streak:{icon:'🔥',eyebrow:'RACHA COMPETITIVA',title:'Tu impulso oficial',body:`<p>La racha individual cuenta victorias consecutivas en <strong>ranked y torneos oficiales</strong>. Dobles lleva una racha separada.</p><div class="metric-info-benefit-v101"><strong>Las casuales quedan fuera</strong><span>Una victoria casual no aumenta la racha y una derrota casual tampoco la corta.</span></div><p class="metric-info-note-v101">Solo entran resultados verificados. Este cambio no modifica la fórmula Elo vigente.</p>`},
+  'best-streak':{icon:'🏆',eyebrow:'MEJOR RACHA OFICIAL',title:'Tu récord competitivo',body:`<p>Muestra la mayor cantidad de <strong>victorias oficiales consecutivas</strong> que alcanzaste en individual.</p><div class="metric-info-benefit-v101"><strong>Es un récord histórico</strong><span>No baja cuando perdés y nunca se altera por un partido casual. Dobles conserva su propio récord.</span></div>`},
   reputation:{icon:'★',eyebrow:'REPUTACIÓN',title:'Cómo te perciben tus rivales',body:`<p>La reputación resume las <strong>valoraciones post partido</strong> relacionadas con deportividad, respeto y experiencia de juego.</p><div class="metric-info-benefit-v101"><strong>No mide tu nivel</strong><span>Tu Elo mide rendimiento competitivo. La reputación mide la experiencia que otros jugadores tuvieron al enfrentarte.</span></div>`},
   achievements:{icon:'◆',eyebrow:'LOGROS',title:'Hitos de tu carrera',body:`<p>Los logros reconocen objetivos, marcas competitivas, temporadas, torneos y otros hitos de TT Rivals.</p><div class="metric-info-benefit-v101"><strong>Construyen tu identidad</strong><span>Los logros desbloqueados permanecen en tu perfil y algunos pueden convertirse en placas destacadas.</span></div>`}
 };

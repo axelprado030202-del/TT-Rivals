@@ -1,16 +1,16 @@
-/* TT Rivals 1.0.1 — Service Worker P7.4.5
+/* TT Rivals 1.0.1 — Service Worker P7.4R.0
    Navegación: network-first.
    Estáticos: cache-first + actualización en segundo plano.
    Al activar, elimina cachés TT Rivals de builds anteriores. */
 const params=new URL(self.location.href).searchParams;
-const TT_BUILD=params.get('v')||'v1.0.1-p7.4.5-incoming-rematch';
+const TT_BUILD=params.get('v')||'v1.0.1-p7.4r.0-rivalries-foundation';
 const CACHE_PREFIX='tt-rivals-';
-const CACHE_NAME='tt-rivals-v1-0-1-p7-4-5-incoming-rematch';
+const CACHE_NAME='tt-rivals-v1-0-1-p7-4r-0-rivalries-foundation';
 
 const APP_SHELL=[
   './','./index.html','./manifest.webmanifest',
-  './css/style.css','./css/v101_ui_rework.css','./css/v101_premium.css','./css/v101_motion_fx.css','./css/v70_metrics.css','./css/v71_result.css','./css/v72_progress.css','./css/v73_rematch.css','./css/v74_performance.css',
-  './js/version.js','./js/app.js','./js/v55_competition_live.js','./js/v74_navigation.js','./js/v70_metrics.js','./js/v72_progress.js','./js/v101_feedback.js','./js/v101_motion_fx.js','./js/v101_performance.js',
+  './css/style.css','./css/v101_ui_rework.css','./css/v101_premium.css','./css/v101_motion_fx.css','./css/v70_metrics.css','./css/v71_result.css','./css/v72_progress.css','./css/v73_rematch.css','./css/v74_performance.css','./css/v74_rivalries.css',
+  './js/version.js','./js/app.js','./js/v55_competition_live.js','./js/v74_navigation.js','./js/v74_rivalries.js','./js/v70_metrics.js','./js/v72_progress.js','./js/v101_feedback.js','./js/v101_motion_fx.js','./js/v101_performance.js',
   './js/pwa.js','./js/v61_ai.js','./js/v62_doubles.js','./js/v63_integrity_rewards.js','./js/v100_launch.js','./js/v101_experience.js',
   './js/v60_runtime.js','./js/v60_motion.js','./js/v60_presence.js','./js/v60_history.js','./js/supabase.js','./js/auth.js',
   './js/challenges.js','./js/matches.js','./js/profile.js','./js/preferences.js','./js/social.js','./js/history.js','./js/tournaments.js',
