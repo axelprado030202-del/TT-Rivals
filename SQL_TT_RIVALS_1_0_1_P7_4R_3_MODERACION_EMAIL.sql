@@ -110,6 +110,9 @@ as $function$
 $function$;
 
 revoke all on function public.tt_v76_user_is_hidden(uuid) from public,anon,authenticated;
+-- La vista visible_profiles_v76 invoca esta función al consultar perfiles.
+-- PostgreSQL exige que el consumidor de la vista también pueda ejecutarla.
+grant execute on function public.tt_v76_user_is_hidden(uuid) to authenticated;
 
 -- Conserva el hook ya activado en Supabase y añade unicidad canónica de correo.
 -- Para Gmail también bloquea variantes con puntos o sufijos +alias.
@@ -517,5 +520,4 @@ select jsonb_build_object(
 -- update tt_private_v76.registration_config_v76
 -- set enabled=true,otp_minutes=10,resend_seconds=60,updated_at=now()
 -- where singleton;
-
 

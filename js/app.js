@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
-import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.1-p7.4r.3';
-import {initAccessControlV75} from './v75_access_control.js?v=1.0.1-p7.4r.2';
+import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.1-p7.4r.3.1';
+import {initAccessControlV75,startSessionAccessGuardV76,stopSessionAccessGuardV76} from './v75_access_control.js?v=1.0.1-p7.4r.3.1';
 import {
   initModerationEmailV76,showAccessBlockedV76,clearAccessBlockedActionV76,
   loadAdminSuspendedV76,createRegistrationCancelTokenV76,maskEmailV76,
@@ -8,6 +8,10 @@ import {
   getRegistrationConfigV76,verifyRegistrationCodeV76,resendRegistrationCodeV76,
   cancelPendingRegistrationV76
 } from './v76_moderation_email.js?v=1.0.1-p7.4r.3';
+import {
+  getAdminAutoModerationV77,setAutoModerationModeV77,
+  dismissAutoModerationCaseV77,reprocessAutoModerationV77
+} from './v77_auto_moderation.js?v=1.0.1-p7.4r.4';
 import {getMyProfile,getMyRatings,completeSportsProfile,getClubsV47,ensureClubV47,getClubsV49,getClubsV50,getClubsV51,suggestClubsV49,suggestClubsV50,suggestClubsV51,ensureClubV49,ensureClubV51,setMyClubV49,setMyClubV51,getMyClubV49,getMyClubV51,adminListClubsV49,adminListClubsV51,adminMergeClubsV49,adminMergeClubsV51,adminRenameClubV49,adminCreateClubV51,adminUpdateClubV51,getRanking,searchPlayers,getRatingHistory,getRankTiers,setProfilePhotoUrl,uploadProfilePhoto,deleteProfilePhotoByUrl} from './profile.js?v=1.0.1-p7.4r.3';
 import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges,invalidateChallengesCacheV60} from './challenges.js?v=1.0.1-p7.4r.3';
 import {getMyMatches,submitMatchResult,confirmMatchResult,disputeMatchResult,getMyDurationStatsV59,adminListMatchIntegrityV59,invalidateMatchesCacheV60} from './matches.js?v=1.0.1-p7.4r.3';
@@ -25,7 +29,7 @@ import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
 import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.3';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.3';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
@@ -216,7 +220,7 @@ let lastRatingSignatureV55='';
 let statsModeV56='all',statsModeStateV56=null,statsModeLoadPromiseV56=null;
 let legalConfigV57=null,legalStatusV57=null,currentLegalTabV57='terms';
 let v58State={protection:{points:0,shield_available:false},notifications:[],installation:null,dispute:null,adminDisputes:[],linkedAccounts:[],reviewTags:[]};
-let durationStatsV59=null,adminIntegrityV59=[],matchClockTimerV59=null;
+let durationStatsV59=null,adminIntegrityV59=[],adminAutoModerationV77=null,matchClockTimerV59=null;
 let selectedReviewTagsV58=new Set(),disputeSearchTimerV58=null;
 let rankingScope='global',followingIds=[],primaryRivalId=null;
 let myShowcaseAchievementIds=[],showcaseDraftIds=[];
@@ -1978,6 +1982,8 @@ async function route(prefetchedSession=undefined){
     return;
   }
 
+  startSessionAccessGuardV76(session);
+
   document.body.dataset.ttBootStage='profile';
   setBootMessageV572('Cargando tu perfil…');
   const p=await getMyProfile(session.user.id);
@@ -2094,7 +2100,7 @@ function activateTab(tab,{source='tap'}={}){
     if(tab==='admin'&&v35Flags?.is_test_admin)runTabLoadV74('admin',()=>Promise.all([
       loadAdminClubsV49(),loadAdminLegalConfigV57(),loadAdminDisputesV58(),
       loadAdminLinkedAccountsV58(),loadAdminIntegrityV59(),loadAdminReviewTagsV58(),
-      loadAdminSuspendedV76(),
+      loadAdminSuspendedV76(),loadAdminAutoModerationV77(),
       ensureV100Module().then(mod=>mod.loadAdminCommunityV100?.())
     ]),{ttl:15000});
   });
@@ -2764,6 +2770,140 @@ async function loadAdminIntegrityV59(){
   }
 }
 
+const AUTO_SIGNAL_LABELS_V77={
+  duration_extreme:'Duración extrema',
+  repeated_pair:'Pareja repetida',
+  linked_installation:'Instalación vinculada',
+  activity_burst:'Actividad acelerada'
+};
+
+function autoModeLabelV77(mode='observe'){
+  return mode==='enforce'?'ACTIVO':mode==='paused'?'PAUSADO':'SIMULACIÓN';
+}
+
+function autoDecisionLabelV77(status='observed'){
+  if(status==='would_suspend')return'Se suspendería en modo activo';
+  if(status==='suspended')return'Suspensión preventiva aplicada';
+  return'En observación';
+}
+
+function renderAdminAutoModerationV77(data={}){
+  const box=$('#adminAutoModerationCasesV77'),summary=$('#adminAutoSummaryV77');
+  if(!box||!summary)return;
+  const config=data.config||{};
+  const totals=data.summary||{};
+  const cases=Array.isArray(data.cases)?data.cases:[];
+  const mode=String(config.mode||'observe');
+
+  $$('[data-auto-mode-v77]').forEach(button=>button.classList.toggle('active',button.dataset.autoModeV77===mode));
+  summary.innerHTML=`
+    <article><span>Modo</span><strong>${autoModeLabelV77(mode)}</strong></article>
+    <article><span>Casos abiertos</span><strong>${Number(totals.open_cases||0)}</strong></article>
+    <article><span>Sobre el umbral</span><strong>${Number(totals.threshold_cases||0)}</strong></article>
+    <article><span>Suspensiones</span><strong>${Number(totals.automatic_suspensions||0)}</strong></article>`;
+
+  box.innerHTML=cases.length?cases.map(item=>{
+    const signals=Array.isArray(item.signals)?item.signals:[];
+    const uniqueSignals=[];
+    const seen=new Set();
+    signals.forEach(signal=>{
+      const key=String(signal.type||'');
+      if(!key||seen.has(key))return;
+      seen.add(key);uniqueSignals.push(signal);
+    });
+    const name=`${item.first_name||''} ${item.last_name||''}`.trim()||item.username||'Usuario';
+    const initials=((item.first_name?.[0]||'')+(item.last_name?.[0]||'')).toUpperCase()||'TT';
+    const caseClass=item.status==='suspended'?'suspended':item.status==='would_suspend'?'threshold':'';
+    return `<article class="v77-case ${caseClass}">
+      <div class="v77-case-head">
+        <div class="v77-case-user">
+          <div class="v77-case-avatar">${item.profile_photo_url?`<img src="${esc(item.profile_photo_url)}" alt="">`:esc(initials)}</div>
+          <div><strong>${esc(name)}</strong><small>@${esc(item.username||'sin_usuario')}</small></div>
+        </div>
+        <div class="v77-risk-score"><strong>${Number(item.score||0)}</strong><small>puntos</small></div>
+      </div>
+      <div class="v77-case-meta">
+        <span>${Number(item.distinct_matches||0)} partidos</span>
+        <span>${Number(item.distinct_signal_types||0)} tipos de señal</span>
+        <span class="v77-decision">${esc(autoDecisionLabelV77(item.status))}</span>
+      </div>
+      <div class="v77-signal-list">${uniqueSignals.map(signal=>`<span class="v77-signal"><b>${esc(AUTO_SIGNAL_LABELS_V77[signal.type]||signal.type)}</b> · +${Number(signal.points||0)}</span>`).join('')}</div>
+      <div class="v77-case-actions">
+        <button data-open-player="${item.user_id}" type="button">Ver usuario</button>
+        ${item.status!=='suspended'?`<button data-dismiss-auto-case-v77="${item.id}" type="button">Descartar caso</button>`:''}
+      </div>
+    </article>`;
+  }).join(''):'<div class="v77-empty">No hay usuarios con señales acumuladas en la ventana actual.</div>';
+
+  const real=mode==='enforce';
+  setStatus(
+    $('#adminAutoModerationStatusV77'),
+    real
+      ?'Modo activo: las nuevas detecciones que superen todas las protecciones recibirán una suspensión temporal preventiva.'
+      :'Simulación segura: ninguna cuenta será suspendida por este motor.',
+    real?'error':'ok'
+  );
+}
+
+async function loadAdminAutoModerationV77(){
+  const box=$('#adminAutoModerationCasesV77');
+  if(!box||!v35Flags?.is_test_admin)return;
+  box.innerHTML='<div class="loading-row">Cargando motor de protección…</div>';
+  try{
+    adminAutoModerationV77=await getAdminAutoModerationV77(50);
+    renderAdminAutoModerationV77(adminAutoModerationV77);
+  }catch(err){
+    console.error('Moderación automática V77:',err);
+    box.innerHTML=`<div class="v77-empty">${esc(err.message||'No se pudo cargar la moderación automática.')}</div>`;
+    setStatus($('#adminAutoModerationStatusV77'),'Ejecutá primero el SQL P7.4R.4 en Supabase.','error');
+  }
+}
+
+async function changeAutoModerationModeV77(button){
+  const mode=button?.dataset?.autoModeV77;
+  if(!mode||!v35Flags?.is_test_admin)return;
+  if(mode==='enforce'){
+    const accepted=window.confirm('¿Activar suspensiones automáticas temporales para las detecciones futuras? Los casos históricos de la simulación no se suspenderán retroactivamente.');
+    if(!accepted)return;
+  }
+  const buttons=$$('[data-auto-mode-v77]');
+  buttons.forEach(item=>item.disabled=true);
+  try{
+    adminAutoModerationV77=await setAutoModerationModeV77(mode);
+    renderAdminAutoModerationV77(adminAutoModerationV77);
+  }catch(err){
+    setStatus($('#adminAutoModerationStatusV77'),err.message||'No se pudo cambiar el modo.','error');
+  }finally{buttons.forEach(item=>item.disabled=false)}
+}
+
+async function reprocessAdminAutoModerationV77(button){
+  if(!v35Flags?.is_test_admin)return;
+  try{
+    button.disabled=true;button.textContent='Analizando…';
+    setStatus($('#adminAutoModerationStatusV77'),'Revisando los partidos competitivos de los últimos 7 días…');
+    adminAutoModerationV77=await reprocessAutoModerationV77(7,500);
+    renderAdminAutoModerationV77(adminAutoModerationV77);
+    const count=Number(adminAutoModerationV77.reprocessed_matches||0);
+    setStatus($('#adminAutoModerationStatusV77'),`Simulación completada: ${count} partido${count===1?'':'s'} analizado${count===1?'':'s'}. No se aplicaron suspensiones retroactivas.`,'ok');
+  }catch(err){
+    setStatus($('#adminAutoModerationStatusV77'),err.message||'No se pudo completar el análisis.','error');
+  }finally{button.disabled=false;button.textContent='Reanalizar 7 días'}
+}
+
+async function dismissAdminAutoCaseV77(button){
+  const caseId=Number(button?.dataset?.dismissAutoCaseV77||0);
+  if(!caseId||!v35Flags?.is_test_admin)return;
+  if(!window.confirm('¿Descartar este caso como falso positivo? Sus señales actuales dejarán de contar.'))return;
+  try{
+    button.disabled=true;
+    adminAutoModerationV77=await dismissAutoModerationCaseV77(caseId,null);
+    renderAdminAutoModerationV77(adminAutoModerationV77);
+    setStatus($('#adminAutoModerationStatusV77'),'Caso descartado. La decisión quedó registrada.','ok');
+  }catch(err){
+    setStatus($('#adminAutoModerationStatusV77'),err.message||'No se pudo descartar el caso.','error');
+  }finally{button.disabled=false}
+}
+
 
 
 function metricNumberV70(value,digits=0){
@@ -2850,6 +2990,7 @@ function setAdminCategoryV60(category='disputes'){
   if(clean==='system'&&v35Flags?.is_test_admin)runAdminDiagnosticsV60().catch(()=>{});
   if(clean==='metrics'&&v35Flags?.is_test_admin)loadAdminProductMetricsV70().catch(()=>{});
   if(clean==='suspended'&&v35Flags?.is_test_admin)loadAdminSuspendedV76().catch(()=>{});
+  if(clean==='suspicious'&&v35Flags?.is_test_admin)Promise.all([loadAdminAutoModerationV77(),loadAdminIntegrityV59()]).catch(()=>{});
 }
 
 let adminUserSearchTimerV60=null;
@@ -6388,6 +6529,7 @@ $('#emailVerificationFormV76')?.addEventListener('submit',async event=>{
     if(error)throw error;
     session=data?.session||await getSession();
     if(!session?.user)throw new Error('El correo se verificó, pero no pudimos abrir la sesión.');
+    startSessionAccessGuardV76(session);
     clearPendingRegistrationV76();
     clearInterval(emailVerificationTimerV76);
     try{await recordMyLegalAcceptanceV57()}catch(error){console.warn('Legal V76:',error)}
@@ -6620,6 +6762,7 @@ $('#loginForm').onsubmit=async e=>{
     const {data,error}=await signInUser({email,password:$('#loginPassword').value});
     if(error)throw error;
     session=data.session;
+    startSessionAccessGuardV76(session);
     const p=await getMyProfile(data.user.id);
     if(!p.profile_completed)return showView('sportsProfileView');
     await loadApp(data.user.id,p);
@@ -7203,7 +7346,7 @@ $('#deleteAccountButton').onclick=async()=>{
   }
 };
 
-$('#settingsLogoutButton').onclick=async()=>{stopTrainingTimerV53?.();stopLiveNotificationStream();await signOutUser();session=null;profile=null;ratings=[];showView('welcomeView')};
+$('#settingsLogoutButton').onclick=async()=>{stopTrainingTimerV53?.();stopLiveNotificationStream();await stopSessionAccessGuardV76();await signOutUser();session=null;profile=null;ratings=[];showView('welcomeView')};
 
 $$('[data-ranking-mode]').forEach(b=>b.onclick=()=>{rankingMode=b.dataset.rankingMode;$$('[data-ranking-mode]').forEach(x=>x.classList.toggle('active',x===b));loadRanking()});
 $$('[data-home-rating-mode-v59]').forEach(button=>button.addEventListener('click',()=>{
@@ -8482,6 +8625,13 @@ $('#disputeResolutionModalV58')?.addEventListener('click',e=>{if(e.target===$('#
 $('#adminRefreshDisputesV58')?.addEventListener('click',loadAdminDisputesV58);
 $('#adminRefreshLinkedV58')?.addEventListener('click',loadAdminLinkedAccountsV58);
 $('#adminRefreshIntegrityV59')?.addEventListener('click',loadAdminIntegrityV59);
+$('#adminRefreshAutoV77')?.addEventListener('click',loadAdminAutoModerationV77);
+$('#adminReprocessAutoV77')?.addEventListener('click',event=>reprocessAdminAutoModerationV77(event.currentTarget));
+$$('[data-auto-mode-v77]').forEach(button=>button.addEventListener('click',()=>changeAutoModerationModeV77(button)));
+$('#adminAutoModerationCasesV77')?.addEventListener('click',event=>{
+  const button=event.target.closest('[data-dismiss-auto-case-v77]');
+  if(button)dismissAdminAutoCaseV77(button);
+});
 $('#adminRefreshReviewTagsV58')?.addEventListener('click',loadAdminReviewTagsV58);
 $('#markAllNotificationsReadV58')?.addEventListener('click',async()=>{try{await markAllNotificationsReadV58();await Promise.all([loadLiveNotifications(),loadActivityCenter()])}catch(err){console.warn(err)}});
 
@@ -8505,16 +8655,35 @@ $('#notificationButton').onclick=async()=>{
   syncModalScrollLock();
   await loadActivityCenter();
 };
-$('#logoutButton').onclick=async()=>{stopTrainingTimerV53?.();stopLiveNotificationStream();presenceHeartbeatV60?.stop?.();await presenceManagerV35?.stop?.();await signOutUser();session=null;profile=null;ratings=[];showView('welcomeView')};
+$('#logoutButton').onclick=async()=>{stopTrainingTimerV53?.();stopLiveNotificationStream();presenceHeartbeatV60?.stop?.();await presenceManagerV35?.stop?.();await stopSessionAccessGuardV76();await signOutUser();session=null;profile=null;ratings=[];showView('welcomeView')};
 window.addEventListener('tt-v62-doubles-confirmed',()=>{
   invalidateRivalriesV74();
   Promise.all([refreshCore(),loadRivalriesV74(true)]).catch(err=>console.warn('Refresh dobles V62:',err));
+});
+
+window.addEventListener('tt-v75-session-blocked',async event=>{
+  const error=event.detail?.error;
+  const email=event.detail?.email||session?.user?.email||'';
+  stopTrainingTimerV53?.();
+  stopLiveNotificationStream();
+  presenceHeartbeatV60?.stop?.();
+  await presenceManagerV35?.stop?.().catch?.(()=>{});
+  session=null;profile=null;ratings=[];
+  $$('.modal').forEach(modal=>modal.classList.add('hidden'));
+  document.body.classList.remove('modal-open');
+  showView('loginView');
+  if($('#loginEmail'))$('#loginEmail').value=email;
+  if($('#loginPassword'))$('#loginPassword').value='';
+  if(!showAccessBlockedV76(error,email,$('#loginStatus'))){
+    setStatus($('#loginStatus'),error?.message||'Tu sesión fue cerrada porque la cuenta está suspendida.','error');
+  }
 });
 
 supabase.auth.onAuthStateChange((event,nextSession)=>{
   if(event==='PASSWORD_RECOVERY'){
     showPasswordRecoveryViewV53(nextSession);
   }
+  if(event==='SIGNED_OUT')void stopSessionAccessGuardV76();
 });
 
 installErrorCaptureV60();

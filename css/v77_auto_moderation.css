@@ -1,0 +1,38 @@
+/* TT Rivals 1.0.1 — P7.4R.4 Moderación automática */
+.v77-auto-card{position:relative;overflow:hidden;border-color:rgba(62,211,255,.24)}
+.v77-auto-card::before{content:"";position:absolute;inset:-70% 58% 42% -18%;background:radial-gradient(circle,rgba(49,201,255,.13),transparent 70%);pointer-events:none}
+.v77-auto-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.v77-mode-switch{display:flex;gap:5px;padding:5px;border:1px solid rgba(123,159,204,.2);border-radius:14px;background:rgba(7,18,34,.55)}
+.v77-mode-switch button{padding:9px 12px;border:0;border-radius:10px;background:transparent;color:#8296ad;font-size:.7rem;font-weight:900;letter-spacing:.05em;cursor:pointer}
+.v77-mode-switch button.active[data-auto-mode-v77="observe"]{background:rgba(45,183,241,.18);color:#8addff}
+.v77-mode-switch button.active[data-auto-mode-v77="enforce"]{background:rgba(255,88,119,.18);color:#ff91a7}
+.v77-mode-switch button.active[data-auto-mode-v77="paused"]{background:rgba(255,185,64,.16);color:#ffd17e}
+.v77-auto-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.v77-auto-summary article{padding:14px;border:1px solid rgba(117,151,195,.18);border-radius:15px;background:rgba(8,22,39,.5)}
+.v77-auto-summary span{display:block;color:#8195ac;font-size:.69rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.v77-auto-summary strong{display:block;margin-top:5px;color:#f4f8ff;font-size:1.25rem}
+.v77-auto-safety{display:flex;gap:11px;align-items:flex-start;padding:13px 15px;margin-bottom:17px;border-left:3px solid #37c8ff;border-radius:10px;background:rgba(38,109,148,.11);color:#8fa7bf;font-size:.78rem;line-height:1.45}
+.v77-auto-safety strong{color:#c8ecff}
+.v77-case-list{display:grid;gap:12px}
+.v77-case{padding:16px;border:1px solid rgba(112,150,198,.2);border-radius:17px;background:linear-gradient(145deg,rgba(19,35,58,.86),rgba(8,21,38,.72))}
+.v77-case.threshold{border-color:rgba(255,166,61,.34);box-shadow:inset 3px 0 0 rgba(255,166,61,.72)}
+.v77-case.suspended{border-color:rgba(255,78,113,.36);box-shadow:inset 3px 0 0 rgba(255,78,113,.76)}
+.v77-case-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.v77-case-user{display:flex;align-items:center;gap:11px;min-width:0}
+.v77-case-avatar{width:43px;height:43px;display:grid;place-items:center;overflow:hidden;border-radius:13px;background:#0a1a2d;border:1px solid rgba(99,184,238,.22);color:#8edcff;font-weight:900}
+.v77-case-avatar img{width:100%;height:100%;object-fit:cover}
+.v77-case-user strong,.v77-case-user small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v77-case-user small{margin-top:3px;color:#8396ac}
+.v77-risk-score{min-width:72px;text-align:right}
+.v77-risk-score strong{display:block;color:#ffb65d;font-size:1.35rem}
+.v77-risk-score small{color:#7f92a7;font-size:.65rem;text-transform:uppercase;letter-spacing:.06em}
+.v77-case-meta{display:flex;flex-wrap:wrap;gap:7px;margin:13px 0}
+.v77-case-meta span,.v77-signal{padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.045);border:1px solid rgba(130,159,196,.15);color:#9fb1c5;font-size:.7rem;font-weight:800}
+.v77-case-meta .v77-decision{color:#ffd083;border-color:rgba(255,190,81,.26);background:rgba(133,86,16,.14)}
+.v77-signal-list{display:flex;flex-wrap:wrap;gap:7px}
+.v77-signal b{color:#dbe8f5}
+.v77-case-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.v77-case-actions button{padding:9px 12px}
+.v77-empty{padding:25px;text-align:center;color:#8093aa;border:1px dashed rgba(125,158,199,.19);border-radius:15px}
+@media(max-width:850px){.v77-auto-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.v77-auto-toolbar{justify-content:flex-start}.v77-mode-switch{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}}
+@media(max-width:520px){.v77-auto-summary{grid-template-columns:1fr 1fr}.v77-case-head{align-items:center}.v77-case-actions{display:grid;grid-template-columns:1fr 1fr}.v77-case-actions button{width:100%}}

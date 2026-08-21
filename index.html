@@ -31,8 +31,9 @@
   <link rel="stylesheet" href="css/v74_admin_decision.css?v=1.0.1-p7.4r.2">
   <link rel="stylesheet" href="css/v75_access_control.css?v=1.0.1-p7.4r.2">
   <link rel="stylesheet" href="css/v76_moderation_email.css?v=1.0.1-p7.4r.3">
+  <link rel="stylesheet" href="css/v77_auto_moderation.css?v=1.0.1-p7.4r.4">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.3-moderation-email" data-active-tab-v101="home" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4-auto-moderation" data-active-tab-v101="home" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -1986,12 +1987,42 @@
           <p id="adminLinkedStatusV58" class="status" aria-live="polite"></p>
         </section>
 
+        <section id="adminAutoModerationV77" class="section-card v77-auto-card" data-admin-panel-v60="suspicious">
+          <div class="section-title-row">
+            <div>
+              <p class="muted-label">PROTECCIÓN AUTOMÁTICA · P7.4R.4</p>
+              <h3>◇ Moderación preventiva</h3>
+              <p>Acumula señales independientes antes de tomar una decisión. Nunca aplica automáticamente baneos permanentes, de correo, dispositivo o IP.</p>
+            </div>
+            <div class="v77-auto-toolbar">
+              <div class="v77-mode-switch" aria-label="Modo de moderación automática">
+                <button data-auto-mode-v77="observe" type="button">SIMULACIÓN</button>
+                <button data-auto-mode-v77="enforce" type="button">ACTIVAR</button>
+                <button data-auto-mode-v77="paused" type="button">PAUSAR</button>
+              </div>
+              <button id="adminReprocessAutoV77" type="button">Reanalizar 7 días</button>
+              <button id="adminRefreshAutoV77" type="button">Actualizar</button>
+            </div>
+          </div>
+          <div class="v77-auto-safety"><span>◎</span><div><strong>Protección contra falsos positivos.</strong> Requiere 100 puntos, 3 partidos distintos y 2 clases de señal dentro de 7 días. Administradores, testers y excepciones autorizadas quedan excluidos.</div></div>
+          <div id="adminAutoSummaryV77" class="v77-auto-summary">
+            <article><span>Modo</span><strong>—</strong></article>
+            <article><span>Casos abiertos</span><strong>—</strong></article>
+            <article><span>Sobre el umbral</span><strong>—</strong></article>
+            <article><span>Suspensiones</span><strong>—</strong></article>
+          </div>
+          <div id="adminAutoModerationCasesV77" class="v77-case-list">
+            <div class="loading-row">Cargando motor de protección…</div>
+          </div>
+          <p id="adminAutoModerationStatusV77" class="status" aria-live="polite"></p>
+        </section>
+
         <section class="section-card v59-admin-integrity-card">
           <div class="section-title-row">
             <div>
               <p class="muted-label">DURACIÓN + INTEGRIDAD</p>
               <h3>⏱ Partidos para revisar</h3>
-              <p>Combina tiempos demasiado cortos, repetición entre la misma pareja y vínculos de instalación. No bloquea resultados automáticamente.</p>
+              <p>Detalle técnico de los partidos marcados. El motor superior decide únicamente cuando se acumulan varias señales independientes.</p>
             </div>
             <button id="adminRefreshIntegrityV59" type="button">Actualizar</button>
           </div>
@@ -2910,7 +2941,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=1.0.1-p7.4r.3"></script>
+  <script type="module" src="js/app.js?v=1.0.1-p7.4r.4"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>

@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import {checkAccessGateV75,checkSessionAccessV75} from './v75_access_control.js';
+import {checkAccessGateV75,checkSessionAccessV75} from './v75_access_control.js?v=1.0.1-p7.4r.3.1';
 import {getInstallationIdV58} from './v58_competition.js';
 export async function signUpUser({
   email,password,firstName,lastName,username,

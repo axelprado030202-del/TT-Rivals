@@ -3,6 +3,15 @@ import {getInstallationIdV58} from './v58_competition.js';
 
 let initializedV75=false;
 let selectedUserV75=null;
+let accessGuardChannelV76=null;
+let accessGuardTimerV76=null;
+let accessGuardUserV76=null;
+let accessGuardEmailV76='';
+let accessGuardCheckV76=null;
+let accessGuardTokenV76=0;
+let accessGuardFocusV76=null;
+let accessGuardVisibilityV76=null;
+let accessGuardOnlineV76=null;
 
 export class AccessBlockedErrorV75 extends Error{
   constructor(decision={}){
@@ -26,6 +35,80 @@ export async function checkAccessGateV75({email=null}={}){
 
 export async function checkSessionAccessV75(session){
   return checkAccessGateV75({email:session?.user?.email||null});
+}
+
+export async function stopSessionAccessGuardV76(){
+  accessGuardTokenV76++;
+  if(accessGuardTimerV76){clearInterval(accessGuardTimerV76);accessGuardTimerV76=null}
+  if(accessGuardFocusV76)window.removeEventListener('focus',accessGuardFocusV76);
+  if(accessGuardVisibilityV76)document.removeEventListener('visibilitychange',accessGuardVisibilityV76);
+  if(accessGuardOnlineV76)window.removeEventListener('online',accessGuardOnlineV76);
+  accessGuardFocusV76=null;
+  accessGuardVisibilityV76=null;
+  accessGuardOnlineV76=null;
+  accessGuardUserV76=null;
+  accessGuardEmailV76='';
+  accessGuardCheckV76=null;
+  if(accessGuardChannelV76){
+    const channel=accessGuardChannelV76;
+    accessGuardChannelV76=null;
+    await supabase.removeChannel(channel).catch(()=>{});
+  }
+}
+
+async function enforceOpenSessionAccessV76(reason='periodic'){
+  if(!accessGuardUserV76)return;
+  if(accessGuardCheckV76)return accessGuardCheckV76;
+  const token=accessGuardTokenV76;
+  accessGuardCheckV76=(async()=>{
+    try{
+      await checkAccessGateV75({email:accessGuardEmailV76});
+    }catch(error){
+      if(error?.code!=='TT_ACCESS_BLOCKED')return;
+      const email=accessGuardEmailV76;
+      await stopSessionAccessGuardV76();
+      await supabase.auth.signOut({scope:'local'}).catch(()=>supabase.auth.signOut().catch(()=>{}));
+      window.dispatchEvent(new CustomEvent('tt-v75-session-blocked',{
+        detail:{error,email,reason}
+      }));
+    }finally{
+      if(token===accessGuardTokenV76)accessGuardCheckV76=null;
+    }
+  })();
+  return accessGuardCheckV76;
+}
+
+export function startSessionAccessGuardV76(activeSession){
+  const userId=String(activeSession?.user?.id||'');
+  if(!userId)return stopSessionAccessGuardV76();
+  const email=String(activeSession?.user?.email||'');
+  if(accessGuardUserV76===userId&&accessGuardChannelV76)return;
+
+  void stopSessionAccessGuardV76().then(()=>{
+    accessGuardUserV76=userId;
+    accessGuardEmailV76=email;
+    const token=++accessGuardTokenV76;
+    const suffix=globalThis.crypto?.randomUUID?.()||Math.random().toString(36).slice(2);
+    accessGuardChannelV76=supabase
+      .channel(`tt-access-revocation-${userId}-${suffix}`)
+      .on('postgres_changes',{
+        event:'INSERT',schema:'public',table:'access_revocation_events_v76',
+        filter:`user_id=eq.${userId}`
+      },()=>{if(token===accessGuardTokenV76)void enforceOpenSessionAccessV76('realtime')})
+      .subscribe();
+
+    accessGuardFocusV76=()=>void enforceOpenSessionAccessV76('focus');
+    accessGuardVisibilityV76=()=>{
+      if(document.visibilityState==='visible')void enforceOpenSessionAccessV76('visible');
+    };
+    accessGuardOnlineV76=()=>void enforceOpenSessionAccessV76('online');
+    window.addEventListener('focus',accessGuardFocusV76,{passive:true});
+    document.addEventListener('visibilitychange',accessGuardVisibilityV76,{passive:true});
+    window.addEventListener('online',accessGuardOnlineV76,{passive:true});
+    // Realtime es la vía inmediata; esta comprobación espaciada es el respaldo
+    // para redes móviles que pausan el WebSocket en segundo plano.
+    accessGuardTimerV76=setInterval(()=>void enforceOpenSessionAccessV76('periodic'),30000);
+  });
 }
 
 function escV75(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]))}
