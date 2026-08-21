@@ -1,4 +1,4 @@
-import {APP_VERSION,APP_BUILD,APP_CACHE_NAME} from './version.js?v=1.0.1-p7.4r.4';
+import {APP_VERSION,APP_BUILD,APP_CACHE_NAME} from './version.js?v=1.0.1-p7.4r.4.1';
 
 const TT_SW_URL_V60=`./service-worker.js?v=${encodeURIComponent(APP_BUILD)}`;
 const TT_CACHE_PREFIX='tt-rivals-';
@@ -175,3 +175,4 @@ export async function setupPwaV573(){
     if(document.visibilityState==='visible')registrationV60?.update().catch(()=>{});
   });
 }
+

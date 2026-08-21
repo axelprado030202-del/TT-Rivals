@@ -31,9 +31,9 @@
   <link rel="stylesheet" href="css/v74_admin_decision.css?v=1.0.1-p7.4r.2">
   <link rel="stylesheet" href="css/v75_access_control.css?v=1.0.1-p7.4r.2">
   <link rel="stylesheet" href="css/v76_moderation_email.css?v=1.0.1-p7.4r.3">
-  <link rel="stylesheet" href="css/v77_auto_moderation.css?v=1.0.1-p7.4r.4">
+  <link rel="stylesheet" href="css/v77_auto_moderation.css?v=1.0.1-p7.4r.4.1">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4-auto-moderation" data-active-tab-v101="home" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.1-integrity-3-of-10" data-active-tab-v101="home" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -1990,9 +1990,9 @@
         <section id="adminAutoModerationV77" class="section-card v77-auto-card" data-admin-panel-v60="suspicious">
           <div class="section-title-row">
             <div>
-              <p class="muted-label">PROTECCIÓN AUTOMÁTICA · P7.4R.4</p>
-              <h3>◇ Moderación preventiva</h3>
-              <p>Acumula señales independientes antes de tomar una decisión. Nunca aplica automáticamente baneos permanentes, de correo, dispositivo o IP.</p>
+              <p class="muted-label">PROTECCIÓN AUTOMÁTICA · P7.4R.4.1</p>
+              <h3>◇ Integridad 3 de 10</h3>
+              <p>Controla ranked y casuales. Retiene el tercer partido de menos de un minuto antes de modificar Elo o estadísticas.</p>
             </div>
             <div class="v77-auto-toolbar">
               <div class="v77-mode-switch" aria-label="Modo de moderación automática">
@@ -2004,12 +2004,12 @@
               <button id="adminRefreshAutoV77" type="button">Actualizar</button>
             </div>
           </div>
-          <div class="v77-auto-safety"><span>◎</span><div><strong>Protección contra falsos positivos.</strong> Requiere 100 puntos, 3 partidos distintos y 2 clases de señal dentro de 7 días. Administradores, testers y excepciones autorizadas quedan excluidos.</div></div>
+          <div class="v77-auto-safety"><span>◎</span><div><strong>Regla exacta.</strong> Dentro del mismo día, se revisan como máximo los últimos 10 partidos de cada usuario. Al tercero que dure menos de 60 segundos se retienen sus consecuencias. La repetición de rivales no genera riesgo por sí sola.</div></div>
           <div id="adminAutoSummaryV77" class="v77-auto-summary">
-            <article><span>Modo</span><strong>—</strong></article>
+            <article><span>Regla</span><strong>3 / 10</strong></article>
             <article><span>Casos abiertos</span><strong>—</strong></article>
-            <article><span>Sobre el umbral</span><strong>—</strong></article>
-            <article><span>Suspensiones</span><strong>—</strong></article>
+            <article><span>Retenidos</span><strong>—</strong></article>
+            <article><span>Restricciones</span><strong>—</strong></article>
           </div>
           <div id="adminAutoModerationCasesV77" class="v77-case-list">
             <div class="loading-row">Cargando motor de protección…</div>
@@ -2941,7 +2941,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=1.0.1-p7.4r.4"></script>
+  <script type="module" src="js/app.js?v=1.0.1-p7.4r.4.1"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>
@@ -3130,3 +3130,4 @@
 
 </body>
 </html>
+

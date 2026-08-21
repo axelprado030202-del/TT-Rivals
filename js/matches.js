@@ -24,7 +24,9 @@ export async function submitMatchResult(matchId,sets){
 }
 
 export async function confirmMatchResult(matchId){
-  const {data,error}=await supabase.rpc('confirm_match_result',{p_match_id:matchId});
+  let {data,error}=await supabase.rpc('confirm_match_result_integrity_v78',{p_match_id:matchId});
+  const unavailable=error&&(['PGRST202','42883'].includes(error.code)||/schema cache|confirm_match_result_integrity_v78/i.test(error.message||''));
+  if(unavailable)({data,error}=await supabase.rpc('confirm_match_result',{p_match_id:matchId}));
   if(error)throw error; matchesCacheV60.clear(); return data;
 }
 
@@ -46,3 +48,4 @@ export async function adminListMatchIntegrityV59(limit=100){
   if(error)throw error;
   return data||[];
 }
+

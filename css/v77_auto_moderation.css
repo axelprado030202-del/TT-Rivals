@@ -36,3 +36,34 @@
 .v77-empty{padding:25px;text-align:center;color:#8093aa;border:1px dashed rgba(125,158,199,.19);border-radius:15px}
 @media(max-width:850px){.v77-auto-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.v77-auto-toolbar{justify-content:flex-start}.v77-mode-switch{width:100%;display:grid;grid-template-columns:repeat(3,1fr)}}
 @media(max-width:520px){.v77-auto-summary{grid-template-columns:1fr 1fr}.v77-case-head{align-items:center}.v77-case-actions{display:grid;grid-template-columns:1fr 1fr}.v77-case-actions button{width:100%}}
+
+/* P7.4R.4.1 — regla 3 de 10 y apelación */
+.v78-admin-holds{display:grid;gap:10px;margin-bottom:18px}
+.v78-admin-holds>h4{margin:0;color:#dbeaff;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
+.v78-held-match small{display:block;margin-top:4px;color:#8498ae}
+.v78-admin-appeal{display:grid;gap:5px;margin-top:12px;padding:11px 13px;border-left:3px solid #66d7ff;border-radius:10px;background:rgba(38,153,204,.1)}
+.v78-admin-appeal strong{color:#bdeeff;font-size:.74rem;text-transform:uppercase;letter-spacing:.05em}
+.v78-admin-appeal span{color:#aebfd1;font-size:.78rem;line-height:1.45}
+.v78-integrity-modal{z-index:10040;padding:18px}
+.v78-integrity-card{width:min(560px,100%);padding:30px;border-color:rgba(255,174,72,.35);background:linear-gradient(155deg,#151a2d,#071522 70%);box-shadow:0 28px 80px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04)}
+.v78-integrity-icon{width:54px;height:54px;display:grid;place-items:center;margin-bottom:15px;border:1px solid rgba(255,190,96,.34);border-radius:17px;background:rgba(255,174,64,.1);color:#ffca7d;font-size:1.45rem}
+.v78-integrity-card h2{margin:4px 0 9px;color:#f7f9ff;font-size:1.65rem}
+.v78-integrity-card>p:not(.muted-label):not(.v78-appealed){margin:0;color:#aab9cc;line-height:1.55}
+.v78-integrity-card>p strong{color:#fff}
+.v78-integrity-grid{display:grid;grid-template-columns:1.25fr 1fr .7fr;gap:9px;margin:20px 0}
+.v78-integrity-grid article{padding:13px;border:1px solid rgba(120,155,197,.2);border-radius:13px;background:rgba(14,31,50,.72)}
+.v78-integrity-grid span,.v78-integrity-grid strong{display:block}
+.v78-integrity-grid span{color:#8296ad;font-size:.67rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.v78-integrity-grid strong{margin-top:5px;color:#f0f6ff;font-size:.82rem}
+.v78-hold-note,.v78-warning{display:flex;justify-content:space-between;gap:12px;margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.045);color:#9eb0c3;font-size:.77rem}
+.v78-hold-note strong,.v78-warning strong{color:#e8f2ff}
+.v78-warning{display:grid;gap:3px;border-left:3px solid #ffad48;background:rgba(255,156,45,.08)}
+.v78-appeal-shell{display:grid;gap:8px;margin-top:17px}
+.v78-appeal-shell label{color:#dbe9f8;font-size:.78rem;font-weight:800}
+.v78-appeal-shell textarea{min-height:105px;resize:vertical;padding:12px;border:1px solid rgba(113,167,219,.3);border-radius:12px;background:#0b192a;color:#f1f6ff}
+.v78-integrity-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:19px}
+.v78-integrity-actions button{min-height:46px}
+.v78-integrity-actions .primary{border-color:#23d69b;background:linear-gradient(135deg,#0ebb72,#24d5a8);color:#fff}
+.v78-appealed{margin:16px 0 0;color:#63e7bd;font-weight:800}
+@media(max-width:560px){.v78-integrity-card{padding:24px 19px}.v78-integrity-grid{grid-template-columns:1fr}.v78-integrity-actions{grid-template-columns:1fr}.v78-hold-note{display:grid}}
+

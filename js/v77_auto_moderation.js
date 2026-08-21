@@ -35,3 +35,28 @@ export async function reprocessAutoModerationV77(days=7,limit=500){
   if(error)throw error;
   return data||{};
 }
+
+export async function getMyIntegrityStatusV78(){
+  const {data,error}=await supabase.rpc('get_my_integrity_status_v78');
+  if(error)throw error;
+  return data||{active:false,pending_holds:[],notifications:[]};
+}
+
+export async function submitIntegrityAppealV78(message){
+  const {data,error}=await supabase.rpc('submit_integrity_appeal_v78',{
+    p_message:String(message||'').trim()
+  });
+  if(error)throw error;
+  return data||{};
+}
+
+export async function resolveIntegrityHoldV78(matchId,action,note=null){
+  const {data,error}=await supabase.rpc('admin_resolve_integrity_hold_v78',{
+    p_match_id:Number(matchId),
+    p_action:String(action||''),
+    p_note:note||null
+  });
+  if(error)throw error;
+  return data||{};
+}
+
