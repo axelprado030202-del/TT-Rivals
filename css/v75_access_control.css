@@ -1,0 +1,20 @@
+/* TT Rivals P7.4R.2 — control administrativo de acceso */
+.v75-admin-ban-trigger,.v75-open-ban-from-review{color:#ffbd5a!important;border-color:rgba(255,189,90,.34)!important}
+.v75-ban-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.v75-ban-head h2{margin:.25rem 0}
+.v75-ban-head p:last-child{margin:.25rem 0 0;color:#91a5bd}
+.v75-ban-shield{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:rgba(255,180,70,.12);border:1px solid rgba(255,180,70,.3);color:#ffc96f}
+.v75-ban-current{margin:20px 0;padding:16px;border:1px solid rgba(112,149,192,.2);border-radius:16px;background:rgba(13,31,54,.55)}
+.v75-ban-current h3{margin:0 0 11px}
+.v75-ban-current-grid{display:grid;gap:8px}
+.v75-ban-current-grid article{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:11px;background:rgba(255,255,255,.035)}
+.v75-ban-current-grid span{color:#91a5bd}.v75-ban-current-grid strong{color:#f5f8ff;text-align:right}
+.v75-ban-form{display:grid;grid-template-columns:1fr 180px;gap:14px}
+.v75-ban-form label{display:grid;gap:7px;color:#bfd0e3;font-weight:800}
+.v75-ban-form select,.v75-ban-form textarea{width:100%;border:1px solid rgba(113,151,195,.3);border-radius:12px;background:#0d1c30;color:#f5f8ff;padding:12px}
+.v75-ban-note,.v75-ban-warning,.v75-ban-actions,.v75-ban-form .status{grid-column:1/-1}
+.v75-ban-warning{padding:12px 14px;border-left:3px solid #48b9f4;background:rgba(72,185,244,.08);color:#a9bdd2;font-size:13px;line-height:1.45}
+.v75-ban-warning.is-danger{border-left-color:#ff6d83;background:rgba(255,76,107,.08);color:#ffc3cd}
+.v75-ban-actions{display:flex;gap:10px;flex-wrap:wrap}.v75-ban-actions .btn{flex:1;min-width:210px}
+.admin-access-ban-modal-v75{width:min(620px,calc(100vw - 24px))}
+@media(max-width:620px){.v75-ban-form{grid-template-columns:1fr}.v75-ban-form>*{grid-column:1}.v75-ban-actions{display:grid}.v75-ban-actions .btn{min-width:0}}

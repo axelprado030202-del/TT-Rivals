@@ -90,6 +90,14 @@ export async function loadPublicPalmaresV63(userId){
 
 function riskLabel(n){n=Number(n)||0;return n>=75?'ALTO':n>=50?'MEDIO':n>0?'BAJO':'SIN ALERTA'}
 function sanctionLabel(k){return ({warning:'Advertencia',ranked_block:'Bloqueo de Elo',suspension:'Suspensión'})[k]||k}
+function decisionCopyV63(action){return ({legitimate:{label:'Legítimo',detail:'La señal quedó cerrada como legítima.',icon:'✓'},watch:{label:'En observación',detail:'La señal seguirá visible para seguimiento.',icon:'◉'},reopen:{label:'Reabierto',detail:'El resultado volvió a estar disponible para resolver.',icon:'↩'},annul:{label:'Anulado',detail:'El partido y su impacto competitivo fueron anulados.',icon:'✕'}})[action]||{label:'Registrada',detail:'La decisión administrativa fue aplicada.',icon:'✓'}}
+function showAdminDecisionToastV63(action){
+  const copy=decisionCopyV63(action);let host=document.querySelector('#v63AdminDecisionToastHost');
+  if(!host){host=document.createElement('div');host.id='v63AdminDecisionToastHost';host.className='v63-admin-decision-toast-host';document.body.appendChild(host)}
+  const toast=document.createElement('article');toast.className='v63-admin-decision-toast action-'+String(action||'').replace(/[^a-z]/g,'');
+  toast.innerHTML='<span>'+esc(copy.icon)+'</span><div><small>DECISIÓN ADMINISTRATIVA</small><strong>Decisión: '+esc(copy.label)+'</strong><p>'+esc(copy.detail)+'</p></div>';
+  host.appendChild(toast);requestAnimationFrame(()=>toast.classList.add('show'));setTimeout(()=>{toast.classList.remove('show');setTimeout(()=>toast.remove(),260)},4800);
+}
 function integritySummaryCard(data,label){
   const sanctions=(data?.sanctions||[]).filter(s=>s.active&&(!s.ends_at||new Date(s.ends_at)>new Date()));
   return `<article class="v63-player-integrity"><span>${esc(label)}</span><div><b>${Number(data?.alerts)||0}</b><small>alertas</small></div><div><b>${Number(data?.legitimate)||0}</b><small>legítimas</small></div><div><b>${Number(data?.annulled)||0}</b><small>anuladas</small></div><p>${sanctions.length?`⚠ ${sanctions.map(s=>sanctionLabel(s.kind)).join(' · ')}`:'Sin sanciones activas'}</p></article>`;
@@ -123,7 +131,7 @@ function renderAdminMatchReviewV63(payload){
     <div class="v63-player-integrity-grid">${integritySummaryCard(payload.player1_integrity,fullName(p1))}${integritySummaryCard(payload.player2_integrity,fullName(p2))}</div>
     <section class="v63-admin-review-actions">
       <div><p class="muted-label">DECISIÓN ADMINISTRATIVA</p><h3>Resolver señal</h3><small>La alerta nunca sanciona automáticamente. La decisión queda registrada.</small></div>
-      <textarea id="adminMatchReviewNoteV63" rows="3" maxlength="1500" placeholder="Nota administrativa / motivo…">${esc(review.note||'')}</textarea>
+      <textarea id="adminMatchReviewNoteV63" rows="2" maxlength="1500" placeholder="Nota administrativa (opcional)…">${esc(review.note||'')}</textarea>
       <div class="v63-admin-action-grid">
         <button data-v63-review-action="legitimate" type="button">✓ Marcar legítimo</button>
         <button data-v63-review-action="watch" type="button">👁 Mantener en observación</button>
@@ -139,7 +147,7 @@ function renderAdminMatchReviewV63(payload){
         <select id="adminSanctionKindV63"><option value="warning">Advertencia</option><option value="ranked_block">Bloquear partidas con Elo</option><option value="suspension">Suspender desafíos</option><option value="clear">Quitar sanciones activas</option></select>
         <input id="adminSanctionDaysV63" type="number" min="1" max="365" value="7" aria-label="Días">
         <textarea id="adminSanctionReasonV63" rows="2" maxlength="1000" placeholder="Motivo de la medida…"></textarea>
-        <button id="adminApplySanctionV63" type="button">Aplicar medida</button>
+        <button id="adminApplySanctionV63" type="button">Aplicar medida</button><button data-admin-ban-selected-v75 class="v75-open-ban-from-review" type="button">◆ Administrar baneo</button>
       </div><p id="adminSanctionStatusV63" class="status"></p>
     </section>
     <section class="v63-admin-review-section"><div class="section-title-row"><div><p class="muted-label">AUDITORÍA</p><h3>Historial de decisiones</h3></div></div>
@@ -147,11 +155,11 @@ function renderAdminMatchReviewV63(payload){
     </section>`;
 
   host.querySelectorAll('[data-v63-review-action]').forEach(btn=>btn.addEventListener('click',async()=>{
-    const status=$('#adminMatchReviewStatusV63'),note=$('#adminMatchReviewNoteV63')?.value||'';
+    const status=$('#adminMatchReviewStatusV63'),note=$('#adminMatchReviewNoteV63')?.value||'',action=btn.dataset.v63ReviewAction;
     btn.disabled=true;if(status){status.textContent='Aplicando decisión…';status.className='status'}
     try{
-      const next=await rpc('admin_review_match_v63',{p_match_id:Number(m.id),p_action:btn.dataset.v63ReviewAction,p_note:note});
-      renderAdminMatchReviewV63(next);window.dispatchEvent(new CustomEvent('tt-v63-integrity-changed'));
+      const next=await rpc('admin_review_match_v63',{p_match_id:Number(m.id),p_action:action,p_note:note});
+      renderAdminMatchReviewV63(next);showAdminDecisionToastV63(action);window.dispatchEvent(new CustomEvent('tt-v63-integrity-changed'));
     }catch(err){if(status){status.textContent=err.message||'No se pudo aplicar la decisión.';status.className='status error'}btn.disabled=false}
   }));
   $('#adminApplySanctionV63')?.addEventListener('click',async e=>{

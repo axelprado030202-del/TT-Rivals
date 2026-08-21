@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
-import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword} from './auth.js?v=1.0.1-p7.4.1';
+import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.1-p7.4r.2';
+import {initAccessControlV75} from './v75_access_control.js?v=1.0.1-p7.4r.2';
 import {getMyProfile,getMyRatings,completeSportsProfile,getClubsV47,ensureClubV47,getClubsV49,getClubsV50,getClubsV51,suggestClubsV49,suggestClubsV50,suggestClubsV51,ensureClubV49,ensureClubV51,setMyClubV49,setMyClubV51,getMyClubV49,getMyClubV51,adminListClubsV49,adminListClubsV51,adminMergeClubsV49,adminMergeClubsV51,adminRenameClubV49,adminCreateClubV51,adminUpdateClubV51,getRanking,searchPlayers,getRatingHistory,getRankTiers,setProfilePhotoUrl,uploadProfilePhoto,deleteProfilePhotoByUrl} from './profile.js';
 import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges,invalidateChallengesCacheV60} from './challenges.js?v=1.0.1-p7.4';
 import {getMyMatches,submitMatchResult,confirmMatchResult,disputeMatchResult,getMyDurationStatsV59,adminListMatchIntegrityV59,invalidateMatchesCacheV60} from './matches.js?v=1.0.1-p7.4';
@@ -1940,6 +1941,21 @@ async function route(prefetchedSession=undefined){
     return;
   }
 
+  document.body.dataset.ttBootStage='access';
+  setBootMessageV572('Verificando acceso…');
+  try{
+    await verifySessionAccessV75(session);
+  }catch(error){
+    await signOutUser().catch(()=>{});
+    const email=session?.user?.email||'';
+    session=null;
+    showView('loginView');
+    if($('#loginEmail'))$('#loginEmail').value=email;
+    setStatus($('#loginStatus'),error.message||'No podés acceder a TT Rivals.','error');
+    closeBootScreenV572();
+    return;
+  }
+
   document.body.dataset.ttBootStage='profile';
   setBootMessageV572('Cargando tu perfil…');
   const p=await getMyProfile(session.user.id);
@@ -2820,7 +2836,7 @@ async function searchAdminUsersV60(){
   box.innerHTML='<div class="loading-row">Buscando usuarios…</div>';
   try{
     const rows=await searchPlayers(q,session?.user?.id);
-    box.innerHTML=rows.length?rows.slice(0,30).map(u=>`<article class="v60-admin-user-row"><button data-open-player="${u.id}" type="button">${avatarHtml(u,'v60-admin-user-avatar')}<div><strong>${esc(`${u.first_name||''} ${u.last_name||''}`.trim()||u.username)}</strong><small>@${esc(u.username||'')} · Perfil de TT Rivals</small><em class="v60-presence-text" data-presence-text-v60="${u.id}">${esc(presenceLabelV60(u.id))}</em></div></button><button data-quick-challenge="${u.id}" data-name="${esc(`${u.first_name||''} ${u.last_name||''}`.trim()||u.username)}" data-user="${esc(u.username||'')}" type="button">⚔</button></article>`).join(''):'<div class="compact-empty">No encontramos usuarios con esa búsqueda.</div>';
+    box.innerHTML=rows.length?rows.slice(0,30).map(u=>`<article class="v60-admin-user-row"><button data-open-player="${u.id}" type="button">${avatarHtml(u,'v60-admin-user-avatar')}<div><strong>${esc(`${u.first_name||''} ${u.last_name||''}`.trim()||u.username)}</strong><small>@${esc(u.username||'')} · Perfil de TT Rivals</small><em class="v60-presence-text" data-presence-text-v60="${u.id}">${esc(presenceLabelV60(u.id))}</em></div></button><button data-admin-ban-user-v75="${u.id}" data-admin-ban-name-v75="${esc(`${u.first_name||''} ${u.last_name||''}`.trim()||u.username)}" class="v75-admin-ban-trigger" type="button" title="Administrar baneo">◆</button><button data-quick-challenge="${u.id}" data-name="${esc(`${u.first_name||''} ${u.last_name||''}`.trim()||u.username)}" data-user="${esc(u.username||'')}" type="button">⚔</button></article>`).join(''):'<div class="compact-empty">No encontramos usuarios con esa búsqueda.</div>';
     refreshPresenceV60(rows.map(x=>x.id)).catch(()=>{});
   }catch(err){recordClientErrorV60(err,'admin-user-search');box.innerHTML=`<div class="compact-empty">${esc(err.message||'No se pudo buscar usuarios.')}</div>`}
 }
@@ -8262,6 +8278,7 @@ setupAdminPanelsV60();
 startMatchClocksV59();
 initMotionV601();
 initRivalriesV74();
+initAccessControlV75();
 setupPwaV573().catch(err=>{recordClientErrorV60(err,'pwa-v60');console.error('PWA V60:',err)});
 
 async function bootApplicationV741(){

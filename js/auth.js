@@ -1,23 +1,41 @@
 import { supabase } from './supabase.js';
-export const signUpUser=({
+import {checkAccessGateV75,checkSessionAccessV75} from './v75_access_control.js';
+import {getInstallationIdV58} from './v58_competition.js';
+export async function signUpUser({
   email,password,firstName,lastName,username,
   legalTermsVersion=null,legalPrivacyVersion=null
-})=>supabase.auth.signUp({
-  email,
-  password,
-  options:{
-    data:{
-      first_name:firstName,
-      last_name:lastName,
-      username,
-      legal_terms_accepted:true,
-      legal_privacy_acknowledged:true,
-      legal_terms_version:legalTermsVersion,
-      legal_privacy_version:legalPrivacyVersion
+}){
+  await checkAccessGateV75({email});
+  return supabase.auth.signUp({
+    email,
+    password,
+    options:{
+      data:{
+        first_name:firstName,
+        last_name:lastName,
+        username,
+        installation_id:getInstallationIdV58(),
+        legal_terms_accepted:true,
+        legal_privacy_acknowledged:true,
+        legal_terms_version:legalTermsVersion,
+        legal_privacy_version:legalPrivacyVersion
+      }
     }
+  });
+}
+export async function signInUser({email,password}){
+  await checkAccessGateV75({email});
+  const result=await supabase.auth.signInWithPassword({email,password});
+  if(result.error||!result.data?.session)return result;
+  try{
+    await checkSessionAccessV75(result.data.session);
+    return result;
+  }catch(error){
+    await supabase.auth.signOut().catch(()=>{});
+    throw error;
   }
-});
-export const signInUser=({email,password})=>supabase.auth.signInWithPassword({email,password});
+}
+export const verifySessionAccessV75=checkSessionAccessV75;
 export const signOutUser=()=>supabase.auth.signOut();
 function decodeStoredAuthV741(raw){
   try{
