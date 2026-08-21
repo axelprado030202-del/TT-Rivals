@@ -1,11 +1,11 @@
-/* TT Rivals 1.0.1 — Service Worker P7.4R.4.1
+/* TT Rivals 1.0.1 — Service Worker P7.4R.4.2
    Navegación: network-first.
    Estáticos: cache-first + actualización en segundo plano.
    Al activar, elimina cachés TT Rivals de builds anteriores. */
 const params=new URL(self.location.href).searchParams;
-const TT_BUILD=params.get('v')||'v1.0.1-p7.4r.4.1-integrity-3-of-10';
+const TT_BUILD=params.get('v')||'v1.0.1-p7.4r.4.2-boot-stability';
 const CACHE_PREFIX='tt-rivals-';
-const CACHE_NAME='tt-rivals-v1-0-1-p7-4r-4-1-integrity-3-of-10';
+const CACHE_NAME='tt-rivals-v1-0-1-p7-4r-4-2-boot-stability';
 
 const APP_SHELL=[
   './','./index.html','./manifest.webmanifest',
@@ -65,4 +65,3 @@ self.addEventListener('fetch',event=>{
   if(request.mode==='navigate'){event.respondWith(navigationResponse(request));return}
   event.respondWith(staticResponse(request));
 });
-

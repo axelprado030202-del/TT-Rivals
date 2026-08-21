@@ -33,7 +33,7 @@
   <link rel="stylesheet" href="css/v76_moderation_email.css?v=1.0.1-p7.4r.3">
   <link rel="stylesheet" href="css/v77_auto_moderation.css?v=1.0.1-p7.4r.4.1">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.1-integrity-3-of-10" data-active-tab-v101="home" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.2-boot-stability" data-tt-boot-stage="files" data-active-tab-v101="home" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -49,8 +49,15 @@
   <script>
   (()=>{
     window.__TT_BOOT_FINISHED=false;
+    let watchdog=null;
+    const clearWatchdog=()=>{
+      if(watchdog)clearTimeout(watchdog);
+      watchdog=null;
+      window.__TT_BOOT_WATCHDOG=null;
+    };
     const recover=(reason)=>{
       if(window.__TT_BOOT_FINISHED||document.getElementById('ttBootRecoveryV601'))return;
+      clearWatchdog();
       const splash=document.getElementById('ttBootScreenV572');
       if(splash)splash.style.display='none';
       document.body.classList.remove('tt-booting-v572');
@@ -59,7 +66,13 @@
       panel.style.cssText='position:fixed;inset:0;z-index:999999;display:grid;place-items:center;padding:24px;background:#07111f;color:#fff;font-family:system-ui,sans-serif';
       panel.innerHTML=`<div style="width:min(440px,100%);padding:24px;border:1px solid rgba(255,255,255,.15);border-radius:20px;background:#0c1a2b;box-shadow:0 20px 60px rgba(0,0,0,.35)"><strong style="display:block;font-size:20px;margin-bottom:8px">TT Rivals no pudo terminar de iniciar</strong><p style="margin:0 0 18px;color:#a9bdd2;line-height:1.45">${reason||'La carga está tardando más de lo esperado.'}</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button id="ttBootRetryV601" style="padding:11px 15px;border:0;border-radius:12px;font-weight:800;cursor:pointer">REINTENTAR</button><button id="ttBootResetV601" style="padding:11px 15px;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:transparent;color:#fff;font-weight:800;cursor:pointer">LIMPIAR CACHÉ</button></div><small style="display:block;margin-top:14px;color:#728aa3">Etapa: ${document.body.dataset.ttBootStage||'carga de archivos'} · TT Rivals 1.0.1</small></div>`;
       document.body.appendChild(panel);
-      document.getElementById('ttBootRetryV601').onclick=()=>location.reload();
+      document.getElementById('ttBootRetryV601').onclick=async()=>{
+        try{
+          const regs=await navigator.serviceWorker?.getRegistrations?.()||[];
+          await Promise.all(regs.map(r=>r.update().catch(()=>{})));
+        }catch(_){}
+        const u=new URL(location.href);u.searchParams.set('tt_retry',Date.now());location.replace(u.toString());
+      };
       document.getElementById('ttBootResetV601').onclick=async()=>{
         try{
           const regs=await navigator.serviceWorker?.getRegistrations?.()||[];
@@ -70,15 +83,33 @@
       };
     };
     window.__TT_BOOT_RECOVER=recover;
+    window.__TT_BOOT_CLEAR_WATCHDOG=clearWatchdog;
+    window.__TT_BOOT_STAGE=(stage,{timeoutMs=30000,reason='La carga está tardando más de lo esperado.'}={})=>{
+      if(window.__TT_BOOT_FINISHED)return;
+      clearWatchdog();
+      document.body.dataset.ttBootStage=stage||'inicio';
+      watchdog=setTimeout(()=>recover(reason),Math.max(5000,Number(timeoutMs)||30000));
+      window.__TT_BOOT_WATCHDOG=watchdog;
+    };
+    window.__TT_BOOT_FILES_READY=()=>{
+      if(document.body.dataset.ttBootStage!=='files')return;
+      window.__TT_BOOT_STAGE('session',{
+        timeoutMs:50000,
+        reason:'La comprobación de la sesión no respondió. Podés reintentar sin perder tu cuenta.'
+      });
+    };
     window.addEventListener('error',event=>{
       const target=event.target;
-      if(target&&['SCRIPT','LINK'].includes(target.tagName))recover('No se pudo cargar uno de los archivos necesarios de la aplicación.');
+      if(target?.matches?.('[data-tt-critical="true"]'))recover('No se pudo cargar el archivo principal de la aplicación.');
     },true);
     window.addEventListener('unhandledrejection',event=>{
       const msg=String(event.reason?.message||event.reason||'');
-      if(!window.__TT_BOOT_FINISHED&&/module|import|fetch|network/i.test(msg))recover('Falló la carga inicial de un módulo o de la conexión.');
+      if(document.body.dataset.ttBootStage==='files'&&!window.__TT_BOOT_FINISHED&&/module|import|fetch|network/i.test(msg))recover('Falló la carga inicial de un módulo o de la conexión.');
     });
-    window.__TT_BOOT_WATCHDOG=setTimeout(()=>recover('La comprobación inicial superó los 12 segundos. Podés reintentar sin quedar atrapado en esta pantalla.'),12000);
+    window.__TT_BOOT_STAGE('files',{
+      timeoutMs:30000,
+      reason:'Los archivos principales no terminaron de cargar. Podés reintentar sin quedar atrapado en esta pantalla.'
+    });
   })();
   </script>
   <div id="ttDynamicBackgroundV101" class="tt-dynamic-bg-v101" aria-hidden="true">
@@ -2941,7 +2972,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=1.0.1-p7.4r.4.1"></script>
+  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.2" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>
@@ -3130,4 +3161,3 @@
 
 </body>
 </html>
-

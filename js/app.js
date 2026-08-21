@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 109884)
-Total output lines: 8901
-
 import { supabase } from './supabase.js';
 import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.1-p7.4r.3.1';
 import {initAccessControlV75,startSessionAccessGuardV76,stopSessionAccessGuardV76} from './v75_access_control.js?v=1.0.1-p7.4r.3.1';
@@ -32,8 +29,8 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.1';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.1';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.2';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.2';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
@@ -1073,8 +1070,17 @@ function setBootMessageV572(message){
   const el=$('#ttBootMessageV572');
   if(el)el.textContent=message;
 }
+function setBootStageV742(stage,message,{timeoutMs=30000,timeoutMessage}={}){
+  document.body.dataset.ttBootStage=stage;
+  setBootMessageV572(message);
+  window.__TT_BOOT_STAGE?.(stage,{
+    timeoutMs,
+    reason:timeoutMessage||'La aplicación no recibió respuesta durante el inicio. Podés reintentar sin perder tu cuenta.'
+  });
+}
 function closeBootScreenV572(){
   window.__TT_BOOT_FINISHED=true;
+  window.__TT_BOOT_CLEAR_WATCHDOG?.();
   if(window.__TT_BOOT_WATCHDOG)clearTimeout(window.__TT_BOOT_WATCHDOG);
   document.body.classList.remove('tt-booting-v572');
   const recovery=document.querySelector('#ttBootRecoveryV601');
@@ -1969,8 +1975,10 @@ async function route(prefetchedSession=undefined){
     return;
   }
 
-  document.body.dataset.ttBootStage='access';
-  setBootMessageV572('Verificando acceso…');
+  setBootStageV742('access','Verificando acceso…',{
+    timeoutMs:25000,
+    timeoutMessage:'La verificación de acceso no respondió. Podés reintentar de forma segura.'
+  });
   try{
     await verifySessionAccessV75(session);
   }catch(error){
@@ -1988,8 +1996,10 @@ async function route(prefetchedSession=undefined){
 
   startSessionAccessGuardV76(session);
 
-  document.body.dataset.ttBootStage='profile';
-  setBootMessageV572('Cargando tu perfil…');
+  setBootStageV742('profile','Cargando tu perfil…',{
+    timeoutMs:30000,
+    timeoutMessage:'Tu perfil está tardando demasiado en cargar. Podés reintentar sin cerrar tu sesión.'
+  });
   const p=await getMyProfile(session.user.id);
 
   if(!p.profile_completed){
@@ -2105,7 +2115,4494 @@ function activateTab(tab,{source='tap'}={}){
       loadAdminClubsV49(),loadAdminLegalConfigV57(),loadAdminDisputesV58(),
       loadAdminLinkedAccountsV58(),loadAdminIntegrityV59(),loadAdminReviewTagsV58(),
       loadAdminSuspendedV76(),loadAdminAutoModerationV77(),
-      ensureV100Module().then(mod=>mo…59884 tokens truncated…('#registerPassword').value='';
+      ensureV100Module().then(mod=>mod.loadAdminCommunityV100?.())
+    ]),{ttl:15000});
+  });
+}
+
+async function loadRanking(){
+  const list=$('#rankingList'),q=$('#rankingSearch').value||'';
+  const listSection=$('#rankingListSection'),feedSection=$('#followingFeedSection'),searchBox=$('#rankingSearchBox');
+
+  if(rankingScope==='feed'){
+    listSection.classList.add('hidden');
+    searchBox.classList.add('hidden');
+    feedSection.classList.remove('hidden');
+    await loadFollowingFeed();
+    return;
+  }
+
+  feedSection.classList.add('hidden');
+  listSection.classList.remove('hidden');
+  searchBox.classList.remove('hidden');
+  list.innerHTML='<div class="loading-row">Cargando…</div>';
+
+  try{
+    const rows=rankingScope==='following'
+      ?await getFollowingRanking(session.user.id,rankingMode,q)
+      :await getRanking(rankingMode,q);
+
+    renderRankingPodium(rows);
+    const regularRows=rankingScope==='global'?rows.filter(x=>x.position>3):rows;
+    list.innerHTML=regularRows.length?regularRows.map(x=>{
+      const p=x.profile,m=`#${x.position}`;
+      const rank=rankForRating(x.rating);
+      return `<article class="v62-rank-row ${x.profile.id===session.user.id?'is-me':''}">
+        <button class="v62-rank-profile" data-open-player="${p.id}" type="button">
+          <div class="v62-rank-position"><strong>${m}</strong><small>POS</small></div>
+          <span class="v62-rank-avatar ranking-avatar-online-v35" data-user-id-v35="${p.id}">${avatarHtml(p,'ranking-avatar')}${onlineDotV35(p.id)}</span>
+          <div class="v62-rank-identity">
+            <strong>${esc(p.first_name||'Jugador')} ${esc(p.last_name||'')} ${adminBadgeV37(!!p.is_test_admin)}</strong>
+            <div class="v62-rank-meta"><small>@${esc(p.username||'usuario')}${x.profile.id===session.user.id?' · Vos':''}</small><span class="ranking-rank-chip ${rankCss(rank)}">${rank}</span></div>
+            ${p.id===session.user.id?'':`<em class="v60-presence-text" data-presence-text-v60="${p.id}">${presenceLabelV60(p.id)}</em>`}
+          </div>
+          <div class="v62-rank-elo"><strong>${Number(x.rating)||1000}</strong><small>Elo</small></div>
+        </button>
+        ${p.id===session.user.id?'':`<button class="v62-rank-challenge" data-quick-challenge="${p.id}" data-name="${esc(p.first_name||'')} ${esc(p.last_name||'')}" data-user="${esc(p.username||'')}" type="button" aria-label="Desafiar a ${esc(p.first_name||'jugador')}"><span aria-hidden="true">⚔</span><b>Desafiar</b></button>`}
+      </article>`;
+    }).join(''):(rankingScope==='following'
+      ?'<div class="following-empty"><strong>Todavía no seguís a ningún jugador.</strong><span>Abrí un perfil desde el ranking global y tocá “Seguir”.</span></div>'
+      :rows.length?'<div class="compact-empty">El podio ocupa actualmente todo el ranking.</div>':'<div class="compact-empty">Sin jugadores.</div>');
+    refreshPresenceV60(rows.map(x=>x.profile?.id).filter(Boolean)).catch(()=>{});
+    animateListV601(list,'.v62-rank-row',20);
+    const meV601=rows.find(x=>x.profile?.id===session.user.id);
+    if(meV601)animateRankingMovementV601({container:list,position:Number(meV601.position),mode:rankingMode});
+  }catch(e){
+    console.error(e);
+    list.innerHTML='<div class="loading-row">No se pudo cargar.</div>';
+  }
+}
+
+
+function renderRankingPodium(rows=[]){
+  const section=$('#rankingPodiumSection'),box=$('#rankingPodium');
+  if(!section||!box)return;
+  if(rankingScope!=='global'){
+    section.classList.add('hidden');
+    return;
+  }
+  const top=rows.filter(x=>x.position<=3).sort((a,b)=>a.position-b.position);
+  if(!top.length){
+    section.classList.add('hidden');return;
+  }
+  section.classList.remove('hidden');
+  const order=[2,1,3];
+  box.innerHTML=order.map(pos=>{
+    const x=top.find(r=>r.position===pos);
+    if(!x)return `<div class="podium-slot empty"></div>`;
+    const p=x.profile,rank=rankForRating(x.rating);
+    return `<button class="podium-slot podium-${pos} ${p.id===session.user.id?'is-me':''}" data-open-player="${p.id}" type="button">
+      <span class="podium-crown">${pos===1?'♛':pos===2?'♕':'♜'}</span>
+      <div class="podium-avatar-wrap" data-user-id-v35="${p.id}">${avatarHtml(p,'podium-avatar')}${onlineDotV35(p.id)}<b>${pos}</b></div>
+      <strong>${esc(p.first_name)} ${p.is_test_admin?'<span class="admin-mini-v37">◆</span>':''}</strong>
+      <small>@${esc(p.username)}</small>
+      <div class="podium-rating">${x.rating} <span>Elo</span></div>
+      <em class="${rankCss(rank)}">${rank}</em>
+    </button>`;
+  }).join('');
+}
+
+async function loadFollowingFeed(){
+  const box=$('#followingFeedList');
+  box.innerHTML='<div class="loading-row">Cargando actividad…</div>';
+  try{
+    const rows=await getFollowingFeed(40);
+    box.innerHTML=rows.length?rows.map(r=>{
+      const label=r.completion_type==='abandonment'
+        ?(r.won?'Ganó por abandono':'Abandonó el partido')
+        :(r.won?'Ganó':'Perdió');
+      const cls=r.completion_type==='abandonment'?'feed-abandon':r.won?'feed-win':'feed-loss';
+      const mode=r.match_type==='casual'?'CASUAL':'RANKING';
+      const delta=r.rating_change===null||r.rating_change===undefined?'':` · ${Number(r.rating_change)>=0?'+':''}${r.rating_change} Elo`;
+      return `<article class="following-feed-item ${cls}">
+        ${avatarHtml({first_name:r.followed_first_name,last_name:r.followed_last_name,profile_photo_url:r.followed_photo},'feed-avatar')}
+        <div class="following-feed-copy">
+          <button type="button" data-open-player="${r.followed_user_id}">${esc(r.followed_first_name)} ${esc(r.followed_last_name)}</button>
+          <strong>${label} ${r.player_sets}–${r.opponent_sets} vs ${esc(r.opponent_first_name)} ${esc(r.opponent_last_name)}</strong>
+          <span>${mode}${delta} · ${new Date(r.event_at).toLocaleDateString()}</span>
+        </div>
+        <button class="v60-feed-challenge" data-quick-challenge="${r.followed_user_id}" data-name="${esc(r.followed_first_name)} ${esc(r.followed_last_name)}" data-user="" type="button">⚔</button>
+      </article>`;
+    }).join(''):'<div class="following-empty"><strong>No hay actividad para mostrar.</strong><span>Seguí jugadores para ver sus últimos partidos acá.</span></div>';
+  }catch(err){
+    console.error(err);
+    box.innerHTML='<div class="loading-row">No se pudo cargar la actividad.</div>';
+  }
+}
+async function playerSearch(){
+  const box=$('#challengePlayerResults'),q=$('#challengePlayerSearch').value.trim();
+  if(!q){box.innerHTML='<div class="loading-row">Escribí para buscar jugadores.</div>';return}
+  const rows=await searchPlayers(q,session.user.id);
+  box.innerHTML=rows.length?rows.map(p=>`<article class="player-row v60-player-row">
+    <button class="v60-player-main" data-open-player="${p.id}" type="button">
+      ${avatarHtml(p,'v60-search-avatar')}
+      <div><strong>${esc(p.first_name)} ${esc(p.last_name)}</strong><small>@${esc(p.username)}</small><em class="v60-presence-text" data-presence-text-v60="${p.id}">${presenceLabelV60(p.id)}</em></div>
+    </button>
+    <button class="v60-player-challenge" data-select-rival="${p.id}" data-name="${esc(p.first_name)} ${esc(p.last_name)}" data-user="${esc(p.username)}" type="button">⚔ Desafiar</button>
+  </article>`).join(''):'<div class="loading-row">No encontrados.</div>';
+  refreshPresenceV60(rows.map(p=>p.id)).catch(()=>{});
+}
+function selectRival(b){selectedRival={id:b.dataset.selectRival,name:b.dataset.name,user:b.dataset.user};$('#selectedRivalName').textContent=selectedRival.name;$('#selectedRivalUsername').textContent=`@${selectedRival.user}`;$('#challengeComposer').classList.remove('hidden');$('#challengePlayerResults').innerHTML='';$('#challengePlayerSearch').value=''}
+function clearRival(){selectedRival=null;$('#challengeComposer').classList.add('hidden')}
+
+
+function matchTypeLabel(type){return type==='casual'?'CASUAL':'RANKING'}
+function matchTypeClass(type){return type==='casual'?'mode-casual':'mode-ranked'}
+function setChallengeType(type='ranked'){
+  const clean=type==='casual'?'casual':'ranked';
+  const input=$('#challengeMatchType');
+  if(input)input.value=clean;
+  $$('[data-challenge-type]').forEach(b=>{
+    const active=b.dataset.challengeType===clean;
+    b.classList.toggle('active',active);
+    b.setAttribute('aria-pressed',active?'true':'false');
+  });
+}
+function renderHomePriorityV60(){
+  const box=$('#homePriorityV60');
+  if(!box||!session?.user)return;
+  const challenges=v60State.challenges||[];
+  const matches=v60State.matches||[];
+  const uid=session.user.id;
+  const received=challenges.find(c=>c.challenged_id===uid&&c.status==='pending');
+  const confirmation=matches.find(m=>m.result_status==='awaiting_confirmation'&&m.result_submitted_by!==uid);
+  const disputed=matches.find(m=>m.result_status==='disputed');
+  const active=matches.find(m=>m.result_status==='pending');
+  const waiting=matches.find(m=>m.result_status==='awaiting_confirmation'&&m.result_submitted_by===uid);
+  const otherOf=m=>m?.player1_id===uid?m?.player2:m?.player1;
+  const fmt=x=>x?.match_format==='bo5'?'Bo5':x?.match_format==='bo3'?'Bo3':'1 set';
+  let html='';
+  if(confirmation){
+    const o=otherOf(confirmation);
+    html=`<div class="v60-priority-kicker"><span>ACCIÓN PRIORITARIA</span><b>Resultado pendiente</b></div>
+      <div class="v60-priority-main"><span class="v60-priority-icon">✓</span><div><strong>Revisá el resultado de ${esc(o?.first_name||'tu rival')}</strong><small>${fmt(confirmation)} · ${matchTypeLabel(confirmation.match_type)} · requiere tu confirmación</small></div></div>
+      <div class="v60-priority-actions"><button class="primary" data-confirm-match="${confirmation.id}" type="button">Confirmar resultado</button><button data-dispute-match="${confirmation.id}" type="button">Disputar</button></div>`;
+  }else if(received){
+    const o=received.challenger;
+    html=`<div class="v60-priority-kicker"><span>TE DESAFIARON</span><b>Respondé cuando puedas</b></div>
+      <div class="v60-priority-main"><span class="v60-priority-icon">⚔</span><div><strong>${esc(o?.first_name||'Un jugador')} ${esc(o?.last_name||'')} quiere jugar</strong><small>${fmt(received)} · ${matchTypeLabel(received.match_type)}</small></div></div>
+      <div class="v60-priority-actions"><button class="primary" data-response="accepted" data-id="${received.id}" type="button">Aceptar</button><button data-response="rejected" data-id="${received.id}" type="button">Declinar</button></div>`;
+  }else if(disputed){
+    const o=otherOf(disputed);
+    html=`<div class="v60-priority-kicker"><span>PARTIDO EN DISPUTA</span><b>Seguimiento activo</b></div>
+      <div class="v60-priority-main"><span class="v60-priority-icon">⚖</span><div><strong>Resolución pendiente vs ${esc(o?.first_name||'Jugador')}</strong><small>Revisá árbitro, acuerdo o intervención del Administrador.</small></div></div>
+      <div class="v60-priority-actions"><button class="primary" data-resolve-dispute-v58="${disputed.id}" type="button">Abrir disputa</button></div>`;
+  }else if(active){
+    const o=otherOf(active);
+    html=`<div class="v60-priority-kicker"><span>PARTIDO ACTIVO</span><b>${fmt(active)}</b></div>
+      <div class="v60-priority-main"><span class="v60-priority-icon">🏓</span><div><strong>Estás jugando contra ${esc(o?.first_name||'Jugador')}</strong><small>${matchTimingChipV59(active).replace(/<[^>]+>/g,'')||'Partido iniciado'}</small></div></div>
+      <div class="v60-priority-actions"><button class="primary" data-enter-result="${active.id}" type="button">Cargar resultado</button><button data-go-tab="play" type="button">Ver partido</button></div>`;
+  }else if(waiting){
+    const o=otherOf(waiting);
+    html=`<div class="v60-priority-kicker"><span>RESULTADO ENVIADO</span><b>Esperando confirmación</b></div>
+      <div class="v60-priority-main"><span class="v60-priority-icon">◷</span><div><strong>${esc(o?.first_name||'Tu rival')} todavía debe confirmar</strong><small>${fmt(waiting)} · podés seguir usando TT Rivals mientras tanto.</small></div></div>
+      <div class="v60-priority-actions"><button data-go-tab="play" class="primary" type="button">Ver estado</button></div>`;
+  }else if(v60State.recommended?.length){
+    const r=v60State.recommended[0];
+    html=`<div class="v60-priority-kicker"><span>TODO AL DÍA</span><b>Tu próxima partida</b></div>
+      <div class="v60-priority-main"><span class="v60-priority-icon">◎</span><div><strong>${esc(r.first_name)} ${esc(r.last_name)} puede ser un buen rival</strong><small>${r.rating} Elo · ${r.rating_gap} de diferencia · ${presenceLabelV60(r.user_id)}</small></div></div>
+      <div class="v60-priority-actions"><button class="primary" data-quick-challenge="${r.user_id}" data-name="${esc(r.first_name)} ${esc(r.last_name)}" data-user="${esc(r.username)}" type="button">Desafiar</button><button data-open-player="${r.user_id}" type="button">Ver perfil</button></div>`;
+  }else{
+    html=`<div class="v60-priority-kicker"><span>TODO AL DÍA</span><b>Sin acciones pendientes</b></div><div class="v60-priority-main"><span class="v60-priority-icon">✓</span><div><strong>Todo listo</strong><small>Tu panel está al día. Usá la navegación principal cuando quieras jugar, competir o revisar tu actividad.</small></div></div>`;
+  }
+  box.innerHTML=html;
+  animatePriorityV601(box,html.replace(/<[^>]+>/g,' '));
+}
+
+function chCard(c,kind){
+  const other=kind==='received'?c.challenger:c.challenged;
+  const fmt=c.match_format==='bo5'?'Bo5':c.match_format==='bo3'?'Bo3':'1 set';
+  let actions='';
+  if(kind==='received'&&c.status==='pending'){
+    actions=`<div class="challenge-actions"><button class="accept-btn" data-response="accepted" data-id="${c.id}">Aceptar</button><button class="reject-btn" data-response="rejected" data-id="${c.id}">Declinar</button></div>`;
+  }
+  if(kind==='sent'&&c.status==='pending')actions=`<div class="challenge-actions"><button class="cancel-btn" data-cancel-challenge="${c.id}">Cancelar</button></div>`;
+  const rematch=!!c.source_match_id;
+  return `<div class="challenge-row ${rematch?'is-rematch-v73':''}"><div class="challenge-meta">
+    <strong>${rematch?'<span class="v73-rematch-badge">↻ REVANCHA</span>':''}${esc(other?.first_name)} ${esc(other?.last_name)}</strong>
+    <small>@${esc(other?.username)} · ${fmt} · <b class="inline-match-mode ${matchTypeClass(c.match_type)}">${matchTypeLabel(c.match_type)}</b></small>
+    <span class="challenge-status ${c.status==='accepted'?'status-accepted':'status-pending'}">${c.status}</span>
+  </div>${actions}</div>`;
+}
+function clearPendingRematchV744(){
+  pendingRematchV744=null;
+  if(rematchOutcomeTimerV744){
+    clearTimeout(rematchOutcomeTimerV744);
+    rematchOutcomeTimerV744=null;
+  }
+}
+
+function closePostMatchForRematchV744(){
+  $('#postMatchModal')?.classList.add('hidden');
+  pendingPostMatchReviewId=null;
+  clearPendingRematchV744();
+  syncModalScrollLock();
+}
+
+function handleRematchOutcomeV744(challenge){
+  if(!pendingRematchV744||!challenge?.id)return false;
+  if(Number(challenge.id)!==Number(pendingRematchV744.challengeId))return false;
+
+  const outcome=String(challenge.status||'').toLowerCase();
+  if(!['accepted','rejected','declined','cancelled'].includes(outcome))return false;
+
+  const matchId=pendingRematchV744.matchId;
+  const status=$(`[data-rematch-status-v73="${matchId}"]`);
+  const button=$(`[data-rematch="${matchId}"]`);
+
+  if(outcome==='accepted'){
+    if(status){
+      status.className='v73-rematch-status success';
+      status.textContent='Revancha aceptada. Preparando el nuevo partido…';
+    }
+    if(button)button.textContent='✓ REVANCHA ACEPTADA';
+    rematchOutcomeTimerV744=setTimeout(closePostMatchForRematchV744,280);
+    return true;
+  }
+
+  if(outcome==='rejected'||outcome==='declined'){
+    if(status){
+      status.className='v73-rematch-status error';
+      status.textContent='El rival declinó la revancha.';
+    }
+    if(button){
+      button.textContent='✕ REVANCHA DECLINADA';
+      button.classList.remove('is-pending');
+      button.classList.add('is-declined');
+    }
+    rematchOutcomeTimerV744=setTimeout(closePostMatchForRematchV744,1150);
+    return true;
+  }
+
+  closePostMatchForRematchV744();
+  return true;
+}
+
+
+function closeIncomingRematchV745(){
+  const modal=$('#incomingRematchModalV745');
+  modal?.classList.add('hidden');
+  if(modal)delete modal.dataset.challengeId;
+  incomingRematchV745=null;
+  syncModalScrollLock();
+}
+
+function postMatchIsOpenV745(){
+  const modal=$('#postMatchModal');
+  return !!modal&&!modal.classList.contains('hidden')&&!!pendingPostMatchReviewId;
+}
+
+function showIncomingRematchV745(challenge){
+  const modal=$('#incomingRematchModalV745');
+  if(!modal)return false;
+  incomingRematchV745=challenge;
+  modal.dataset.challengeId=String(challenge.id);
+  const opponent=challenge.challenger;
+  const name=[opponent?.first_name,opponent?.last_name].filter(Boolean).join(' ')||'Tu rival';
+  const copy=$('#incomingRematchCopyV745');
+  if(copy)copy.textContent=name+' quiere jugar otra vez.';
+  modal.querySelectorAll('[data-rematch-response-v745]').forEach(button=>{
+    button.dataset.id=String(challenge.id);
+    button.disabled=false;
+  });
+  const status=$('#incomingRematchStatusV745');
+  if(status){status.textContent='';status.className='v745-rematch-status'}
+  modal.classList.remove('hidden');
+  syncModalScrollLock();
+  return true;
+}
+
+function handleIncomingRematchV745(challenge){
+  if(!session?.user||!challenge?.id)return false;
+  const status=String(challenge.status||'').toLowerCase();
+  const currentId=Number(incomingRematchV745?.id||0);
+  const challengeId=Number(challenge.id);
+
+  if(currentId===challengeId&&status!=='pending'){
+    closeIncomingRematchV745();
+    if(status==='accepted')closePostMatchForRematchV744();
+    return true;
+  }
+
+  if(status!=='pending')return false;
+  if(String(challenge.challenged_id)!==String(session.user.id))return false;
+  if(!challenge.source_match_id||Number(challenge.source_match_id)!==Number(pendingPostMatchReviewId))return false;
+  if(!postMatchIsOpenV745())return false;
+  if(currentId===challengeId)return true;
+  return showIncomingRematchV745(challenge);
+}
+
+async function loadChallenges(){
+  if(!session)return;
+  const rows=await getMyChallenges(session.user.id);
+  rows.forEach(challenge=>{
+    handleRematchOutcomeV744(challenge);
+    handleIncomingRematchV745(challenge);
+  });
+  const rec=rows.filter(r=>r.challenged_id===session.user.id&&r.status==='pending'),
+    sen=rows.filter(r=>r.challenger_id===session.user.id&&r.status==='pending');
+  v60State.challenges=rows;renderHomePriorityV60();
+  $('#receivedChallenges').innerHTML=rec.length?rec.map(r=>chCard(r,'received')).join(''):'<div class="compact-empty">Sin desafíos recibidos</div>';
+  $('#sentChallenges').innerHTML=sen.length?sen.map(r=>chCard(r,'sent')).join(''):'<div class="compact-empty">Sin desafíos enviados</div>';
+  if($('#receivedChallengeCount'))$('#receivedChallengeCount').textContent=rec.length;
+  if($('#sentChallengeCount'))$('#sentChallengeCount').textContent=sen.length;
+}
+
+/* ============================================================
+   V58 — DISPUTAS / PROTECCIÓN / MULTICUENTA / NOTIFICACIONES
+   ============================================================ */
+
+async function loadV58Core({refreshTitles=false,skipInstallation=false}={}){
+  if(!session?.user)return;
+  try{
+    const jobs=[
+      skipInstallation?Promise.resolve(v58State.installation):registerCurrentInstallationV58().catch(err=>({error:err.message})),
+      getMyProtectionV58().catch(()=>({points:0,shield_available:false})),
+      getMyNotificationsV58(50).catch(()=>[])
+    ];
+    if(refreshTitles)jobs.push(refreshOwnCompetitiveTitlesV58().catch(()=>[]));
+    const [installation,protection,notifications]=await Promise.all(jobs);
+    v58State.installation=installation;
+    v58State.protection=protection||{points:0,shield_available:false};
+    v58State.notifications=notifications||[];
+    renderProtectionV58();
+  }catch(err){console.warn('V58 core:',err)}
+}
+
+function renderProtectionV58(){
+  const w=v58State.protection||{};
+  const shield=!!w.shield_available;
+  const points=shield?100:Math.max(0,Math.min(99,Number(w.points||0)));
+  const pct=shield?100:points;
+
+  if($('#homeProtectionTitleV58'))$('#homeProtectionTitleV58').textContent=shield?'Protección disponible':'Acumulando protección';
+  if($('#homeProtectionDetailV58'))$('#homeProtectionDetailV58').textContent=shield
+    ?'Tu próxima derrota ranked normal no reducirá tu Elo.'
+    :`Te faltan ${100-points} puntos para activar una protección.`;
+  if($('#homeProtectionValueV58'))$('#homeProtectionValueV58').textContent=shield?'1 / 1':`${points} / 100`;
+  if($('#homeProtectionBarV58'))animateProgressV601($('#homeProtectionBarV58'),pct);
+  if($('#homeProtectionStatusV58'))$('#homeProtectionStatusV58').textContent=shield?'🛡️ Escudo listo':'Sin escudo disponible';
+  $('#homeProtectionV58')?.classList.toggle('shield-ready-v58',shield);
+  pulseProtectionReadyV601($('#homeProtectionV58'),shield);
+
+  if($('#profileProtectionTitleV58'))$('#profileProtectionTitleV58').textContent=shield?'Protección disponible':`${points} / 100 puntos`;
+  if($('#profileProtectionShieldV58'))$('#profileProtectionShieldV58').textContent=shield?'🛡️ 1 / 1':'0 / 1';
+  if($('#profileProtectionBarV58'))animateProgressV601($('#profileProtectionBarV58'),pct);
+  if($('#profileProtectionDetailV58'))$('#profileProtectionDetailV58').textContent=shield
+    ?'Escudo activo. Se consume sólo en una derrota ranked normal; nunca en abandono.'
+    :'La dificultad del rival y la repetición contra el mismo jugador determinan cuántos puntos recibís.';
+  $('#profileProtectionV58')?.classList.toggle('shield-ready-v58',shield);
+}
+
+function notificationIconV58(type=''){
+  if(type.includes('dispute')||type.includes('arbiter'))return '⚖';
+  if(type.includes('protection'))return '🛡';
+  if(type.includes('title'))return '✦';
+  if(type.includes('annul'))return '∅';
+  return '●';
+}
+
+async function loadPersistentNotificationsV58(){
+  if(!session?.user)return [];
+  try{
+    v58State.notifications=await getMyNotificationsV58(60);
+    return v58State.notifications;
+  }catch(err){console.warn('V58 notifications',err);return v58State.notifications||[]}
+}
+
+async function handleNotificationActionV58(n){
+  if(!n)return;
+  if(!n.read_at){
+    try{await markNotificationReadV58(n.id);n.read_at=new Date().toISOString()}catch{}
+  }
+  if(n.entity_kind==='match'&&n.entity_id&&(n.action==='dispute'||n.action==='resolve_dispute'||n.action==='admin_dispute')){
+    await openDisputeModalV58(Number(n.entity_id),{admin:n.action==='admin_dispute'});
+    return;
+  }
+  if(n.action==='titles'){activateTab('profile');setTimeout(openTitleSelector,100);return}
+  if(n.action==='history'){activateTab('history');return}
+  if(n.action==='protection'){activateTab('home');return}
+  if(n.action==='places'){activateTab('places');return}
+  if(n.action==='profile'){activateTab('profile');return}
+  if(n.action==='admin_community'&&v35Flags?.is_test_admin){activateTab('admin');setTimeout(()=>ensureV100Module().then(mod=>mod.loadAdminCommunityV100?.()).catch(()=>{}),120);return}
+}
+
+function disputeFormatLabelV58(format){return format==='bo5'?'Mejor de 5':format==='bo3'?'Mejor de 3':'1 set'}
+function disputeStatusLabelV58(status){return ({open:'Abierta',arbiter_proposed:'Árbitro propuesto',awaiting_arbiter:'Esperando árbitro',admin_requested:'Esperando Administrador',annul_requested:'Anulación propuesta',resolved:'Resuelta',annulled:'Anulada'})[status]||status}
+
+function renderDisputeSetInputsV58(match){
+  const box=$('#disputeSetInputsV58');if(!box)return;
+  const max=match?.match_format==='bo5'?5:match?.match_format==='bo3'?3:1;
+  const p1=v58State.dispute?.player1?.first_name||'Jugador 1';
+  const p2=v58State.dispute?.player2?.first_name||'Jugador 2';
+  box.innerHTML=Array.from({length:max},(_,i)=>`<div class="dispute-set-row-v58" data-dispute-set-row-v58>
+    <span>Set ${i+1}</span>
+    <label><small>${esc(p1)}</small><input type="number" min="0" max="99" inputmode="numeric" data-dispute-p1-v58></label>
+    <b>–</b>
+    <label><small>${esc(p2)}</small><input type="number" min="0" max="99" inputmode="numeric" data-dispute-p2-v58></label>
+  </div>`).join('');
+}
+
+function collectDisputeSetsV58(){
+  const rows=$$('[data-dispute-set-row-v58]');
+  const sets=[];let gap=false;
+  for(const row of rows){
+    const a=row.querySelector('[data-dispute-p1-v58]').value;
+    const b=row.querySelector('[data-dispute-p2-v58]').value;
+    if(a===''&&b===''){gap=true;continue}
+    if(gap)throw new Error('Los sets deben cargarse en orden, sin dejar espacios vacíos.');
+    if(a===''||b==='')throw new Error('Completá los dos puntajes de cada set utilizado.');
+    sets.push({player1_points:Number(a),player2_points:Number(b)});
+  }
+  if(!sets.length)throw new Error('Ingresá al menos un set.');
+  return sets;
+}
+
+async function renderDisputeModalV58(){
+  const data=v58State.dispute;
+  if(!data?.dispute)return;
+  const d=data.dispute,m=data.match,me=session.user.id;
+  const isPlayer=me===m.player1_id||me===m.player2_id;
+  const isAdmin=!!v35Flags?.is_test_admin;
+  const isArbiter=d.agreed_arbiter_id===me;
+  const proposals=data.proposals||[];
+  const current=proposals.find(p=>Number(p.id)===Number(d.current_proposal_id));
+  const p1=data.player1||{},p2=data.player2||{};
+  const original=data.original_result||{};
+  const setText=(original.sets||[]).map(s=>`${s.player1_points}-${s.player2_points}`).join(' · ');
+
+  $('#disputeTitleV58').textContent=`${p1.first_name||'Jugador 1'} vs ${p2.first_name||'Jugador 2'}`;
+  const deadline=d.admin_deadline_at?new Date(d.admin_deadline_at):null;
+  const deadlineLeft=deadline?Math.max(0,deadline-Date.now()):null;
+  const deadlineText=deadlineLeft===null?'':deadlineLeft<86400000?`${Math.ceil(deadlineLeft/3600000)} h restantes`:`${Math.ceil(deadlineLeft/86400000)} días restantes`;
+  $('#disputeSummaryV58').innerHTML=`
+    <div class="dispute-state-v58"><span>${disputeStatusLabelV58(d.status)}</span><strong>${disputeFormatLabelV58(m.match_format)} · ${m.match_type==='casual'?'Casual':'Ranked'}</strong></div>
+    ${d.status==='admin_requested'&&deadline?`<div class="dispute-deadline-v101 ${deadlineLeft<=86400000?'urgent':''}"><span>⏱</span><div><strong>${deadlineText}</strong><small>Administración tiene hasta ${deadline.toLocaleString('es-UY')} para resolver. Si vence, el partido se anula y su impacto competitivo se revierte.</small></div></div>`:''}
+    <div class="dispute-original-v58"><small>RESULTADO ORIGINAL</small><strong>${original.player1_sets??m.player1_sets??0} – ${original.player2_sets??m.player2_sets??0}</strong><span>${esc(setText||'Sin detalle de sets')}</span></div>
+    ${data.arbiter?`<div class="dispute-arbiter-chip-v58">⚖ Árbitro acordado: <b>${esc(data.arbiter.first_name||'')} ${esc(data.arbiter.last_name||'')}</b> · @${esc(data.arbiter.username||'')}</div>`:''}
+    ${proposals.length?`<div class="dispute-proposal-history-v58"><small>HISTORIAL DE ÁRBITROS</small>${proposals.slice(0,5).map(x=>`<span>${esc(x.arbiter_name||x.arbiter_username)} · <b>${esc(x.status)}</b></span>`).join('')}</div>`:''}`;
+
+  const actions=$('#disputePlayerActionsV58');
+  const search=$('#disputeArbiterSearchV58');
+  const score=$('#disputeScoreFormV58');
+  actions.classList.add('hidden');search.classList.add('hidden');score.classList.add('hidden');
+  actions.innerHTML='';
+
+  if(['resolved','annulled'].includes(d.status)){
+    actions.classList.remove('hidden');
+    actions.innerHTML=`<div class="compact-empty">${d.status==='annulled'?'Este partido fue anulado de común acuerdo.':'La disputa ya fue resuelta.'}</div>`;
+    return;
+  }
+
+  if((isAdmin&&d.status!=='resolved')||isArbiter){
+    score.classList.remove('hidden');
+    renderDisputeSetInputsV58(m);
+    if(isArbiter&&!isAdmin){
+      actions.classList.remove('hidden');
+      actions.innerHTML='<button class="dispute-secondary-v58" data-decline-arbiter-v58 type="button">No puedo arbitrar este partido</button>';
+    }
+    return;
+  }
+
+  if(!isPlayer)return;
+  actions.classList.remove('hidden');
+
+  if(d.status==='arbiter_proposed'&&current&&current.proposed_by!==me){
+    actions.innerHTML=`<div class="dispute-proposal-question-v58"><strong>${esc(current.arbiter_name||current.arbiter_username)} fue propuesto como árbitro</strong><small>Ambos jugadores deben estar de acuerdo.</small></div>
+      <button class="dispute-primary-v58" data-respond-arbiter-v58="accept" type="button">ACEPTAR ÁRBITRO</button>
+      <button class="dispute-secondary-v58" data-respond-arbiter-v58="reject" type="button">RECHAZAR · ELEGIR OTRO</button>
+      <button class="dispute-admin-v58" data-request-admin-v58 type="button">SOLICITAR ADMINISTRADOR</button>`;
+    return;
+  }
+
+  if(d.status==='arbiter_proposed'&&current?.proposed_by===me){
+    actions.innerHTML=`<div class="compact-empty">Esperando que tu rival acepte o rechace a <strong>${esc(current.arbiter_name||current.arbiter_username)}</strong>.</div>
+      <button class="dispute-admin-v58" data-request-admin-v58 type="button">SOLICITAR ADMINISTRADOR</button>`;
+    return;
+  }
+
+  if(d.status==='awaiting_arbiter'){
+    actions.innerHTML='<div class="compact-empty">Ambos aceptaron al árbitro. La disputa se resolverá cuando cargue el resultado definitivo.</div><button class="dispute-admin-v58" data-request-admin-v58 type="button">SOLICITAR ADMINISTRADOR</button>';
+    return;
+  }
+
+  if(d.status==='admin_requested'){
+    actions.innerHTML=`<div class="compact-empty">La disputa fue enviada al Administrador. Recibirán una notificación cuando quede resuelta.${deadlineText?` <strong>${deadlineText}.</strong>`:''} Si el plazo vence, el partido se anula automáticamente y se revierte cualquier impacto competitivo.</div>`;
+    return;
+  }
+
+  if(d.status==='annul_requested'){
+    if(d.annul_requested_by===me){
+      actions.innerHTML='<div class="compact-empty">Esperando que el rival confirme la anulación.</div><button class="dispute-secondary-v58" data-show-arbiter-search-v58 type="button">PROPONER ÁRBITRO EN SU LUGAR</button><button class="dispute-admin-v58" data-request-admin-v58 type="button">SOLICITAR ADMINISTRADOR</button>';
+    }else{
+      actions.innerHTML='<div class="dispute-proposal-question-v58"><strong>Tu rival propone anular el partido</strong><small>Si aceptás, no contará para Elo, estadísticas ni rachas.</small></div><button class="dispute-primary-v58" data-request-annul-v58 type="button">ACEPTAR ANULACIÓN</button><button class="dispute-secondary-v58" data-show-arbiter-search-v58 type="button">NO · PROPONER ÁRBITRO</button><button class="dispute-admin-v58" data-request-admin-v58 type="button">SOLICITAR ADMINISTRADOR</button>';
+    }
+    return;
+  }
+
+  actions.innerHTML=`<button class="dispute-primary-v58" data-show-arbiter-search-v58 type="button">⚖ PROPONER ÁRBITRO</button>
+    <button class="dispute-admin-v58" data-request-admin-v58 type="button">🛡 SOLICITAR ADMINISTRADOR</button>
+    <button class="dispute-secondary-v58" data-request-annul-v58 type="button">∅ ANULAR DE COMÚN ACUERDO</button>`;
+}
+
+async function openDisputeModalV58(matchId,{admin=false}={}){
+  if(!matchId)return;
+  const modal=$('#disputeResolutionModalV58');
+  if(!modal){
+    console.error('V58: falta #disputeResolutionModalV58 en index.html');
+    alert('La interfaz de resolución de disputas no está disponible. Actualizá TT Rivals a V58.0.2.');
+    return;
+  }
+  modal.classList.remove('hidden');syncModalScrollLock();
+  $('#disputeSummaryV58').innerHTML='<div class="loading-row">Cargando disputa…</div>';
+  setStatus($('#disputeStatusV58'),'');
+  try{
+    v58State.dispute=await getMatchDisputeV58(matchId);
+    if(admin&&!v35Flags?.is_test_admin)throw new Error('Acceso administrativo no disponible.');
+    await renderDisputeModalV58();
+  }catch(err){
+    $('#disputeSummaryV58').innerHTML=`<div class="compact-empty">${esc(err.message)}</div>`;
+  }
+}
+
+async function refreshOpenDisputeV58(){
+  const id=v58State.dispute?.match?.id;
+  if(id)await openDisputeModalV58(Number(id));
+}
+
+async function searchArbitersUiV58(){
+  const id=v58State.dispute?.match?.id,box=$('#disputeArbiterResultsV58');if(!id||!box)return;
+  const q=$('#disputeArbiterQueryV58')?.value.trim()||'';
+  box.innerHTML='<div class="loading-row">Buscando…</div>';
+  try{
+    const rows=await searchDisputeArbitersV58(id,q);
+    box.innerHTML=rows.length?rows.map(u=>`<button type="button" data-pick-arbiter-v58="${u.id}"><strong>${esc(`${u.first_name||''} ${u.last_name||''}`.trim()||u.username)}</strong><small>@${esc(u.username||'')}</small><b>Proponer →</b></button>`).join(''):'<div class="compact-empty">No encontramos árbitros disponibles.</div>';
+  }catch(err){box.innerHTML=`<div class="compact-empty">${esc(err.message)}</div>`}
+}
+
+async function loadAdminDisputesV58(){
+  const box=$('#adminDisputesListV58');if(!box||!v35Flags?.is_test_admin)return;
+  box.innerHTML='<div class="loading-row">Cargando disputas…</div>';
+  try{
+    v58State.adminDisputes=await adminListDisputesV58();
+    const rows=v58State.adminDisputes||[];
+    if($('#adminCountDisputesV60'))$('#adminCountDisputesV60').textContent=`${rows.length} ${rows.length===1?'pendiente':'pendientes'}`;
+    box.innerHTML=rows.length?rows.map(d=>{
+      const deadline=d.admin_deadline_at?new Date(d.admin_deadline_at):null;
+      const left=deadline?Math.max(0,deadline-Date.now()):null;
+      const deadlineText=left===null?'':left<86400000?`${Math.ceil(left/3600000)} h para resolver`:`${Math.ceil(left/86400000)} días para resolver`;
+      const urgent=left!==null&&left<=86400000;
+      return `<button type="button" class="admin-dispute-row-v58 ${urgent?'deadline-urgent-v101':''}" data-admin-open-dispute-v58="${d.match_id}"><span>⚖</span><div><strong>${esc(d.player1_name||'Jugador')} vs ${esc(d.player2_name||'Jugador')}</strong><small>${esc(disputeStatusLabelV58(d.status))} · ${disputeFormatLabelV58(d.match_format)}${deadlineText?` · ⏱ ${deadlineText}`:''}</small></div><b>Resolver →</b></button>`;
+    }).join(''):'<div class="compact-empty">No hay disputas abiertas que requieran atención.</div>';
+  }catch(err){box.innerHTML=`<div class="compact-empty">${esc(err.message)}</div>`}
+}
+
+async function loadAdminLinkedAccountsV58(){
+  const box=$('#adminLinkedAccountsV58');if(!box||!v35Flags?.is_test_admin)return;
+  box.innerHTML='<div class="loading-row">Analizando instalaciones…</div>';
+  try{
+    v58State.linkedAccounts=await adminListLinkedAccountsV58();
+    const rows=v58State.linkedAccounts||[];
+    if($('#adminCountMultiV60'))$('#adminCountMultiV60').textContent=`${rows.length} ${rows.length===1?'vínculo':'vínculos'}`;
+    box.innerHTML=rows.length?rows.map(x=>`<article class="linked-account-row-v58"><div><strong>${esc(x.user1_name||x.user1_username)} ↔ ${esc(x.user2_name||x.user2_username)}</strong><small>@${esc(x.user1_username||'')} · @${esc(x.user2_username||'')} · instalación ${esc(String(x.installation_id).slice(0,8))}…</small></div><span class="${x.exception_allowed?'allowed':'blocked'}">${x.exception_allowed?'EXCEPCIÓN':'BLOQUEADAS'}</span><button type="button" data-toggle-related-v58="${x.user1_id}:${x.user2_id}:${x.exception_allowed?'revoke':'allow'}">${x.exception_allowed?'Revocar':'Autorizar'}</button></article>`).join(''):'<div class="compact-empty">No hay pares de cuentas vinculadas registrados.</div>';
+  }catch(err){box.innerHTML=`<div class="compact-empty">${esc(err.message)}</div>`}
+}
+
+async function loadAdminReviewTagsV58(){
+  const box=$('#adminReviewTagsV58');if(!box||!v35Flags?.is_test_admin)return;
+  box.innerHTML='<div class="loading-row">Cargando menciones…</div>';
+  try{
+    v58State.reviewTags=await adminListReviewTagsV58(100);
+    const labels={edge_ball:'🏓 Edge Ball',defense:'🧱 Defensa difícil',creative:'🎩 Creativo',tactical:'🧠 Adaptación táctica',sportsmanship:'🤝 Deportividad'};
+    const activeSignals=v58State.reviewTags.filter(x=>x.active).length;
+    if($('#adminCountIntegrityV60'))$('#adminCountIntegrityV60').textContent=`${activeSignals} ${activeSignals===1?'señal':'señales'}`;
+    box.innerHTML=v58State.reviewTags.length?v58State.reviewTags.map(t=>`<article class="admin-review-tag-row-v58 ${t.active?'':'invalid'}"><div><strong>${labels[t.tag_key]||esc(t.tag_key)}</strong><small>${esc(t.reviewer_name||t.reviewer_username)} → ${esc(t.reviewed_name||t.reviewed_username)} · Partido #${t.match_id}</small></div><span>${t.active?'ACTIVA':'INVALIDADA'}</span>${t.active?`<button type="button" data-invalidate-tag-v58="${t.id}">Invalidar</button>`:''}</article>`).join(''):'<div class="compact-empty">Todavía no hay menciones comunitarias.</div>';
+  }catch(err){box.innerHTML=`<div class="compact-empty">${esc(err.message)}</div>`}
+}
+
+
+async function loadDurationStatsV59(){
+  const box=$('#matchDurationStatsV59');
+  if(!box||!session?.user)return;
+  try{
+    durationStatsV59=await getMyDurationStatsV59();
+    const s=durationStatsV59||{};
+    const measured=Number(s.measured_matches||0);
+    $('#durationMeasuredBadgeV59').textContent=`${measured} ${measured===1?'medido':'medidos'}`;
+    $('#durationAverageV59').textContent=measured?formatDurationV59(s.average_duration_seconds):'—';
+    $('#gameplayAverageV59').textContent=measured?formatDurationV59(s.average_gameplay_seconds):'—';
+    $('#durationShortestV59').textContent=measured?formatDurationV59(s.shortest_duration_seconds):'—';
+    $('#durationLongestV59').textContent=measured?formatDurationV59(s.longest_duration_seconds):'—';
+    $('#durationSingleV59').textContent=s.single_average_seconds?formatDurationV59(s.single_average_seconds):'—';
+    $('#durationBo3V59').textContent=s.bo3_average_seconds?formatDurationV59(s.bo3_average_seconds):'—';
+    $('#durationBo5V59').textContent=s.bo5_average_seconds?formatDurationV59(s.bo5_average_seconds):'—';
+    box.classList.toggle('v59-no-duration-data',measured===0);
+  }catch(err){
+    console.warn('Duración V59:',err);
+    $('#durationMeasuredBadgeV59').textContent='Sin datos';
+    ['durationAverageV59','gameplayAverageV59','durationShortestV59','durationLongestV59','durationSingleV59','durationBo3V59','durationBo5V59']
+      .forEach(id=>{const el=$(`#${id}`);if(el)el.textContent='—'});
+  }
+}
+
+function integrityRiskLabelV59(score=0){
+  const n=Number(score)||0;
+  if(n>=75)return'Alta';
+  if(n>=50)return'Media';
+  return'Baja';
+}
+
+async function loadAdminIntegrityV59(){
+  const box=$('#adminMatchIntegrityV59');
+  if(!box||!v35Flags?.is_test_admin)return;
+  box.innerHTML='<div class="loading-row">Analizando duración de partidos…</div>';
+  try{
+    adminIntegrityV59=await adminListMatchIntegrityV59(100);
+    const rows=adminIntegrityV59||[];
+    if($('#adminCountSuspiciousV60'))$('#adminCountSuspiciousV60').textContent=`${rows.length} ${rows.length===1?'alerta':'alertas'}`;
+    box.innerHTML=rows.length?rows.map(x=>{
+      const linked=!!x.same_device_or_linked;
+      const repeats=Number(x.fast_matches_between_pair||0);
+      return `<article class="v59-integrity-row risk-${Number(x.risk_score||0)>=75?'high':Number(x.risk_score||0)>=50?'medium':'low'}">
+        <div class="v59-integrity-main">
+          <div class="v59-integrity-title"><strong>${esc(x.player1_name||'Jugador')} ↔ ${esc(x.player2_name||'Jugador')}</strong><span>${esc(x.match_format==='bo5'?'Bo5':x.match_format==='bo3'?'Bo3':'1 set')}</span></div>
+          <small>Juego ${formatDurationV59(x.gameplay_seconds)} · mínimo esperado ${formatDurationV59(x.minimum_seconds)} · oficial ${x.duration_seconds===null?'—':formatDurationV59(x.duration_seconds)}</small>
+          <div class="v59-integrity-signals">
+            <span>Riesgo ${integrityRiskLabelV59(x.risk_score)} · ${Number(x.risk_score||0)}/100</span>
+            ${linked?'<b>Instalaciones vinculadas</b>':''}
+            ${repeats>1?`<b>${repeats} partidos rápidos entre ambos</b>`:''}
+          </div>
+        </div>
+        <div class="v63-integrity-row-actions"><b class="v59-integrity-id">#${x.match_id}</b><button data-admin-review-match-v63="${x.match_id}" type="button">Revisar partido</button></div>
+      </article>`;
+    }).join(''):'<div class="compact-empty">No hay partidos rápidos marcados para revisión.</div>';
+    setStatus($('#adminIntegrityStatusV59'),rows.length?`${rows.length} señal${rows.length===1?'':'es'} para revisar.`:'Sin señales activas.','ok');
+  }catch(err){
+    console.error('Integridad V59:',err);
+    box.innerHTML=`<div class="compact-empty">${esc(err.message||'No se pudo cargar la integridad de partidos.')}</div>`;
+    setStatus($('#adminIntegrityStatusV59'),'No se pudo cargar el panel.','error');
+  }
+}
+
+function formatIntegrityEndV78(value){
+  if(!value)return'—';
+  const date=new Date(value);
+  return Number.isNaN(date.getTime())?'—':date.toLocaleString('es-UY',{
+    day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'
+  });
+}
+
+function ensureIntegrityNoticeV78(){
+  let modal=$('#integrityNoticeV78');
+  if(modal)return modal;
+  modal=document.createElement('div');
+  modal.id='integrityNoticeV78';
+  modal.className='modal hidden v78-integrity-modal';
+  modal.innerHTML='<div class="modal-card v78-integrity-card" id="integrityNoticeCardV78"></div>';
+  document.body.appendChild(modal);
+  modal.addEventListener('click',event=>{
+    if(event.target===modal||event.target.closest('[data-close-integrity-v78]')){
+      modal.classList.add('hidden');syncModalScrollLock();
+    }
+  });
+  return modal;
+}
+
+function showIntegrityNoticeV78(data={}){
+  const sanction=data.sanction||null;
+  const holds=Array.isArray(data.pending_holds)?data.pending_holds:[];
+  const notices=Array.isArray(data.notifications)?data.notifications:[];
+  if(!sanction&&!holds.length&&!notices.length)return;
+  const modal=ensureIntegrityNoticeV78();
+  const card=$('#integrityNoticeCardV78');
+  const competitive=!!sanction?.competitive_locked;
+  const appealed=!!sanction?.appealed_at;
+  const pendingHold=holds[0]||null;
+  card.innerHTML=`
+    <button class="modal-close" data-close-integrity-v78 type="button" aria-label="Cerrar">✕</button>
+    <div class="v78-integrity-icon">◇</div>
+    <p class="muted-label">INTEGRIDAD DE PARTIDOS</p>
+    <h2>${sanction?'Progreso temporalmente congelado':'Partido en revisión'}</h2>
+    <p>${sanction
+      ?`Detectamos <strong>3 partidos de menos de un minuto</strong> entre tus últimos 10 del día.`
+      :'Un resultado quedó retenido mientras se revisa la señal de duración.'}</p>
+    ${sanction?`<div class="v78-integrity-grid">
+      <article><span>Finaliza</span><strong>${esc(formatIntegrityEndV78(sanction.ends_at))}</strong></article>
+      <article><span>Restricción</span><strong>${competitive?'Elo + casuales':'Casuales oficiales'}</strong></article>
+      <article><span>Nivel</span><strong>${Number(sanction.level||1)} de 3</strong></article>
+    </div>`:''}
+    ${pendingHold?`<div class="v78-hold-note"><strong>Partido #${Number(pendingHold.match_id)}</strong><span>No modificó ${pendingHold.hold_scope==='elo_and_statistics'?'Elo ni estadísticas':'las estadísticas'}.</span></div>`:''}
+    <div class="v78-warning"><strong>Las sanciones son acumulables.</strong><span>Las reincidencias aumentan a 72 horas y luego a 7 días.</span></div>
+    ${sanction&&!appealed?`<div class="v78-appeal-shell hidden" id="integrityAppealShellV78">
+      <label for="integrityAppealTextV78">Explicanos qué ocurrió</label>
+      <textarea id="integrityAppealTextV78" maxlength="2000" placeholder="Contá por qué pensás que la detección debe revisarse."></textarea>
+      <p id="integrityAppealStatusV78" class="status" aria-live="polite"></p>
+    </div>`:''}
+    ${appealed?'<p class="v78-appealed">✓ Tu apelación ya fue enviada al administrador.</p>':''}
+    <div class="v78-integrity-actions">
+      ${sanction&&!appealed?'<button data-open-integrity-appeal-v78 type="button">APELAR SANCIÓN</button>':''}
+      <button class="primary" data-close-integrity-v78 type="button">ENTENDIDO</button>
+    </div>`;
+  card.querySelector('[data-open-integrity-appeal-v78]')?.addEventListener('click',event=>{
+    const shell=$('#integrityAppealShellV78');
+    if(shell?.classList.contains('hidden')){
+      shell.classList.remove('hidden');event.currentTarget.textContent='ENVIAR APELACIÓN';
+      $('#integrityAppealTextV78')?.focus();return;
+    }
+    const message=$('#integrityAppealTextV78')?.value?.trim()||'';
+    if(message.length<10){setStatus($('#integrityAppealStatusV78'),'Contanos un poco más para poder revisar el caso.','error');return}
+    event.currentTarget.disabled=true;
+    submitIntegrityAppealV78(message).then(()=>{
+      setStatus($('#integrityAppealStatusV78'),'Apelación enviada. El administrador podrá revisarla.','ok');
+      event.currentTarget.remove();
+    }).catch(error=>{
+      setStatus($('#integrityAppealStatusV78'),error.message||'No se pudo enviar la apelación.','error');
+      event.currentTarget.disabled=false;
+    });
+  });
+  modal.classList.remove('hidden');syncModalScrollLock();
+}
+
+async function loadMyIntegrityStatusV78({show=false}={}){
+  if(!session?.user)return null;
+  try{
+    myIntegrityStatusV78=await getMyIntegrityStatusV78();
+    if(show||myIntegrityStatusV78?.active||myIntegrityStatusV78?.notifications?.length||myIntegrityStatusV78?.pending_holds?.length){
+      showIntegrityNoticeV78(myIntegrityStatusV78);
+    }
+    return myIntegrityStatusV78;
+  }catch(error){
+    if(!/get_my_integrity_status_v78|schema cache|PGRST202/i.test(error?.message||''))console.warn('Integridad V78:',error);
+    return null;
+  }
+}
+
+const AUTO_SIGNAL_LABELS_V77={
+  duration_extreme:'Duración extrema',
+  repeated_pair:'Pareja repetida',
+  linked_installation:'Instalación vinculada',
+  activity_burst:'Actividad acelerada'
+};
+
+function autoModeLabelV77(mode='observe'){
+  return mode==='enforce'?'ACTIVO':mode==='paused'?'PAUSADO':'SIMULACIÓN';
+}
+
+function autoDecisionLabelV77(status='observed'){
+  if(status==='would_suspend')return'Activaría una restricción en modo activo';
+  if(status==='suspended')return'Progreso congelado temporalmente';
+  return'En observación';
+}
+
+function renderAdminAutoModerationV77(data={}){
+  const box=$('#adminAutoModerationCasesV77'),summary=$('#adminAutoSummaryV77');
+  if(!box||!summary)return;
+  const config=data.config||{};
+  const totals=data.summary||{};
+  const cases=Array.isArray(data.cases)?data.cases:[];
+  const holds=Array.isArray(data.holds)?data.holds:[];
+  const mode=String(config.mode||'observe');
+
+  $$('[data-auto-mode-v77]').forEach(button=>button.classList.toggle('active',button.dataset.autoModeV77===mode));
+  summary.innerHTML=`
+    <article><span>Regla</span><strong>3 / 10</strong></article>
+    <article><span>Casos abiertos</span><strong>${Number(totals.open_cases||0)}</strong></article>
+    <article><span>Retenidos</span><strong>${Number(totals.pending_holds||0)}</strong></article>
+    <article><span>Restricciones</span><strong>${Number(totals.automatic_suspensions||0)}</strong></article>`;
+
+  const holdsHtml=holds.length?`<div class="v78-admin-holds"><h4>Resultados retenidos</h4>${holds.map(item=>`
+    <article class="v77-case threshold v78-held-match">
+      <div class="v77-case-head"><div><strong>${esc(item.player1_username||'Jugador')} ↔ ${esc(item.player2_username||'Jugador')}</strong><small>Partido #${Number(item.match_id)} · ${item.match_type==='casual'?'Casual':'Con Elo'}</small></div><div class="v77-risk-score"><strong>${Number(item.duration_seconds||0)} s</strong><small>duración</small></div></div>
+      <div class="v77-case-meta"><span>${item.hold_scope==='elo_and_statistics'?'Elo y estadísticas retenidos':'Estadísticas retenidas'}</span><span class="v77-decision">Decisión pendiente</span></div>
+      <div class="v77-case-actions"><button data-resolve-integrity-hold-v78="approve" data-match-id="${Number(item.match_id)}" type="button">Validar partido</button><button class="danger" data-resolve-integrity-hold-v78="annul" data-match-id="${Number(item.match_id)}" type="button">Anular partido</button></div>
+    </article>`).join('')}</div>`:'';
+
+  const casesHtml=cases.length?cases.map(item=>{
+    const evidenceMatches=Array.isArray(item.evidence?.matches)?item.evidence.matches:[];
+    const name=`${item.first_name||''} ${item.last_name||''}`.trim()||item.username||'Usuario';
+    const initials=((item.first_name?.[0]||'')+(item.last_name?.[0]||'')).toUpperCase()||'TT';
+    const caseClass=item.status==='suspended'?'suspended':item.status==='would_suspend'?'threshold':'';
+    const sanction=item.sanction||null;
+    return `<article class="v77-case ${caseClass}">
+      <div class="v77-case-head">
+        <div class="v77-case-user">
+          <div class="v77-case-avatar">${item.profile_photo_url?`<img src="${esc(item.profile_photo_url)}" alt="">`:esc(initials)}</div>
+          <div><strong>${esc(name)}</strong><small>@${esc(item.username||'sin_usuario')}</small></div>
+        </div>
+        <div class="v77-risk-score"><strong>${Number(item.distinct_matches||item.score||0)}</strong><small>partidos cortos</small></div>
+      </div>
+      <div class="v77-case-meta">
+        <span>Últimos 10 del día</span>
+        <span>Menos de ${Number(config.short_match_seconds||60)} s</span>
+        <span class="v77-decision">${esc(autoDecisionLabelV77(item.status))}</span>
+      </div>
+      <div class="v77-signal-list">${evidenceMatches.map(match=>`<span class="v77-signal"><b>#${Number(match.match_id)}</b> · ${Number(match.duration_seconds||0)} s · ${match.match_type==='casual'?'Casual':'Con Elo'}</span>`).join('')}</div>
+      ${sanction?.appealed_at?`<div class="v78-admin-appeal"><strong>Apelación recibida</strong><span>${esc(sanction.appeal_message||'Sin mensaje')}</span></div>`:''}
+      <div class="v77-case-actions">
+        <button data-open-player="${item.user_id}" type="button">Ver usuario</button>
+        ${item.status!=='suspended'?`<button data-dismiss-auto-case-v77="${item.id}" type="button">Descartar caso</button>`:''}
+      </div>
+    </article>`;
+  }).join(''):'<div class="v77-empty">No hay usuarios con 3 partidos cortos dentro de una ventana de 10.</div>';
+  box.innerHTML=holdsHtml+casesHtml;
+
+  const real=mode==='enforce';
+  setStatus(
+    $('#adminAutoModerationStatusV77'),
+    real
+      ?'Modo activo: el tercer partido corto quedará retenido antes de aplicar Elo o estadísticas.'
+      :'Simulación segura: analiza ranked y casuales, pero todavía no retiene resultados ni restringe modalidades.',
+    real?'error':'ok'
+  );
+}
+
+async function loadAdminAutoModerationV77(){
+  const box=$('#adminAutoModerationCasesV77');
+  if(!box||!v35Flags?.is_test_admin)return;
+  box.innerHTML='<div class="loading-row">Cargando motor de protección…</div>';
+  try{
+    adminAutoModerationV77=await getAdminAutoModerationV77(50);
+    renderAdminAutoModerationV77(adminAutoModerationV77);
+  }catch(err){
+    console.error('Moderación automática V77:',err);
+    box.innerHTML=`<div class="v77-empty">${esc(err.message||'No se pudo cargar la moderación automática.')}</div>`;
+    setStatus($('#adminAutoModerationStatusV77'),'Ejecutá primero los SQL P7.4R.4 y P7.4R.4.1 en Supabase.','error');
+  }
+}
+
+async function changeAutoModerationModeV77(button){
+  const mode=button?.dataset?.autoModeV77;
+  if(!mode||!v35Flags?.is_test_admin)return;
+  if(mode==='enforce'){
+    const accepted=window.confirm('¿Activar suspensiones automáticas temporales para las detecciones futuras? Los casos históricos de la simulación no se suspenderán retroactivamente.');
+    if(!accepted)return;
+  }
+  const buttons=$$('[data-auto-mode-v77]');
+  buttons.forEach(item=>item.disabled=true);
+  try{
+    adminAutoModerationV77=await setAutoModerationModeV77(mode);
+    renderAdminAutoModerationV77(adminAutoModerationV77);
+  }catch(err){
+    setStatus($('#adminAutoModerationStatusV77'),err.message||'No se pudo cambiar el modo.','error');
+  }finally{buttons.forEach(item=>item.disabled=false)}
+}
+
+async function reprocessAdminAutoModerationV77(button){
+  if(!v35Flags?.is_test_admin)return;
+  try{
+    button.disabled=true;button.textContent='Analizando…';
+    setStatus($('#adminAutoModerationStatusV77'),'Revisando ranked y casuales de los últimos 7 días…');
+    adminAutoModerationV77=await reprocessAutoModerationV77(7,500);
+    renderAdminAutoModerationV77(adminAutoModerationV77);
+    const count=Number(adminAutoModerationV77.reprocessed_matches||0);
+    setStatus($('#adminAutoModerationStatusV77'),`Simulación completada: ${count} partido${count===1?'':'s'} analizado${count===1?'':'s'}. No se aplicaron suspensiones retroactivas.`,'ok');
+  }catch(err){
+    setStatus($('#adminAutoModerationStatusV77'),err.message||'No se pudo completar el análisis.','error');
+  }finally{button.disabled=false;button.textContent='Reanalizar 7 días'}
+}
+
+async function dismissAdminAutoCaseV77(button){
+  const caseId=Number(button?.dataset?.dismissAutoCaseV77||0);
+  if(!caseId||!v35Flags?.is_test_admin)return;
+  if(!window.confirm('¿Descartar este caso como falso positivo? Sus señales actuales dejarán de contar.'))return;
+  try{
+    button.disabled=true;
+    adminAutoModerationV77=await dismissAutoModerationCaseV77(caseId,null);
+    renderAdminAutoModerationV77(adminAutoModerationV77);
+    setStatus($('#adminAutoModerationStatusV77'),'Caso descartado. La decisión quedó registrada.','ok');
+  }catch(err){
+    setStatus($('#adminAutoModerationStatusV77'),err.message||'No se pudo descartar el caso.','error');
+  }finally{button.disabled=false}
+}
+
+async function resolveIntegrityHoldAdminV78(button){
+  const matchId=Number(button?.dataset?.matchId||0);
+  const action=button?.dataset?.resolveIntegrityHoldV78;
+  if(!matchId||!['approve','annul'].includes(action)||!v35Flags?.is_test_admin)return;
+  const decision=action==='approve'?'validar el partido y aplicar sus consecuencias':'anular el partido sin aplicar Elo ni estadísticas';
+  if(!window.confirm(`¿Confirmás que querés ${decision}?`))return;
+  try{
+    button.disabled=true;
+    adminAutoModerationV77=await resolveIntegrityHoldV78(matchId,action,null);
+    renderAdminAutoModerationV77(adminAutoModerationV77);
+    setStatus($('#adminAutoModerationStatusV77'),action==='approve'?'Decisión: Partido validado.':'Decisión: Partido anulado.','ok');
+  }catch(error){
+    setStatus($('#adminAutoModerationStatusV77'),error.message||'No se pudo resolver el partido.','error');
+  }finally{button.disabled=false}
+}
+
+
+
+function metricNumberV70(value,digits=0){
+  const n=Number(value||0);
+  return Number.isFinite(n)?n.toLocaleString('es-UY',{minimumFractionDigits:digits,maximumFractionDigits:digits}):'0';
+}
+function renderAdminProductMetricsV70(data={}){
+  const grid=$('#adminMetricsGridV70'),funnel=$('#adminMetricsFunnelV70'),trend=$('#adminMetricsTrendV70');
+  if(!grid||!funnel||!trend)return;
+  const active=Number(data.active_competitive_players||0);
+  const verified=Number(data.verified_matches||0);
+  const ranked=Number(data.ranked_verified_matches||0);
+  const casual=Number(data.casual_verified_matches||0);
+  const sent=Number(data.challenges_sent||0);
+  const accepted=Number(data.challenges_accepted||0);
+  const submitted=Number(data.results_submitted||0);
+  const perPlayer=Number(data.verified_matches_per_active_player||0);
+  const acceptance=Number(data.challenge_acceptance_rate||0);
+  const confirmation=Number(data.confirmation_rate||0);
+  const rematches=Number(data.rematch_requests||0);
+  const pairs=Number(data.different_rival_pairs||0);
+  grid.innerHTML=`
+    <article class="v70-metric primary"><span>Partidos / jugador</span><strong>${metricNumberV70(perPlayer,2)}</strong><small>ranked verificados por jugador competitivo activo</small></article>
+    <article class="v70-metric"><span>Jugadores activos</span><strong>${metricNumberV70(active)}</strong><small>con al menos un ranked verificado</small></article>
+    <article class="v70-metric"><span>Partidos verificados</span><strong>${metricNumberV70(verified)}</strong><small>${metricNumberV70(ranked)} ranked · ${metricNumberV70(casual)} casuales</small></article>
+    <article class="v70-metric"><span>Pares de rivales</span><strong>${metricNumberV70(pairs)}</strong><small>enfrentamientos distintos confirmados</small></article>
+    <article class="v70-metric"><span>Desafíos enviados</span><strong>${metricNumberV70(sent)}</strong><small>${metricNumberV70(acceptance,1)}% de aceptación en la ventana</small></article>
+    <article class="v70-metric"><span>Resultados cargados</span><strong>${metricNumberV70(submitted)}</strong><small>${metricNumberV70(confirmation,1)}% terminaron confirmados</small></article>
+    <article class="v70-metric"><span>Revanchas</span><strong>${metricNumberV70(rematches)}</strong><small>solicitudes desde un partido finalizado</small></article>
+    <article class="v70-metric"><span>Integridad</span><strong>${metricNumberV70(data.disputes||0)}</strong><small>${metricNumberV70(data.annulled_matches||0)} anulados en la ventana</small></article>`;
+
+  const steps=[['Desafíos enviados',sent],['Aceptados',accepted],['Resultados cargados',submitted],['Partidos verificados',verified]];
+  const max=Math.max(1,...steps.map(x=>Number(x[1]||0)));
+  funnel.innerHTML=`<div class="v70-funnel-head"><strong>Embudo competitivo</strong><small>${metricNumberV70(acceptance,1)}% aceptación · ${metricNumberV70(confirmation,1)}% confirmación</small></div>${steps.map(([label,value])=>`<div class="v70-funnel-row"><span>${esc(label)}</span><div class="v70-funnel-track"><i style="width:${Math.max(3,Math.min(100,(Number(value||0)/max)*100))}%"></i></div><b>${metricNumberV70(value)}</b></div>`).join('')}`;
+
+  const daily=Array.isArray(data.daily)?data.daily:[];
+  const maxDaily=Math.max(1,...daily.map(x=>Number(x.verified_matches||0)));
+  trend.innerHTML=`<div class="v70-trend-head"><strong>Partidos verificados por día</strong><small>${data.days||v60State.metricsDays} días</small></div><div class="v70-bars">${daily.map(x=>{const n=Number(x.verified_matches||0);const h=Math.max(4,(n/maxDaily)*100);const label=new Date(`${x.date}T12:00:00`).toLocaleDateString('es-UY',{day:'2-digit',month:'2-digit'});return `<div class="v70-bar" data-tip="${esc(label)} · ${n} verificados"><i style="height:${h}%"></i></div>`}).join('')}</div>`;
+
+  if($('#adminCountMetricsV70'))$('#adminCountMetricsV70').textContent=`${verified} verificados`;
+}
+async function loadAdminProductMetricsV70(days=v60State.metricsDays||7){
+  if(!v35Flags?.is_test_admin)return;
+  const grid=$('#adminMetricsGridV70');if(!grid)return;
+  const clean=Math.max(1,Math.min(90,Number(days)||7));
+  v60State.metricsDays=clean;
+  if($('#adminMetricsRangeV70'))$('#adminMetricsRangeV70').value=String(clean);
+  grid.innerHTML='<div class="loading-row">Calculando actividad competitiva…</div>';
+  try{
+    const data=await getAdminProductMetricsV70(clean);
+    v60State.lastProductMetrics=data;
+    renderAdminProductMetricsV70(data);
+    const started=data.telemetry_started_at?new Date(data.telemetry_started_at).toLocaleString('es-UY'):'sin eventos todavía';
+    setStatus($('#adminMetricsStatusV70'),`Ventana de ${clean} días · instrumentación P7 activa desde ${started}.`,'ok');
+  }catch(err){
+    recordClientErrorV60(err,'admin-product-metrics-v70');
+    grid.innerHTML=`<div class="compact-empty">${esc(err.message||'No se pudieron cargar las métricas P7.')}</div>`;
+    if($('#adminMetricsFunnelV70'))$('#adminMetricsFunnelV70').innerHTML='';
+    if($('#adminMetricsTrendV70'))$('#adminMetricsTrendV70').innerHTML='';
+    setStatus($('#adminMetricsStatusV70'),'Si todavía no ejecutaste el SQL P7.0, instalalo primero en Supabase.','error');
+  }
+}
+
+function setupAdminPanelsV60(){
+  const admin=$('#tab-admin');if(!admin)return;
+  const map=[
+    ['disputes','#adminDisputesListV58'],
+    ['multi','#adminLinkedAccountsV58'],
+    ['suspicious','#adminMatchIntegrityV59'],
+    ['integrity','#adminReviewTagsV58']
+  ];
+  map.forEach(([category,selector])=>$(selector)?.closest('.section-card')?.setAttribute('data-admin-panel-v60',category));
+  [...admin.querySelectorAll(':scope > .section-card')].forEach(card=>{
+    if(!card.dataset.adminPanelV60)card.dataset.adminPanelV60='system';
+  });
+  setAdminCategoryV60(v60State.adminCategory||'disputes');
+}
+function setAdminCategoryV60(category='disputes'){
+  const allowed=new Set(['disputes','integrity','multi','users','suspended','suspicious','community','metrics','system']);
+  const clean=allowed.has(category)?category:'disputes';
+  v60State.adminCategory=clean;
+  $$('[data-admin-category-v60]').forEach(b=>b.classList.toggle('active',b.dataset.adminCategoryV60===clean));
+  $$('[data-admin-panel-v60]').forEach(panel=>panel.classList.toggle('hidden',panel.dataset.adminPanelV60!==clean));
+  if(clean==='system'&&v35Flags?.is_test_admin)runAdminDiagnosticsV60().catch(()=>{});
+  if(clean==='metrics'&&v35Flags?.is_test_admin)loadAdminProductMetricsV70().catch(()=>{});
+  if(clean==='suspended'&&v35Flags?.is_test_admin)loadAdminSuspendedV76().catch(()=>{});
+  if(clean==='suspicious'&&v35Flags?.is_test_admin)Promise.all([loadAdminAutoModerationV77(),loadAdminIntegrityV59()]).catch(()=>{});
+}
+
+let adminUserSearchTimerV60=null;
+async function searchAdminUsersV60(){
+  const box=$('#adminUserResultsV60'),input=$('#adminUserSearchV60');if(!box||!input||!v35Flags?.is_test_admin)return;
+  const q=input.value.trim();
+  if(q.length<2){box.innerHTML='<div class="compact-empty">Escribí al menos 2 caracteres para buscar usuarios.</div>';return}
+  box.innerHTML='<div class="loading-row">Buscando usuarios…</div>';
+  try{
+    const rows=await searchPlayers(q,session?.user?.id);
+    box.innerHTML=rows.length?rows.slice(0,30).map(u=>`<article class="v60-admin-user-row"><button data-open-player="${u.id}" type="button">${avatarHtml(u,'v60-admin-user-avatar')}<div><strong>${esc(`${u.first_name||''} ${u.last_name||''}`.trim()||u.username)}</strong><small>@${esc(u.username||'')} · Perfil de TT Rivals</small><em class="v60-presence-text" data-presence-text-v60="${u.id}">${esc(presenceLabelV60(u.id))}</em></div></button><button data-admin-ban-user-v75="${u.id}" data-admin-ban-name-v75="${esc(`${u.first_name||''} ${u.last_name||''}`.trim()||u.username)}" class="v75-admin-ban-trigger" type="button" title="Administrar baneo">◆</button><button data-quick-challenge="${u.id}" data-name="${esc(`${u.first_name||''} ${u.last_name||''}`.trim()||u.username)}" data-user="${esc(u.username||'')}" type="button">⚔</button></article>`).join(''):'<div class="compact-empty">No encontramos usuarios con esa búsqueda.</div>';
+    refreshPresenceV60(rows.map(x=>x.id)).catch(()=>{});
+  }catch(err){recordClientErrorV60(err,'admin-user-search');box.innerHTML=`<div class="compact-empty">${esc(err.message||'No se pudo buscar usuarios.')}</div>`}
+}
+
+function diagnosticCellV60(label,value,state=''){
+  return `<article class="${state}"><span>${esc(label)}</span><strong>${esc(String(value??'—'))}</strong></article>`;
+}
+async function runAdminDiagnosticsV60(){
+  if(!v35Flags?.is_test_admin)return;
+  const grid=$('#adminDiagnosticsGridV60'),errors=$('#adminRecentErrorsV60');if(!grid)return;
+  grid.innerHTML='<div class="loading-row">Probando aplicación, caché y Supabase…</div>';
+  const started=performance.now();
+  try{
+    const [pwa,checks]=await Promise.all([
+      getPwaDiagnosticsV60().catch(err=>({error:err.message})),
+      Promise.allSettled([
+        getMyRatings(session.user.id),
+        getMyChallenges(session.user.id,{force:true}),
+        getMyMatches(session.user.id,{force:true}),
+        getMyNotificationsV58(1)
+      ])
+    ]);
+    const latency=Math.round(performance.now()-started);
+    const failed=checks.filter(x=>x.status==='rejected');
+    failed.forEach((x,i)=>recordClientErrorV60(x.reason,`diagnostic-supabase-${i+1}`));
+    const recent=getRecentErrorsV60();
+    const perf=window.__TT_PERF_V101||{};
+    const realtimeChannels=typeof supabase.getChannels==='function'?supabase.getChannels().length:null;
+    const diag={
+      generatedAt:new Date().toISOString(),version:APP_VERSION,build:APP_BUILD,userId:session?.user?.id||null,
+      username:profile?.username||null,online:navigator.onLine,supabaseOk:failed.length===0,supabaseLatencyMs:latency,pwa,recentErrors:recent,
+      performance:{...perf,realtimeChannels}
+    };
+    v60State.lastDiagnostics=diag;
+    grid.innerHTML=[
+      diagnosticCellV60('Versión',`V${APP_VERSION}`,'ok'),
+      diagnosticCellV60('Internet',navigator.onLine?'Conectado':'Sin conexión',navigator.onLine?'ok':'warn'),
+      diagnosticCellV60('Supabase',failed.length?'Con errores':'Conectado',failed.length?'error':'ok'),
+      diagnosticCellV60('Respuesta',`${latency} ms`,latency>2500?'warn':'ok'),
+      diagnosticCellV60('Service Worker',pwa.serviceWorkerState||pwa.error||'—',pwa.controlled?'ok':'warn'),
+      diagnosticCellV60('Caché activa',(pwa.caches||[]).join(', ')||'Sin caché TT',((pwa.caches||[]).includes(pwa.expectedCache))?'ok':'warn'),
+      diagnosticCellV60('Modo app',pwa.standalone?'Instalada':'Navegador',pwa.standalone?'ok':''),
+      diagnosticCellV60('Usuario',profile?`@${profile.username}`:'Sin perfil',profile?'ok':'warn'),
+      diagnosticCellV60('FPS fondo',perf.motion?.fps?`${perf.motion.fps} / ${perf.motion.targetFps||'—'}`:'En espera',perf.motion?.fps&&perf.motion.fps<18?'warn':'ok'),
+      diagnosticCellV60('Calidad gráfica',(perf.motion?.quality||'—').toUpperCase(),perf.motion?.quality==='low'?'warn':'ok'),
+      diagnosticCellV60('Canvas activos',perf.motion?.canvasActive??0,'ok'),
+      diagnosticCellV60('Realtime activos',realtimeChannels??'—',realtimeChannels>10?'warn':'ok'),
+      diagnosticCellV60('Memoria JS',perf.jsHeapMB?`${perf.jsHeapMB} MB`:'No disponible',perf.jsHeapMB>180?'warn':''),
+      diagnosticCellV60('Tareas largas',perf.longTasks??0,(perf.longTasks||0)>8?'warn':'ok')
+    ].join('');
+    if(errors)errors.textContent=recent.length?recent.map(x=>`${x.at} · ${x.context}\n${x.message}`).join('\n\n'):'Sin errores registrados en esta sesión.';
+    setStatus($('#adminDiagnosticsStatusV60'),failed.length?'Diagnóstico completado con advertencias.':'Diagnóstico completado correctamente.',failed.length?'error':'ok');
+    return diag;
+  }catch(err){recordClientErrorV60(err,'admin-diagnostics');grid.innerHTML=`<div class="compact-empty">${esc(err.message||'No se pudo completar el diagnóstico.')}</div>`;setStatus($('#adminDiagnosticsStatusV60'),'Falló el diagnóstico.','error');throw err}
+}
+async function copyAdminDiagnosticsV60(){
+  const diag=v60State.lastDiagnostics||await runAdminDiagnosticsV60();
+  const text=JSON.stringify(diag,null,2);
+  try{await navigator.clipboard.writeText(text);setStatus($('#adminDiagnosticsStatusV60'),'Diagnóstico copiado.','ok')}catch{setStatus($('#adminDiagnosticsStatusV60'),'No se pudo copiar automáticamente.','error')}
+}
+
+async function loadActiveMatchSetsV62(rows=[]){
+  const ids=rows.filter(m=>m.result_status==='awaiting_confirmation').map(m=>Number(m.id)).filter(Number.isFinite);
+  const map=new Map();
+  if(!ids.length){v60State.matchSets=map;return map}
+  try{
+    const {data,error}=await supabase.from('match_sets').select('match_id,set_number,player1_points,player2_points').in('match_id',ids).order('set_number');
+    if(error)throw error;
+    (data||[]).forEach(row=>{const id=Number(row.match_id);if(!map.has(id))map.set(id,[]);map.get(id).push(row)});
+  }catch(err){console.warn('Detalle de sets V62:',err)}
+  v60State.matchSets=map;return map;
+}
+function confirmationResultV62(m){
+  if(m.result_status!=='awaiting_confirmation')return '';
+  const p1=m.player1||{},p2=m.player2||{};
+  const sets=v60State.matchSets?.get?.(Number(m.id))||[];
+  const score=`${esc(p1.first_name||'Jugador 1')} ${Number(m.player1_sets||0)} – ${Number(m.player2_sets||0)} ${esc(p2.first_name||'Jugador 2')}`;
+  const detail=sets.length?sets.map(s=>`<span>Set ${Number(s.set_number)||''}<b>${Number(s.player1_points)}–${Number(s.player2_points)}</b></span>`).join(''):'<small>El detalle de sets todavía no está disponible.</small>';
+  return `<details class="match-confirm-review-v62"><summary><span>Revisar resultado</span><strong>${score}</strong></summary><div class="match-confirm-sets-v62">${detail}</div></details>`;
+}
+
+function matchCard(m){
+  const me=session.user.id,other=m.player1_id===me?m.player2:m.player1;
+  const fmt=m.match_format==='bo5'?'Mejor de 5':m.match_format==='bo3'?'Mejor de 3':'1 set';
+  const mode=m.match_type==='casual'?'Casual · sin Elo':'Con ranking';
+  let state='Pendiente de resultado', cls='status-accepted', actions='';
+  if(m.result_status==='pending'){
+    actions=`<div class="match-actions"><button class="result-btn" data-enter-result="${m.id}">Registrar resultado</button></div>`;
+  }else if(m.result_status==='awaiting_confirmation'){
+    state='Esperando confirmación';cls='status-confirmation';
+    if(m.result_submitted_by!==me) actions=`<div class="match-actions"><button class="confirm-btn" data-confirm-match="${m.id}">Confirmar</button><button class="dispute-btn" data-dispute-match="${m.id}">Disputar</button></div>`;
+  }else if(m.result_status==='confirmed'){state='Confirmado';cls='status-accepted'}
+  else if(m.result_status==='disputed'){state='En disputa';cls='status-disputed';actions=`<div class="match-actions"><button class="dispute-resolve-btn-v58" data-resolve-dispute-v58="${m.id}">Resolver disputa</button></div>`}
+  else if(m.result_status==='annulled'){state='Anulado';cls='status-annulled-v58'}
+  const result=m.player1_sets||m.player2_sets?` · ${m.player1_sets}-${m.player2_sets}`:'';
+  const finish=m.completion_type==='abandonment'?' · Abandono':'';
+  const timing=matchTimingChipV59(m);
+  return`<div class="match-row v59-match-row v62-match-row"><div class="match-meta"><strong>vs ${esc(other?.first_name)} ${esc(other?.last_name)}</strong><small>${fmt} · ${mode}${result}${finish}</small><div class="v59-match-state-line"><span class="challenge-status ${cls}">${state}</span>${timing}</div>${m.result_submitted_by!==me?confirmationResultV62(m):''}</div>${actions}</div>`
+}
+async function loadMatches(){
+  if(!session)return;
+  try{
+    const rows=await getMyMatches(session.user.id);
+    v60State.matches=rows;renderHomePriorityV60();
+    const active=rows.filter(m=>!['confirmed','annulled'].includes(m.result_status));
+    await loadActiveMatchSetsV62(active);
+    $('#activeMatches').innerHTML=active.length?active.map(matchCard).join(''):'<div class="compact-empty">No hay partidos pendientes</div>';
+    if($('#activeMatchCount'))$('#activeMatchCount').textContent=active.length;
+  }catch(e){
+    console.error(e);
+    $('#activeMatches').innerHTML='<div class="compact-empty">No se pudieron cargar los partidos.</div>';
+  }
+}
+
+async function loadHistory(){
+  if(!session)return;
+  try{
+    const rows=await getRatingHistory(session.user.id);
+    renderRatingChart(rows);
+
+    $('#ratingHistoryList').innerHTML=rows.length?rows.slice(0,8).map(r=>`
+      <div class="history-row">
+        <div><strong>${r.new_rating} Elo</strong><small>${new Date(r.created_at).toLocaleDateString()}</small></div>
+        <strong class="history-change ${r.rating_change>=0?'positive':'negative'}">${r.rating_change>=0?'+':''}${r.rating_change}</strong>
+      </div>`).join(''):'';
+  }catch(e){
+    console.error(e);
+    $('#ratingHistoryList').innerHTML='<div class="loading-row">No se pudo cargar el historial.</div>';
+    $('#ratingChartEmpty').classList.remove('hidden');
+  }
+}
+
+
+async function loadLiveNotifications(){
+  if(!session?.user||!$('#liveNotificationStack'))return;
+  try{
+    const [challenges,matches,persistent]=await Promise.all([
+      getMyChallenges(session.user.id),
+      getMyMatches(session.user.id),
+      loadPersistentNotificationsV58()
+    ]);
+
+    if(!liveMatchStatusPrimed){
+      liveMatchStatusSnapshot=new Map(matches.map(m=>[Number(m.id),m.result_status]));
+      liveMatchStatusPrimed=true;
+    }else{
+      for(const m of matches){
+        const id=Number(m.id),previous=liveMatchStatusSnapshot.get(id);
+        if(m.result_status==='confirmed'&&previous&&previous!=='confirmed'&&!postMatchShownIds.has(id)){
+          setTimeout(()=>handleConfirmedMatchV55(m),40);
+        }
+        liveMatchStatusSnapshot.set(id,m.result_status);
+      }
+    }
+
+    const pending=challenges.filter(c=>c.challenged_id===session.user.id&&c.status==='pending');
+    const confirmations=matches.filter(m=>m.result_status==='awaiting_confirmation'&&m.result_submitted_by!==session.user.id);
+    const unread=(persistent||[]).filter(n=>!n.read_at);
+    const items=[];
+
+    for(const c of pending.slice(0,2)){
+      const other=c.challenger;
+      const fmt=c.match_format==='bo5'?'Bo5':c.match_format==='bo3'?'Bo3':'1 set';
+      items.push(`<article class="live-action-notification"><div class="live-notification-icon">!</div><div class="live-notification-copy"><small>NUEVO DESAFÍO · ${matchTypeLabel(c.match_type)}</small><strong>${esc(other?.first_name||'Jugador')} te desafió</strong><span>${fmt}${c.match_type==='casual'?' · No modifica el Elo':' · Partido con ranking'}</span></div><div class="live-notification-actions"><button class="live-accept" data-response="accepted" data-id="${c.id}" type="button">Aceptar</button><button class="live-decline" data-response="rejected" data-id="${c.id}" type="button">Declinar</button></div></article>`);
+    }
+    for(const m of confirmations.slice(0,2)){
+      const other=m.player1_id===session.user.id?m.player2:m.player1;
+      items.push(`<article class="live-action-notification"><div class="live-notification-icon">✓</div><div class="live-notification-copy"><small>RESULTADO PENDIENTE · ${matchTypeLabel(m.match_type)}</small><strong>${esc(other?.first_name||'Tu rival')} cargó el resultado</strong><span>Revisalo y confirmá o disputá el partido.</span></div><div class="live-notification-actions"><button class="live-accept" data-confirm-match="${m.id}" type="button">Confirmar</button><button class="live-decline" data-dispute-match="${m.id}" type="button">Disputar</button></div></article>`);
+    }
+    for(const n of unread.slice(0,3)){
+      items.push(`<button class="live-action-notification live-persistent-v58" data-notification-v58="${n.id}" type="button"><div class="live-notification-icon">${notificationIconV58(n.type)}</div><div class="live-notification-copy"><small>${esc(String(n.type||'ACTIVIDAD').replaceAll('_',' ').toUpperCase())}</small><strong>${esc(n.title)}</strong><span>${esc(n.body||'')}</span></div><b>›</b></button>`);
+    }
+
+    const stack=$('#liveNotificationStack');
+    stack.innerHTML=items.join('');
+    stack.classList.toggle('hidden',items.length===0);
+    const count=pending.length+confirmations.length+unread.length;
+    $('#notificationBadge').textContent=count>99?'99+':String(count);
+    $('#notificationBadge').classList.toggle('hidden',count===0);
+  }catch(err){console.warn('Notificaciones:',err)}
+}
+function scheduleLiveRefreshV55(key,fn,delay=90){
+  const old=liveRefreshTimersV55.get(key);
+  if(old)clearTimeout(old);
+
+  const timer=setTimeout(async()=>{
+    liveRefreshTimersV55.delete(key);
+    try{await fn()}catch(err){console.warn(`V55 ${key}:`,err)}
+  },delay);
+
+  liveRefreshTimersV55.set(key,timer);
+}
+
+async function refreshDuelViewsV55(){
+  if(!session?.user)return;
+
+  // Estas tres vistas deben moverse juntas:
+  // desafío -> partido -> confirmación.
+  await Promise.all([
+    loadChallenges(),
+    loadMatches(),
+    loadLiveNotifications()
+  ]);
+}
+
+async function refreshCompetitionExperienceV55(){
+  if(!session?.user)return;
+  if(competitionRefreshPromiseV55)return competitionRefreshPromiseV55;
+
+  competitionRefreshPromiseV55=(async()=>{
+    ratings=await getMyRatings(session.user.id);
+    lastRatingSignatureV55=JSON.stringify(
+      ratings.map(r=>[r.modality,r.rating,r.matches_played,r.wins,r.losses])
+    );
+
+    await loadSocialState();
+    populate();
+
+    // No llamamos loadLiveNotifications acá para no crear un bucle:
+    // esa función es quien detecta la transición a confirmed.
+    await Promise.all([
+      loadRanking(),
+      loadChallenges(),
+      loadMatches(),
+      loadHistory(),
+      loadHomeDashboard(),
+      loadHistoryPage(),
+      loadRecommendedRivals(),
+      loadStatsModeV56(true),
+      loadV28Experience()
+    ]);
+  })();
+
+  try{
+    await competitionRefreshPromiseV55;
+  }finally{
+    competitionRefreshPromiseV55=null;
+  }
+}
+
+async function handleConfirmedMatchV55(matchRow){
+  if(!session?.user||!matchRow)return;
+
+  const id=Number(matchRow.id);
+  if(!id||postMatchShownIds.has(id))return;
+
+  // Se marca ANTES del refresh para bloquear eventos duplicados de:
+  // matches + ratings + rating_history + polling.
+  postMatchShownIds.add(id);
+  pendingPostMatchReviewId=id;
+
+  try{
+    // Feedback inmediato: el usuario ve el resultado mientras los paneles
+    // secundarios (ranking, historial y estadísticas) se actualizan detrás.
+    const modal=$('#postMatchModal');
+    const content=$('#postMatchContent');
+    if(content)content.innerHTML='<div class="v71-result-shell"><main class="v71-result-body"><section class="v71-coach"><span>✦</span><div><small>RESULTADO CONFIRMADO</small><p>Actualizando Elo y preparando el resumen…</p></div></section></main></div>';
+    modal?.classList.remove('hidden');
+    syncModalScrollLock();
+
+    const current=(socialState.matches||[]).filter(x=>Number(x.id)!==id);
+    socialState.matches=[matchRow,...current];
+    const won=matchRow?.winner_id===session.user.id;
+
+    invalidateMatchesCacheV60(session.user.id);
+    invalidateChallengesCacheV60(session.user.id);
+    invalidateTabLoadsV74('home','ranking','play','history','stats','profile');
+    const backgroundRefresh=Promise.all([
+      loadMatches(),
+      refreshRatingViewsV55()
+    ]).catch(err=>console.warn('P7.4 actualización posterior al partido:',err));
+
+    await showPostMatch({
+      matchId:id,
+      won,
+      oldRating:null,
+      newRating:null
+    });
+
+    // No bloquea el cartel ni la navegación.
+    backgroundRefresh.then(()=>loadActivityCenter().catch(()=>{}));
+  }catch(err){
+    console.error('V55 post-match live',err);
+    // Si algo excepcional falló, permitimos reintentar mediante polling.
+    postMatchShownIds.delete(id);
+    pendingPostMatchReviewId=null;
+  }
+}
+
+async function refreshVisibleRatingViewsV74(){
+  const active=document.body.dataset.activeTabV101||'home';
+  if(active==='home')await loadHomeDashboard();
+  else if(active==='ranking')await loadRanking();
+  else if(active==='history')await loadHistoryPage();
+  else if(active==='stats')await Promise.all([loadHistory(),loadStatsModeV56(true)]);
+  else if(active==='profile'){
+    renderProfileSeasonCards();
+    renderIdentityShowcase();
+  }
+}
+
+async function refreshRatingViewsV55(){
+  if(!session?.user)return;
+  ratings=await getMyRatings(session.user.id);
+  lastRatingSignatureV55=JSON.stringify(
+    ratings.map(r=>[r.modality,r.rating,r.matches_played,r.wins,r.losses])
+  );
+  invalidateTabLoadsV74('home','ranking','history','stats','profile');
+  await refreshVisibleRatingViewsV74();
+}
+
+async function refreshReviewViewsV55(){
+  if(!session?.user)return;
+  await loadSocialState();
+  invalidateTabLoadsV74('home','history','profile');
+  const active=document.body.dataset.activeTabV101||'home';
+  if(active==='home')await loadHomeDashboard();
+  if(active==='history')await loadHistoryPage();
+  if(active==='profile'){
+    renderAchievements();renderPrimaryRival();renderIdentityShowcase();
+  }
+}
+
+async function refreshSelectedTournamentV55(){
+  if(!session?.user)return;
+
+  const detailVisible=!!$('#tournamentDetail')&&!$('#tournamentDetail').classList.contains('hidden');
+  const tournamentTabActive=$('#tab-tournaments')?.classList.contains('active');
+
+  if(selectedTournament?.id&&detailVisible){
+    const all=await getTournamentsV8();
+    const updated=all.find(t=>Number(t.id)===Number(selectedTournament.id));
+    if(updated)selectedTournament=updated;
+
+    await renderTournamentBracket();
+    await renderTournamentSummaryV20();
+  }
+
+  if(tournamentTabActive){
+    await loadTournamentHubV30();
+  }
+}
+
+async function refreshSelectedTeamTournamentV55(){
+  if(!session?.user)return;
+
+  const detailVisible=!!$('#teamTournamentDetailV32')&&!$('#teamTournamentDetailV32').classList.contains('hidden');
+  const builderVisible=!!$('#teamTournamentBuilderV32')&&!$('#teamTournamentBuilderV32').classList.contains('hidden');
+
+  if(selectedTeamTournamentV32?.tournament?.id&&detailVisible){
+    selectedTeamTournamentV32=await getTeamTournamentV32(
+      selectedTeamTournamentV32.tournament.id
+    );
+    renderTeamTournamentDetailV32();
+  }
+
+  if(detailVisible||builderVisible||$('#tab-tournaments')?.classList.contains('active')){
+    await Promise.all([
+      loadTeamTournamentListV32(),
+      loadTeamTournamentHistoryV33()
+    ]);
+  }
+}
+
+async function fallbackCompetitionPollV55(){
+  if(!session?.user||document.visibilityState==='hidden')return;
+
+  // Respaldo de los duelos. Realtime sigue siendo el camino inmediato;
+  // esto corrige desconexiones temporales de red / suspensión móvil.
+  await refreshDuelViewsV55();
+
+  // Si cambió el Elo por un torneo, refrescamos toda la experiencia competitiva.
+  try{
+    const latest=await getMyRatings(session.user.id);
+    const signature=JSON.stringify(
+      latest.map(r=>[r.modality,r.rating,r.matches_played,r.wins,r.losses])
+    );
+
+    if(lastRatingSignatureV55&&signature!==lastRatingSignatureV55){
+      ratings=latest;
+      lastRatingSignatureV55=signature;
+      invalidateTabLoadsV74('home','ranking','history','stats','profile');
+      await refreshVisibleRatingViewsV74();
+    }else if(!lastRatingSignatureV55){
+      lastRatingSignatureV55=signature;
+    }
+  }catch(err){
+    console.warn('V55 rating poll',err);
+  }
+
+  // Sólo hacemos polling pesado de torneos cuando realmente están abiertos.
+  if(
+    $('#tab-tournaments')?.classList.contains('active')||
+    ($('#tournamentDetail')&&!$('#tournamentDetail').classList.contains('hidden'))
+  ){
+    await refreshSelectedTournamentV55().catch(()=>{});
+    await refreshSelectedTeamTournamentV55().catch(()=>{});
+  }
+}
+
+function stopLiveNotificationStream(){
+  for(const timer of liveRefreshTimersV55.values())clearTimeout(timer);
+  liveRefreshTimersV55.clear();
+
+  if(competitionLiveSyncV55){
+    competitionLiveSyncV55.stop().catch?.(()=>{});
+    competitionLiveSyncV55=null;
+  }
+}
+
+function startLiveNotificationStream(){
+  if(!session?.user)return;
+
+  stopLiveNotificationStream();
+  const uid=session.user.id;
+
+  competitionLiveSyncV55=createCompetitionLiveSyncV55({
+    userId:uid,
+
+    onChallengeChange:payload=>{
+      const changedChallenge=payload?.new||payload?.old;
+      handleRematchOutcomeV744(changedChallenge);
+      handleIncomingRematchV745(changedChallenge);
+      invalidateChallengesCacheV60(uid);
+      invalidateTabLoadsV74('play','home');
+      scheduleLiveRefreshV55('challenges',async()=>{
+        await loadChallenges();
+        await loadLiveNotifications();
+      },40);
+    },
+
+    onMatchChange:payload=>{
+      invalidateMatchesCacheV60(uid);
+      invalidateTabLoadsV74('play','history','stats','home');
+      const changed=payload?.new;
+      if(changed?.id){
+        const previous=(socialState.matches||[]).find(x=>Number(x.id)===Number(changed.id));
+        socialState.matches=[
+          {...(previous||{}),...changed},
+          ...(socialState.matches||[]).filter(x=>Number(x.id)!==Number(changed.id))
+        ];
+      }
+      scheduleLiveRefreshV55('matches',async()=>{
+        await loadMatches();
+        await loadLiveNotifications();
+      },40);
+      if(changed?.result_status==='confirmed')handleConfirmedMatchV55(changed);
+      if(document.body.dataset.activeTabV101==='stats'){
+        scheduleLiveRefreshV55('stats-v56',()=>loadStatsModeV56(true),80);
+      }
+    },
+
+    onRatingChange:()=>{
+      invalidateTabLoadsV74('home','ranking','history','stats','profile');
+      scheduleLiveRefreshV55('rating',refreshRatingViewsV55,60);
+    },
+
+    onReviewChange:()=>{
+      scheduleLiveRefreshV55('reviews',refreshReviewViewsV55,80);
+    },
+
+    onTournamentChange:()=>{
+      invalidateTabLoadsV74('tournaments','stats','profile');
+      if(document.body.dataset.activeTabV101==='tournaments'){
+        scheduleLiveRefreshV55('tournaments',refreshSelectedTournamentV55,80);
+      }
+    },
+
+    onTeamTournamentChange:()=>{
+      invalidateTabLoadsV74('tournaments','stats','profile');
+      if(document.body.dataset.activeTabV101==='tournaments'){
+        scheduleLiveRefreshV55('team-tournaments',refreshSelectedTeamTournamentV55,80);
+      }
+    },
+
+    onV58Change:()=>{
+      scheduleLiveRefreshV55('v58',async()=>{
+        await loadV58Core({refreshTitles:true});
+        titleState=await getPlayerTitles(session.user.id).catch(()=>titleState);
+        frameState=await getFrames(session.user.id).catch(()=>frameState);
+        renderEquippedTitle();renderFrameGallery();renderOwnAvatarsV44();
+        await loadLiveNotifications();
+        if(!$('#disputeResolutionModalV58')?.classList.contains('hidden'))await refreshOpenDisputeV58();
+        if(v35Flags?.is_test_admin&&document.body.dataset.activeTabV101==='admin'){
+          await Promise.all([loadAdminDisputesV58(),loadAdminLinkedAccountsV58(),loadAdminReviewTagsV58()]);
+        }
+      },80);
+    },
+
+    onFallbackPoll:fallbackCompetitionPollV55,
+    pollMs:15000
+  });
+
+  competitionLiveSyncV55.start();
+}
+
+
+async function renderCompetitivePulse(rankingRows){
+  const title=$('#competitivePulseTitle'),badge=$('#competitivePulseBadge'),
+        myPos=$('#pulseMyPosition'),label=$('#pulseTargetLabel'),
+        name=$('#pulseTargetName'),detail=$('#pulseTargetDetail'),
+        fill=$('#pulseTrackFill'),btn=$('#pulseChallengeButton');
+  if(!title||!session?.user)return;
+
+  competitivePulseTarget=null;
+  const me=rankingRows.find(x=>x.profile?.id===session.user.id);
+  if(!me){
+    myPos.textContent='#—';label.textContent='Entrá al ranking con tu primer partido';
+    name.textContent='Todavía sin posición';detail.textContent='Jugá un ranked para empezar.';
+    fill.style.width='0%';btn.classList.add('hidden');return;
+  }
+
+  myPos.textContent=`#${me.position}`;
+
+  const above=rankingRows.find(x=>x.position===me.position-1);
+  const below=rankingRows.find(x=>x.position===me.position+1);
+  const target=above||below;
+
+  if(target){
+    competitivePulseTarget=target.profile;
+    const gap=Math.abs(Number(target.rating)-Number(me.rating));
+    const chasing=target.position<me.position;
+    title.textContent=chasing?'Subí un puesto':'Defendé tu lugar';
+    badge.textContent=chasing?'A LA CAZA':'DEFENSA';
+    label.textContent=chasing?`#${target.position} está a ${gap} Elo`:`#${target.position} está detrás tuyo`;
+    name.textContent=`${target.profile.first_name} ${target.profile.last_name}`;
+    detail.textContent=`@${target.profile.username} · ${target.rating} Elo`;
+    const pct=Math.max(8,Math.min(100,100-gap/4));
+    fill.style.width=`${pct}%`;
+    btn.classList.remove('hidden');
+    btn.textContent='Desafiar';
+  }else{
+    title.textContent=me.position===1?'Defendé la cima':'Seguí compitiendo';
+    badge.textContent=me.position===1?'#1':'RANKING';
+    label.textContent=me.position===1?'Sos el líder actual':'No hay un rival adyacente todavía';
+    name.textContent=me.position===1?'Todos van por vos':'Seguí sumando partidos';
+    detail.textContent=seasonState?`${seasonState.name||'Temporada actual'} en curso`:'Temporada activa';
+    fill.style.width=me.position===1?'100%':'35%';
+    btn.classList.add('hidden');
+  }
+}
+
+function renderIdentityShowcase(){
+  const box=$('#identityShowcaseCard');if(!box||!profile)return;
+  const equippedFrame=frameState?.equipped||null;
+  const title=(titleState?.items||[]).find(x=>x.id===titleState?.equipped);
+  const showcase=(socialState?.achievements||[]).filter(a=>myShowcaseAchievementIds.includes(a.id)).slice(0,3);
+  box.innerHTML=`
+    ${identityAvatarMarkupV44(profile,equippedFrame||'none')}
+    <div class="identity-showcase-copy">
+      <small>ASÍ TE VEN LOS DEMÁS</small>
+      <strong>${esc(profile.first_name)} ${esc(profile.last_name)}</strong>
+      <span>@${esc(profile.username)}</span>
+      ${title?`<em class="public-equipped-title rarity-${title.rarity}">✦ ${esc(title.name)}</em>`:'<em class="identity-empty-title">Sin título equipado</em>'}
+    </div>
+    <div class="identity-showcase-achievements">
+      ${showcase.length?showcase.map(a=>`<span title="${esc(a.name)}">${a.icon||'◆'} <b>${esc(a.name)}</b></span>`).join(''):'<span class="identity-no-achievements">Elegí hasta 3 logros destacados</span>'}
+    </div>`;
+}
+
+async function loadHomeDashboard(){
+  if(!session?.user)return;
+
+  const ind=getRating('individual');
+  const dob=getRating('dobles');
+  const rep=averageReviews(socialState.reviewsReceived);
+  const streak=socialState.streak;
+  const achievements=socialState.achievements;
+  const unlocked=achievements.filter(a=>a.unlocked).length;
+
+  if($('#homeCurrentStreak'))animateNumberV601($('#homeCurrentStreak'),streak.current,{duration:430});
+  if($('#homeMaxStreak'))animateNumberV601($('#homeMaxStreak'),streak.max,{duration:430});
+  const streakCaption=$('#homeCurrentStreak')?.nextElementSibling;
+  if(streakCaption){
+    streakCaption.textContent='victorias oficiales con Elo';
+    streakCaption.classList.remove('has-elo-boost');
+  }
+  if($('#homeReputation'))$('#homeReputation').textContent=rep.count?rep.average.toFixed(1):'—';
+  if($('#homeReviewCount'))$('#homeReviewCount').textContent=rep.count?`${rep.count} ${rep.count===1?'valoración':'valoraciones'}`:'sin valoraciones';
+  if($('#homeAchievementCount'))animateNumberV601($('#homeAchievementCount'),unlocked,{duration:430});
+  if($('#homeAchievementTotal'))$('#homeAchievementTotal').textContent=`de ${achievements.length} desbloqueados`;
+  if($('#homeDoublesRating'))animateNumberV601($('#homeDoublesRating'),dob.rating,{duration:520});
+
+  const info=nextRankInfo(ind.rating);
+  if($('#homeNextRankText')){
+    $('#homeNextRankText').textContent=info.next?`${info.remaining} Elo para ${info.next.name}`:'Rango máximo';
+  }
+  if($('#homeRankProgressBar'))animateProgressV601($('#homeRankProgressBar'),info.progress);
+
+  if(info.next){
+    const remaining=Math.max(0,Number(info.next.min_rating)-Number(ind.rating));
+    $('#homeObjectiveTitle').textContent=`¡Rumbo a ${info.next.name}!`;
+    $('#homeObjectiveDetail').textContent=`Te faltan ${remaining} puntos de Elo para tu próximo ascenso.`;
+    if($('#homeObjectiveProgress'))animateProgressV601($('#homeObjectiveProgress'),info.progress);
+    if($('#homeObjectiveReward'))$('#homeObjectiveReward').textContent=`RECOMPENSA · Marco ${info.next.name}`;
+    if($('#homeObjectiveGlyph'))$('#homeObjectiveGlyph').textContent='✦';
+  }else{
+    $('#homeObjectiveTitle').textContent='Defendé tu lugar';
+    $('#homeObjectiveDetail').textContent='Llegaste al rango máximo. Ahora peleá por la temporada.';
+    if($('#homeObjectiveProgress'))animateProgressV601($('#homeObjectiveProgress'),100);
+    if($('#homeObjectiveReward'))$('#homeObjectiveReward').textContent='OBJETIVO · Mejor posición de temporada';
+    if($('#homeObjectiveGlyph'))$('#homeObjectiveGlyph').textContent='♛';
+  }
+
+  if(seasonState){
+    const start=new Date(seasonState.starts_at),end=new Date(seasonState.ends_at),now=new Date();
+    const total=Math.max(1,end-start),elapsed=Math.max(0,Math.min(total,now-start));
+    const day=Math.max(1,Math.min(90,Math.floor(elapsed/86400000)+1));
+    const remaining=Math.max(0,Math.ceil((end-now)/86400000));
+    if($('#homeSeasonName'))$('#homeSeasonName').textContent=String(seasonState.name||'Temporada').toUpperCase();
+    if($('#homeSeasonPosition'))$('#homeSeasonPosition').textContent=seasonState.position?`#${seasonState.position}`:'#—';
+    if($('#homeSeasonDay'))$('#homeSeasonDay').textContent=`Día ${day} de 90`;
+    if($('#homeSeasonRemaining'))$('#homeSeasonRemaining').textContent=`${remaining} días restantes`;
+    if($('#homeSeasonBar'))animateProgressV601($('#homeSeasonBar'),(elapsed/total)*100);
+    if($('#rankingSeasonName'))$('#rankingSeasonName').textContent=seasonState.name||'Temporada';
+    if($('#rankingSeasonRemaining'))$('#rankingSeasonRemaining').textContent=`${remaining} días restantes · soft reset ${seasonState.soft_reset_percent||20}%`;
+    if($('#rankingSeasonPosition'))$('#rankingSeasonPosition').textContent=seasonState.position?`#${seasonState.position}`:'#—';
+  }
+
+  try{
+    const ranking=await getRanking('individual','');
+    const me=ranking.find(x=>x.profile?.id===session.user.id);
+    $('#homeRankPosition').textContent=me?`#${me.position} Ranking global`:'Ranking global: —';
+    await renderCompetitivePulse(ranking);
+  }catch(e){
+    $('#homeRankPosition').textContent='Ranking global: —';
+    await renderCompetitivePulse([]);
+  }
+
+  renderAchievements();
+  renderIdentityShowcase();
+}
+
+
+
+
+
+function titleRarityLabel(r){
+  return ({common:'Común',rare:'Raro',epic:'Épico',legendary:'Legendario',mythic:'Mítico',exclusive:'Exclusivo'})[r]||'Común';
+}
+function renderEquippedTitle(){
+  const box=$('#equippedTitleCard');if(!box)return;
+  const t=(titleState.items||[]).find(x=>x.id===titleState.equipped);
+  const hero=$('#profileEquippedTitleV58');
+  if(!t){
+    box.innerHTML='<span class="title-none">Sin título equipado</span><small>Podés equipar uno desde Perfil competitivo.</small>';
+    if(hero){hero.className='profile-equipped-title-v58 hidden';hero.innerHTML='';hero.removeAttribute('title')}
+    return
+  }
+  box.innerHTML=`<div class="title-emblem rarity-${t.rarity}">${esc(t.icon||'✦')}</div><div><span>${titleRarityLabel(t.rarity)}</span><strong>${esc(t.name)}</strong><small>${esc(t.description)}</small></div>`;
+  if(hero){
+    hero.className=`profile-equipped-title-v58 rarity-${t.rarity}`;
+    hero.innerHTML=`<span>${esc(t.icon||'✦')}</span><strong>${esc(t.name)}</strong><small>${esc(titleRarityLabel(t.rarity))}</small>`;
+    hero.title=t.description||t.name;
+  }
+}
+async function openTitleSelector(){
+  $('#titleSelectorModal').classList.remove('hidden');syncModalScrollLock();
+  const box=$('#titleSelectorList');box.innerHTML='<div class="loading-row">Actualizando progreso de títulos…</div>';
+  try{
+    await refreshOwnCompetitiveTitlesV58().catch(()=>[]);
+    titleState=await getPlayerTitles(session.user.id);
+    trackTitleUnlocksV60(titleState.items||[]);
+    const visibleTitles=(titleState.items||[]).filter(t=>t.id!=='v100_tester'||v35Flags?.is_test_admin||t.unlocked);
+    const items=[{id:'',icon:'○',name:'Sin título',description:'No mostrar ningún título bajo tu nombre.',rarity:'common',unlocked:true,progress:100,progress_label:'Disponible',source:'system'},...visibleTitles];
+    box.innerHTML=items.map(t=>{
+      const active=(titleState.equipped||'')===t.id;
+      const progress=Math.max(0,Math.min(100,Number(t.progress??(t.unlocked?100:0))));
+      return `<article class="title-choice title-choice-v58 ${t.unlocked?'unlocked':'locked'} ${active?'active':''}">
+        <div class="title-emblem rarity-${t.rarity}">${t.unlocked?esc(t.icon||'✦'):'🔒'}</div>
+        <div class="title-choice-copy-v58">
+          <div class="title-choice-name-v58"><strong>${esc(t.name)}</strong><i>${titleRarityLabel(t.rarity)}</i></div>
+          <small>${esc(t.description)}</small>
+          ${['v58','v100'].includes(t.source)?`<div class="title-progress-v58"><div><span>${esc(t.progress_label||'Progreso')}</span><b>${Math.round(progress)}%</b></div><div class="title-progress-track-v58"><span style="width:${progress}%"></span></div></div>`:''}
+        </div>
+        <button type="button" data-equip-title="${t.id}" ${t.unlocked?'':'disabled'}>${active?'Equipado ✓':t.unlocked?'Equipar':'Bloqueado'}</button>
+      </article>`;
+    }).join('');
+  }catch(err){box.innerHTML=`<div class="compact-empty">${esc(err.message||'No se pudieron cargar los títulos.')}</div>`}
+}
+function statModeLabelV56(mode=statsModeV56){
+  return ({
+    all:'Todo',
+    casual:'Casual',
+    competitive:'Competitivo',
+    tournament:'Torneos'
+  })[mode]||'Todo';
+}
+
+function statModeDescriptionV56(mode=statsModeV56){
+  return ({
+    all:'Resumen unificado de Casual, Competitivo y Torneos. El Win Rate principal es el promedio entre las modalidades que ya jugaste.',
+    casual:'Sólo partidos casuales: resultados sin impacto en el Elo.',
+    competitive:'Sólo duelos competitivos con ranking y evolución de Elo.',
+    tournament:'Todos tus partidos de torneo: individuales, dobles y enfrentamientos por equipos.'
+  })[mode];
+}
+
+function selectedStatsV56(){
+  return statsModeStateV56?.[statsModeV56]||{
+    matches:0,wins:0,losses:0,win_rate:0,
+    sets_for:0,sets_against:0,set_balance:0,
+    tournaments_played:0
+  };
+}
+
+function renderStatsModeTopV56(){
+  const s=selectedStatsV56();
+  const mode=statsModeV56;
+  const played=Number(s.matches||0);
+  const wr=played?Number(s.win_rate||0):0;
+
+  if($('#statsModeDescriptionV56'))$('#statsModeDescriptionV56').textContent=statModeDescriptionV56(mode);
+
+  if($('#statMatches'))$('#statMatches').textContent=played;
+  if($('#statWins'))$('#statWins').textContent=Number(s.wins||0);
+  if($('#statLosses'))$('#statLosses').textContent=Number(s.losses||0);
+  if($('#statWinRate'))$('#statWinRate').textContent=played?`${wr.toFixed(1)}%`:'—';
+
+  const texts={
+    all:{
+      rate:'Win Rate promedio',
+      rateHint:'promedio entre modalidades activas',
+      matches:'registro unificado',
+      wins:'todas las modalidades',
+      losses:'todas las modalidades'
+    },
+    casual:{
+      rate:'Win Rate casual',
+      rateHint:'partidos sin Elo',
+      matches:'partidos casuales',
+      wins:'victorias casuales',
+      losses:'derrotas casuales'
+    },
+    competitive:{
+      rate:'Win Rate competitivo',
+      rateHint:'duelos con ranking',
+      matches:'partidos competitivos',
+      wins:'victorias competitivas',
+      losses:'derrotas competitivas'
+    },
+    tournament:{
+      rate:'Win Rate en torneos',
+      rateHint:`${Number(s.tournaments_played||0)} torneo${Number(s.tournaments_played||0)===1?'':'s'} jugado${Number(s.tournaments_played||0)===1?'':'s'}`,
+      matches:'partidos de torneo',
+      wins:'victorias en torneo',
+      losses:'derrotas en torneo'
+    }
+  }[mode];
+
+  if($('#statWinRateLabelV56'))$('#statWinRateLabelV56').textContent=texts.rate;
+  if($('#statWinRateHintV56'))$('#statWinRateHintV56').textContent=texts.rateHint;
+  if($('#statMatchesHintV56'))$('#statMatchesHintV56').textContent=texts.matches;
+  if($('#statWinsHintV56'))$('#statWinsHintV56').textContent=texts.wins;
+  if($('#statLossesHintV56'))$('#statLossesHintV56').textContent=texts.losses;
+}
+
+function renderStatsDistributionV56(){
+  const st=statsModeStateV56||{};
+  const casual=st.casual||{};
+  const competitive=st.competitive||{};
+  const tournament=st.tournament||{};
+  const all=st.all||{};
+
+  if($('#statCasualMatches'))$('#statCasualMatches').textContent=Number(casual.matches||0);
+  if($('#statRankedMatches'))$('#statRankedMatches').textContent=Number(competitive.matches||0);
+  if($('#statTournamentMatchesV56'))$('#statTournamentMatchesV56').textContent=Number(tournament.matches||0);
+  if($('#statTotalMatches'))$('#statTotalMatches').textContent=Number(all.matches||0);
+
+  $$('[data-stats-tile-v56]').forEach(card=>{
+    card.classList.toggle('active-v56',card.dataset.statsTileV56===statsModeV56);
+  });
+}
+
+function renderModeComparativeV56(){
+  const box=$('#comparativeStatsGrid');
+  if(!box)return;
+
+  const badge=$('#comparativePopulation');
+  const kicker=$('#comparativeKickerV56');
+  const title=$('#comparativeTitleV56');
+  const st=statsModeStateV56||{};
+  const current=selectedStatsV56();
+
+  if(statsModeV56==='competitive'){
+    const c=comparativeState||{};
+    if(kicker)kicker.textContent='COMPARATIVA';
+    if(title)title.textContent='Cómo estás frente a la comunidad';
+    if(badge)badge.textContent=`${c.population||0} jugadores`;
+
+    if(!c.rating){
+      box.innerHTML='<div class="compact-empty">Todavía no hay suficientes datos para comparar.</div>';
+      return;
+    }
+
+    const wrDelta=Number(c.win_rate.value||0)-Number(c.win_rate.average||0);
+    const ratingDelta=Number(c.rating.value||0)-Number(c.rating.average||0);
+
+    box.innerHTML=`
+      <article><span>Elo</span><strong>${c.rating.value}</strong><b>Top ${c.rating.top_percent}%</b><small>${ratingDelta>=0?'+':''}${Math.round(ratingDelta)} vs promedio</small></article>
+      <article><span>Win rate</span><strong>${c.win_rate.value}%</strong><b>Percentil ${c.win_rate.percentile}</b><small>${wrDelta>=0?'+':''}${wrDelta.toFixed(1)} pts vs promedio</small></article>
+      <article><span>Actividad</span><strong>${c.activity.matches}</strong><b>Percentil ${c.activity.percentile}</b><small>partidos ranked jugados</small></article>`;
+    return;
+  }
+
+  if(kicker)kicker.textContent=statsModeV56==='all'?'MODALIDADES':'LECTURA DEL MODO';
+  if(title)title.textContent=statsModeV56==='all'?'Cómo se reparte tu actividad':`Radiografía ${statModeLabelV56().toLowerCase()}`;
+  if(badge)badge.textContent=statsModeV56==='all'?'3 modalidades':statModeLabelV56();
+
+  if(statsModeV56==='all'){
+    const rows=[
+      ['Casual',st.casual||{},'sin Elo'],
+      ['Competitivo',st.competitive||{},'con ranking'],
+      ['Torneos',st.tournament||{},'competencia organizada']
+    ];
+    box.innerHTML=rows.map(([name,s,detail])=>`
+      <article>
+        <span>${name}</span>
+        <strong>${Number(s.matches||0)} PJ</strong>
+        <b>${Number(s.matches||0)?Number(s.win_rate||0).toFixed(1):'0.0'}% victorias</b>
+        <small>${detail}</small>
+      </article>`).join('');
+    return;
+  }
+
+  const balance=Number(current.wins||0)-Number(current.losses||0);
+  const setBalance=Number(current.set_balance||0);
+  const allMatches=Math.max(1,Number(st.all?.matches||0));
+  const share=Math.round((Number(current.matches||0)/allMatches)*100);
+
+  box.innerHTML=`
+    <article><span>Actividad</span><strong>${Number(current.matches||0)}</strong><b>${share}% del total</b><small>partidos registrados</small></article>
+    <article><span>Balance</span><strong>${balance>=0?'+':''}${balance}</strong><b>${Number(current.wins||0)}V–${Number(current.losses||0)}D</b><small>diferencia entre victorias y derrotas</small></article>
+    <article><span>Sets</span><strong>${Number(current.sets_for||0)}–${Number(current.sets_against||0)}</strong><b>${setBalance>=0?'+':''}${setBalance}</b><small>diferencia de sets</small></article>`;
+}
+
+function renderModeRecordsV56(){
+  const box=$('#personalRecordsGrid');
+  if(!box)return;
+
+  const s=selectedStatsV56();
+  const title=$('#recordsTitleV56');
+  const kicker=$('#recordsKickerV56');
+  const badge=$('#statsComparativeLabel');
+
+  if(statsModeV56==='competitive'){
+    if(kicker)kicker.textContent='HISTORIA PERSONAL';
+    if(title)title.textContent='Récords competitivos';
+    loadPersonalRecords();
+    loadCompetitiveProgressV72();
+    return;
+  }
+
+  if(kicker)kicker.textContent='RESUMEN DEL MODO';
+  if(title)title.textContent=statsModeV56==='all'?'Panorama general':`Detalle ${statModeLabelV56().toLowerCase()}`;
+  if(badge)badge.textContent=statModeLabelV56();
+
+  const balance=Number(s.wins||0)-Number(s.losses||0);
+  const setBalance=Number(s.set_balance||0);
+
+  if(statsModeV56==='tournament'){
+    box.innerHTML=`
+      <article><span>Torneos disputados</span><strong>${Number(s.tournaments_played||0)}</strong><small>ediciones con al menos un partido</small></article>
+      <article><span>Partidos</span><strong>${Number(s.matches||0)}</strong><small>todos los encuentros de torneo</small></article>
+      <article><span>Individuales</span><strong>${Number(s.tournament_individual_matches||0)}</strong><small>cuadro individual</small></article>
+      <article><span>Dobles</span><strong>${Number(s.tournament_doubles_matches||0)}</strong><small>cuadro de parejas</small></article>
+      <article><span>Por equipos</span><strong>${Number(s.tournament_team_matches||0)}</strong><small>encuentros dentro de series 4vs4</small></article>
+      <article><span>Balance de sets</span><strong>${setBalance>=0?'+':''}${setBalance}</strong><small>${Number(s.sets_for||0)} a favor · ${Number(s.sets_against||0)} en contra</small></article>`;
+    return;
+  }
+
+  if(statsModeV56==='all'){
+    const weighted=Number(s.weighted_win_rate||0);
+    box.innerHTML=`
+      <article><span>Partidos totales</span><strong>${Number(s.matches||0)}</strong><small>suma de todas las modalidades</small></article>
+      <article><span>Win Rate promedio</span><strong>${Number(s.win_rate||0).toFixed(1)}%</strong><small>promedio simple entre modalidades activas</small></article>
+      <article><span>Win Rate ponderado</span><strong>${weighted.toFixed(1)}%</strong><small>ponderado por cantidad real de partidos</small></article>
+      <article><span>Balance global</span><strong>${balance>=0?'+':''}${balance}</strong><small>${Number(s.wins||0)}V–${Number(s.losses||0)}D</small></article>
+      <article class="record-wide"><span>Balance de sets</span><strong>${setBalance>=0?'+':''}${setBalance}</strong><small>${Number(s.sets_for||0)} sets a favor · ${Number(s.sets_against||0)} en contra</small></article>`;
+    return;
+  }
+
+  box.innerHTML=`
+    <article><span>Partidos</span><strong>${Number(s.matches||0)}</strong><small>${statModeLabelV56()}</small></article>
+    <article><span>Victorias</span><strong>${Number(s.wins||0)}</strong><small>partidos ganados</small></article>
+    <article><span>Derrotas</span><strong>${Number(s.losses||0)}</strong><small>partidos perdidos</small></article>
+    <article><span>Win Rate</span><strong>${Number(s.matches||0)?Number(s.win_rate||0).toFixed(1):'0.0'}%</strong><small>rendimiento del modo</small></article>
+    <article class="record-wide"><span>Balance de sets</span><strong>${setBalance>=0?'+':''}${setBalance}</strong><small>${Number(s.sets_for||0)} a favor · ${Number(s.sets_against||0)} en contra</small></article>`;
+}
+
+function renderStatsSpecializedSectionsV56(){
+  const competitive=statsModeV56==='competitive';
+  $$('.stats-competitive-only-v56').forEach(el=>el.classList.toggle('hidden',!competitive));
+}
+
+function renderStatsModeV56(){
+  if(!statsModeStateV56)return;
+
+  const select=$('#statsModeSelectV56');
+  if(select&&select.value!==statsModeV56)select.value=statsModeV56;
+
+  renderStatsModeTopV56();
+  renderStatsDistributionV56();
+  renderModeComparativeV56();
+  renderModeRecordsV56();
+  renderStatsSpecializedSectionsV56();
+}
+
+async function loadStatsModeV56(force=false){
+  if(!session?.user)return;
+  if(statsModeLoadPromiseV56&&!force)return statsModeLoadPromiseV56;
+
+  statsModeLoadPromiseV56=(async()=>{
+    try{
+      statsModeStateV56=await getMyStatsV56();
+      renderStatsModeV56();
+    }catch(err){
+      console.error('V56 estadísticas',err);
+      if($('#comparativeStatsGrid')){
+        $('#comparativeStatsGrid').innerHTML='<div class="compact-empty">No se pudieron cargar las estadísticas por modalidad.</div>';
+      }
+    }
+  })();
+
+  try{
+    await statsModeLoadPromiseV56;
+  }finally{
+    statsModeLoadPromiseV56=null;
+  }
+}
+
+function setStatsModeV56(mode){
+  const clean=['all','casual','competitive','tournament'].includes(mode)?mode:'all';
+  statsModeV56=clean;
+
+  // La pantalla cambia inmediatamente con los datos ya cargados.
+  renderStatsModeV56();
+
+  // Y refresca silenciosamente desde Supabase para asegurar estado actual.
+  loadStatsModeV56(true).catch(()=>{});
+}
+
+function renderComparativeStats(){
+  renderModeComparativeV56();
+}
+
+async function loadTournamentHistoryV21(){
+  const box=$('#tournamentHistoryList');if(!box)return;
+  box.innerHTML='<div class="loading-row">Cargando ediciones…</div>';
+  try{
+    const rows=await getTournamentHistory(80);
+    if(!rows.length){box.innerHTML='<div class="compact-empty">Todavía no hay torneos para mostrar.</div>';return}
+    const groups={};
+    rows.forEach(r=>{const key=r.normalized_series||r.tournament_name;(groups[key] ||= []).push(r)});
+    box.innerHTML=Object.entries(groups).map(([series,list])=>{
+      const ordered=[...list].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+      const base=ordered[0].tournament_name.replace(/\s*[·-]\s*(Nueva edición|Edición\s*\d+)\s*$/i,'');
+      return `<article class="tournament-series-card">
+        <div class="tournament-series-head"><div><span>SERIE</span><strong>${esc(base)}</strong></div><b>${ordered.length} ${ordered.length===1?'edición':'ediciones'}</b></div>
+        <div class="tournament-editions">${ordered.map((t,i)=>`<button type="button" data-open-tournament-history="${t.tournament_id}">
+          <span>Edición ${i+1}</span><strong>${t.status==='completed'?esc(t.champion_name||'Sin campeón'):'En curso'}</strong>
+          <small>${t.participants} participantes · ${t.completed_games} partidos</small></button>`).join('')}</div>
+      </article>`;
+    }).join('');
+  }catch(err){box.innerHTML='<div class="compact-empty">No se pudo cargar el historial de torneos.</div>'}
+}
+
+async function loadChampionsHall(){
+  const box=$('#championsHall');if(!box)return;
+  try{
+    const rows=await getSeasonChampions(8);
+    if(!rows.length){
+      box.innerHTML='<div class="compact-empty">El Salón de Campeones se estrenará cuando finalice la primera temporada.</div>';
+      return;
+    }
+    const seasons=[...new Set(rows.map(r=>r.season_number))];
+    box.innerHTML=seasons.map(sn=>{
+      const podium=rows.filter(r=>r.season_number===sn).sort((a,b)=>a.position-b.position);
+      return `<article class="champion-season-card">
+        <div class="champion-season-title"><span>TEMPORADA ${sn}</span><small>${podium[0]?.season_name||''}</small></div>
+        <div class="champion-podium">
+          ${podium.map(r=>`<button type="button" class="champion-place place-${r.position}" data-open-player="${r.user_id}">
+            <span class="champion-crown">${r.position===1?'♛':r.position===2?'♕':'♜'}</span>
+            ${avatarHtml(r,'champion-avatar')}
+            <strong>${esc(r.first_name)} ${esc(r.last_name)}</strong>
+            <small>#${r.position} · ${r.final_rating} Elo</small>
+          </button>`).join('')}
+        </div>
+      </article>`;
+    }).join('');
+  }catch(err){
+    console.error(err);box.innerHTML='<div class="compact-empty">No se pudo cargar el Salón de Campeones.</div>';
+  }
+}
+
+function seasonCardHtml(s,label){
+  if(!s)return `<article class="season-profile-card empty"><span>${label}</span><strong>Sin datos todavía</strong><small>Se completará al cerrar una temporada.</small></article>`;
+  const wr=s.matches_played?Number(s.win_rate||0):0;
+  return `<article class="season-profile-card">
+    <span>${label}</span>
+    <div class="season-profile-place"><strong>#${s.final_position||'—'}</strong><b>${esc(s.rank_name||'—')}</b></div>
+    <div class="season-profile-stats">
+      <small>Elo final <b>${s.final_rating}</b></small>
+      <small>Máximo <b>${s.max_rating}</b></small>
+      <small>Partidos <b>${s.matches_played}</b></small>
+      <small>Victorias <b>${s.wins}</b></small>
+      <small>Win rate <b>${wr}%</b></small>
+    </div>
+  </article>`;
+}
+
+async function renderProfileSeasonCards(){
+  const box=$('#profileSeasonCards');if(!box||!session?.user)return;
+  try{
+    const s=await getPublicPlayerSeasons(session.user.id);
+    box.innerHTML=seasonCardHtml(s.last_season,'ÚLTIMA TEMPORADA')+seasonCardHtml(s.best_season,'MEJOR TEMPORADA');
+  }catch(err){box.innerHTML='<div class="compact-empty">No se pudieron cargar las temporadas.</div>'}
+}
+
+async function loadCompetitiveProgressV72(){
+  const box=$('#competitiveProgressV72');if(!box||!session?.user||statsModeV56!=='competitive')return;
+  box.innerHTML='<div class="loading-row">Calculando tu progreso…</div>';
+  try{
+    const p=await getCompetitiveProgressV72();
+    const signed=n=>`${Number(n)>=0?'+':''}${Number(n)}`;
+    const trendLabel=p.trend==='up'?'EN ASCENSO':p.trend==='down'?'EN RECUPERACIÓN':'ESTABLE';
+    const deltaClass=n=>Number(n)>0?'v72-positive':Number(n)<0?'v72-negative':'';
+    box.innerHTML=`
+      <div class="v72-progress-head">
+        <div><p class="muted-label">P7.2 · PROGRESO</p><h3>Tu momento competitivo</h3></div>
+        <div class="v72-momentum ${p.trend}"><small>ÚLTIMOS 7 DÍAS</small><strong>${trendLabel}</strong></div>
+      </div>
+      <div class="v72-progress-hero">
+        <section class="v72-rank-panel">
+          <div class="v72-rank-copy"><div><small>RANGO ACTUAL</small><strong>${esc(p.rank)}</strong></div><div><small>ELO</small><b>${p.rating}</b></div></div>
+          <div class="v72-rank-track" role="progressbar" aria-label="Progreso hacia ${esc(p.nextRank||'el rango máximo')}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p.progress)}"><i style="width:${p.progress}%"></i></div>
+          <p>${p.nextRank?`${p.toNext} Elo para <strong>${esc(p.nextRank)}</strong>`:'Alcanzaste el rango máximo'}</p>
+        </section>
+        <section class="v72-record-panel">
+          <div><small>MÁXIMO HISTÓRICO</small><strong>${p.maxElo}</strong><em>Elo</em></div>
+          <div><small>POSICIÓN ACTUAL</small><strong>${p.position?`#${p.position}`:'—'}</strong><em>${p.bestPosition?`mejor conocida #${p.bestPosition}`:'ranking global'}</em></div>
+        </section>
+      </div>
+      <div class="v72-progress-grid">
+        <article><span>Variación 7 días</span><strong class="${deltaClass(p.delta7)}">${signed(p.delta7)}</strong><small>Elo acumulado</small></article>
+        <article><span>Variación 30 días</span><strong class="${deltaClass(p.delta30)}">${signed(p.delta30)}</strong><small>Elo acumulado</small></article>
+        <article><span>Racha competitiva</span><strong>${p.currentStreak}</strong><small>individual · sin casuales</small></article>
+        <article><span>Mejor racha oficial</span><strong>${p.bestStreak}</strong><small>récord competitivo</small></article>
+      </div>
+      <section class="v72-milestone"><span>${esc(p.milestone.icon)}</span><div><small>${esc(p.milestone.label)}</small><strong>${esc(p.milestone.title)}</strong><p>${esc(p.milestone.detail)}</p></div></section>`;
+  }catch(err){
+    console.error('P7.2 progreso',err);
+    box.innerHTML='<div class="v72-progress-error">No se pudo calcular el progreso en este momento.</div>';
+  }
+}
+
+async function loadPersonalRecords(){
+  const box=$('#personalRecordsGrid');if(!box||!session?.user)return;
+
+  // Los récords históricos son competitivos. En otros modos el contenedor
+  // lo gobierna renderModeRecordsV56().
+  if(statsModeV56!=='competitive')return;
+
+  try{
+    const rec=await getPlayerRecords(session.user.id);
+    const pct=percentileState?.top_percent;
+    if($('#statsComparativeLabel')){
+      $('#statsComparativeLabel').textContent=pct?`Top ${pct}% por Elo`:'Comparativa pendiente';
+    }
+    const rival=rec.most_faced_rival;
+    const upset=rec.biggest_upset;
+    box.innerHTML=`
+      <article><span>Elo máximo</span><strong>${rec.max_elo||1000}</strong><small>mejor rating histórico</small></article>
+      <article><span>Mejor temporada</span><strong>${rec.best_season_position?`#${rec.best_season_position}`:'—'}</strong><small>posición final</small></article>
+      <article><span>Torneos ganados</span><strong>${rec.tournaments_won||0}</strong><small>${rec.finals_played||0} finales jugadas</small></article>
+      <article><span>Rival más enfrentado</span><strong>${rival?esc(rival.first_name):'—'}</strong><small>${rival?`${rival.matches} partidos · ${rival.wins} victorias`:'Sin suficientes partidos'}</small></article>
+      <article class="record-wide"><span>Mayor sorpresa</span><strong>${upset?`+${upset.rating_gap} Elo de diferencia`:'—'}</strong><small>${upset?`Venciste a ${esc(upset.first_name)} ${esc(upset.last_name)} siendo ${upset.my_rating} vs ${upset.opponent_rating}`:'Todavía no venciste a un rival con Elo superior.'}</small></article>`;
+  }catch(err){console.error(err);box.innerHTML='<div class="compact-empty">No se pudieron cargar los récords.</div>'}
+}
+
+function activityItemHtmlV60(i){
+  const unread=i.unread?' is-unread':'';
+  const urgent=i.attention?' is-attention':'';
+  return `<button class="activity-center-item activity-${i.kind}${unread}${urgent}" ${i.attr||''} type="button"><span>${i.icon}</span><div><strong>${esc(i.title)}</strong><small>${esc(i.detail||'')}</small>${i.when?`<em>${esc(i.when)}</em>`:''}</div><b>›</b></button>`;
+}
+
+function renderActivityCenterV60(){
+  const box=$('#activityCenterList');if(!box)return;
+  const all=v60State.activityItems||[];
+  const attention=all.filter(x=>x.attention);
+  const unread=all.filter(x=>x.unread);
+  const recent=all.filter(x=>x.recent);
+  if($('#activityPendingCountV60'))$('#activityPendingCountV60').textContent=attention.length;
+  if($('#activityUnreadCountV60'))$('#activityUnreadCountV60').textContent=unread.length;
+  if($('#activityRecentCountV60'))$('#activityRecentCountV60').textContent=recent.length;
+  const filter=v60State.activityFilter||'attention';
+  const rows=filter==='attention'?attention:filter==='recent'?recent:all;
+  box.innerHTML=rows.length?rows.map(activityItemHtmlV60).join(''):'<div class="activity-empty-state"><span>✓</span><strong>Todo al día</strong><small>No tenés actividad para mostrar en este filtro.</small></div>';
+  animateListV601(box,'.activity-center-item',16);
+  $$('[data-activity-filter-v60]').forEach(b=>b.classList.toggle('active',b.dataset.activityFilterV60===filter));
+}
+
+async function loadActivityCenter(){
+  if(activityLoadPromiseV60)return activityLoadPromiseV60;
+  const box=$('#activityCenterList');if(!box)return;
+  box.innerHTML='<div class="loading-row">Actualizando actividad…</div>';
+  activityLoadPromiseV60=(async()=>{
+    try{
+      const [challenges,matches,feed,notifications]=await Promise.all([
+        getMyChallenges(session.user.id),
+        getMyMatches(session.user.id),
+        getFollowingFeed(12).catch(()=>[]),
+        loadPersistentNotificationsV58()
+      ]);
+      const items=[];
+      const now=Date.now();
+      const when=t=>{
+        if(!t)return'';const diff=Math.max(0,now-new Date(t).getTime());const min=Math.floor(diff/60000);
+        if(min<2)return'Ahora';if(min<60)return`Hace ${min} min`;const h=Math.floor(min/60);if(h<24)return`Hace ${h} h`;return new Date(t).toLocaleDateString('es-UY');
+      };
+
+      (notifications||[]).slice(0,40).forEach(n=>{
+        const type=String(n.type||'activity');
+        const action=String(n.action||'');
+        const attention=!n.read_at&&(type.includes('dispute')||type.includes('arbiter')||type.includes('challenge')||type.includes('confirm')||action.includes('dispute'));
+        items.push({
+          key:`n:${n.id}`,kind:type.includes('title')?'title':type.includes('tournament')?'tournament':type.includes('dispute')||type.includes('arbiter')?'dispute':'notification',
+          icon:notificationIconV58(type),title:n.title,detail:n.body||'',unread:!n.read_at,attention,recent:true,when:when(n.created_at),at:new Date(n.created_at||0).getTime(),attr:`data-notification-v58="${n.id}"`
+        });
+      });
+
+      recentRewardsV60.filter(r=>now-Number(r.at||0)<90000).forEach(r=>{
+        items.push({key:`reward:${r.kind}:${r.name}:${r.at}`,kind:r.kind||'achievement',icon:r.icon||'✦',title:r.name||'Nuevo logro',detail:r.kicker||r.detail||'Progreso desbloqueado',attention:false,recent:true,at:Number(r.at||now),when:when(r.at),attr:'data-activity-tab="profile"'});
+      });
+
+      challenges.filter(c=>c.challenged_id===session.user.id&&c.status==='pending').forEach(c=>{
+        items.push({key:`c:${c.id}`,kind:'challenge',icon:'⚔',title:`${c.challenger?.first_name||'Un jugador'} te desafió`,detail:`${matchTypeLabel(c.match_type)} · ${c.match_format==='bo5'?'Bo5':c.match_format==='bo3'?'Bo3':'1 set'}`,attention:true,recent:true,at:new Date(c.created_at||0).getTime(),when:when(c.created_at),attr:'data-activity-tab="play"'});
+      });
+      matches.filter(m=>m.result_status==='awaiting_confirmation'&&m.result_submitted_by!==session.user.id).forEach(m=>{
+        const other=m.player1_id===session.user.id?m.player2:m.player1;
+        items.push({key:`m-confirm:${m.id}`,kind:'confirmation',icon:'✓',title:'Resultado pendiente de confirmar',detail:`vs ${other?.first_name||'Jugador'} ${other?.last_name||''}`,attention:true,recent:true,at:new Date(m.result_submitted_at||m.created_at||0).getTime(),when:when(m.result_submitted_at||m.created_at),attr:'data-activity-tab="play"'});
+      });
+      matches.filter(m=>m.result_status==='disputed').forEach(m=>{
+        const other=m.player1_id===session.user.id?m.player2:m.player1;
+        items.push({key:`m-dispute:${m.id}`,kind:'dispute',icon:'⚖',title:'Partido en disputa',detail:`vs ${other?.first_name||'Jugador'} · revisá el estado de la resolución`,attention:true,recent:true,at:new Date(m.updated_at||m.created_at||0).getTime(),when:when(m.updated_at||m.created_at),attr:`data-resolve-dispute-v58="${m.id}"`});
+      });
+
+      (socialState.ratingHistory||[]).slice(0,10).forEach(r=>{
+        const delta=Number(r.rating_change||0);
+        items.push({key:`elo:${r.id}`,kind:'elo',icon:delta>=0?'↑':'↓',title:`${delta>=0?'+':''}${delta} Elo`,detail:`${r.previous_rating} → ${r.new_rating}`,attention:false,recent:true,at:new Date(r.created_at||0).getTime(),when:when(r.created_at),attr:r.match_id?`data-match-detail="${r.match_id}"`:'data-activity-tab="history"'});
+      });
+
+      if(seasonState){
+        const end=new Date(seasonState.ends_at),remaining=Math.max(0,Math.ceil((end-new Date())/86400000));
+        items.push({key:'season',kind:'season',icon:'♛',title:`${seasonState.name||'Temporada actual'} · ${seasonState.position?`#${seasonState.position}`:'sin posición'}`,detail:`${remaining} días restantes`,attention:false,recent:false,at:0,attr:'data-activity-tab="ranking"'});
+      }
+
+      if(userPreferences?.notify_following_activity!==false)feed.slice(0,8).forEach(f=>{
+        items.push({key:`feed:${f.followed_user_id}:${f.event_at}`,kind:'following',icon:f.won?'↑':'↓',title:`${f.followed_first_name} ${f.followed_last_name} ${f.won?'ganó':'perdió'}`,detail:`${f.player_sets}-${f.opponent_sets} vs ${f.opponent_first_name} ${f.opponent_last_name}`,attention:false,recent:true,at:new Date(f.event_at||0).getTime(),when:when(f.event_at),attr:`data-open-player="${f.followed_user_id}"`});
+      });
+
+      const dedup=new Map();
+      for(const item of items){if(!dedup.has(item.key))dedup.set(item.key,item)}
+      v60State.activityItems=[...dedup.values()].sort((a,b)=>(Number(b.attention)-Number(a.attention))||(b.at-a.at));
+      renderActivityCenterV60();
+    }catch(err){
+      console.error(err);recordClientErrorV60(err,'activity-center');
+      box.innerHTML='<div class="compact-empty">No se pudo cargar la actividad.</div>';
+    }
+  })().finally(()=>{activityLoadPromiseV60=null});
+  return activityLoadPromiseV60;
+}
+
+async function loadRecommendedRivals(){
+  const box=$('#recommendedRivals');
+  if(!box||!session?.user)return;
+  try{
+    const rows=await getRecommendedRivals(6);
+    v60State.recommended=rows||[];renderHomePriorityV60();
+    box.innerHTML=rows.length?rows.map(r=>{
+      const h2h=r.h2h_total?`${r.h2h_me}–${r.h2h_them}`:'Sin enfrentamientos';
+      return `<article class="recommended-rival-card">
+        <button class="recommended-rival-profile" data-open-player="${r.user_id}" type="button">
+          <span class="recommended-avatar-online-v37" data-user-id-v35="${r.user_id}">${avatarHtml({first_name:r.first_name,last_name:r.last_name,profile_photo_url:r.profile_photo_url},'recommended-avatar')}${onlineDotV35(r.user_id)}</span>
+          <div><strong>${esc(r.first_name)} ${esc(r.last_name)}</strong><small>@${esc(r.username)} · ${r.rating} Elo</small><em class="v60-presence-text" data-presence-text-v60="${r.user_id}">${presenceLabelV60(r.user_id)}</em></div>
+        </button>
+        <div class="recommended-rival-meta"><span>${r.rating_gap} Elo de diferencia</span><span>H2H ${h2h}</span></div>
+        <button class="recommended-challenge" data-quick-challenge="${r.user_id}" data-name="${esc(r.first_name)} ${esc(r.last_name)}" data-user="${esc(r.username)}" type="button">Desafiar</button>
+      </article>`;
+    }).join(''):'<div class="compact-empty">No encontramos rivales recomendados todavía.</div>';
+    refreshPresenceV60(rows.map(r=>r.user_id)).catch(()=>{});
+  }catch(err){
+    console.error(err);
+    box.innerHTML='<div class="compact-empty">No se pudieron cargar las recomendaciones.</div>';
+  }
+}
+
+async function openSeasonHistoryModal(){
+  $('#seasonHistoryModal').classList.remove('hidden');syncModalScrollLock();
+  const box=$('#seasonHistoryList');
+  box.innerHTML='<div class="loading-row">Cargando temporadas…</div>';
+  try{
+    const rows=await getSeasonHistory(20);
+    box.innerHTML=rows.length?rows.map(s=>{
+      const wr=s.matches_played?Math.round((s.wins/s.matches_played)*100):0;
+      return `<article class="season-history-card">
+        <div><small>TEMPORADA ${s.season_number}</small><strong>#${s.final_position||'—'}</strong></div>
+        <div><span>Rango</span><b>${esc(s.rank_name)}</b></div>
+        <div><span>Elo final</span><b>${s.final_rating}</b></div>
+        <div><span>Elo máximo</span><b>${s.max_rating}</b></div>
+        <div><span>Partidos</span><b>${s.matches_played}</b></div>
+        <div><span>Victorias</span><b>${s.wins} · ${wr}%</b></div>
+      </article>`;
+    }).join(''):'<div class="compact-empty">Todavía no finalizaste ninguna temporada.</div>';
+  }catch(err){box.innerHTML='<div class="compact-empty">No se pudo cargar el historial.</div>'}
+}
+
+async function renderPrimaryRival(){
+  const box=$('#primaryRivalCard');
+  if(!box)return;
+
+  if(!primaryRivalId){
+    box.innerHTML='<div class="primary-rival-empty"><strong>Sin rival principal</strong><span>Seguí a un jugador y marcálo como tu rival desde su perfil.</span></div>';
+    return;
+  }
+
+  try{
+    const p=await getPublicPlayerCard(primaryRivalId);
+    box.innerHTML=`<button class="primary-rival-player" data-open-player="${p.id}" type="button">
+      ${avatarHtml(p,'primary-rival-avatar')}
+      <div>
+        <small>⚔ RIVAL PRINCIPAL</small>
+        <strong>${esc(p.first_name)} ${esc(p.last_name)}</strong>
+        <span>${rankForRating(p.individual_rating)} · ${p.individual_rating} Elo · Cara a cara ${p.h2h_me}-${p.h2h_them}</span>
+      </div>
+      <b>Ver perfil →</b>
+    </button>`;
+  }catch(err){
+    box.innerHTML='<div class="loading-row">No se pudo cargar el rival.</div>';
+  }
+}
+
+
+function achievementVisualMeta(a){
+  const id=String(a.id||'');
+  const parts=id.split('_');
+  let symbol='✦',value='',kind='special',detail='';
+
+  if(id.startsWith('match_')){
+    symbol='🏓'; value=parts[1]||''; kind='matches'; detail='PARTIDOS';
+  }else if(id.startsWith('win_')){
+    symbol='🏆'; value=parts[1]||''; kind='wins'; detail='VICTORIAS';
+  }else if(id.startsWith('streak_')){
+    symbol='🔥'; value=parts[1]||''; kind='streak'; detail='RACHA';
+  }else if(id.startsWith('elo_')){
+    symbol='◆'; value=parts[1]||''; kind='elo'; detail='ELO';
+  }else if(id.startsWith('casual_')){
+    symbol='●'; value=parts[1]||''; kind='casual'; detail='CASUAL';
+  }else if(id.startsWith('ranked_')){
+    symbol='♜'; value=parts[1]||''; kind='ranked'; detail='RANKED';
+  }else if(id.startsWith('rep_')){
+    symbol='★'; kind='reputation'; detail='REPUTACIÓN';
+    if(id==='rep_1')value='1';
+    else if(id==='rep_4_5')value='4.0';
+    else if(id==='rep_45_10')value='4.5';
+    else if(id==='rep_48_20')value='4.8';
+  }else if(id.startsWith('follow_')){
+    symbol='♧'; value=parts[1]||''; kind='social'; detail='RIVALES';
+  }
+
+  return {symbol,value,kind,detail};
+}
+
+function achievementEmblemHtml(a,compact=false){
+  const v=achievementVisualMeta(a);
+  return `<span class="achievement-illustration achievement-${v.kind} rarity-${a.rarity||'common'} ${compact?'compact':''}">
+    <span class="achievement-illustration-halo"></span>
+    <span class="achievement-illustration-symbol">${v.symbol}</span>
+    ${v.value?`<b class="achievement-illustration-value">${esc(v.value)}</b>`:''}
+    <small>${esc(v.detail)}</small>
+    <i class="achievement-illustration-shine"></i>
+  </span>`;
+}
+
+function achievementPlateHtml(a,{selected=false,clickable=true}={}){
+  if(!a)return'';
+  return `<button class="achievement-plate ${a.unlocked?'unlocked':'locked'} ${selected?'selected':''}" ${clickable?`data-achievement-info="${a.id}"`:'disabled'} type="button">
+    <span class="achievement-plate-icon">${achievementEmblemHtml(a,true)}</span>
+    <span class="achievement-plate-copy"><strong>${esc(a.name)}</strong><small>${esc(a.group)} · ${esc(a.rarity||'common')}</small></span>
+  </button>`;
+}
+
+function renderAchievements(){
+  const box=$('#profileAchievements');
+  if(!box)return;
+  const rows=socialState.achievements||[];
+  const unlocked=rows.filter(a=>a.unlocked).length;
+  $('#profileAchievementCounter').textContent=`${unlocked} / ${rows.length}`;
+
+  box.innerHTML=rows.map(a=>{
+    const progress=Math.max(0,Math.min(100,Number(a.progress??(a.unlocked?100:0))));
+    return `<article class="achievement-card ${a.unlocked?'unlocked':'locked'}" data-achievement-card="${a.id}">
+      <button class="achievement-card-main" data-achievement-info="${a.id}" type="button">
+        <span class="achievement-icon">${achievementEmblemHtml(a)}</span>
+        <div class="achievement-copy-v60"><strong>${esc(a.name)}</strong><small>${esc(a.desc)}</small><span class="achievement-progress-label-v60">${esc(a.unlocked?'Completado':a.progress_label||'En progreso')}</span><span class="achievement-progress-track-v60"><i style="width:${a.unlocked?100:progress}%"></i></span></div>
+        <em class="achievement-rarity rarity-${a.rarity||'common'}">${String(a.rarity||'common').toUpperCase()}</em>
+        <i>${a.unlocked?'DESBLOQUEADO':`${Math.round(progress)}%`}</i>
+      </button>
+    </article>`;
+  }).join('');
+
+  renderMyShowcaseAchievements();
+}
+
+function renderMyShowcaseAchievements(){
+  const box=$('#myShowcaseAchievements');
+  if(!box)return;
+  const selected=myShowcaseAchievementIds
+    .map(id=>achievementById(id))
+    .filter(Boolean);
+
+  box.innerHTML=selected.length
+    ?selected.map(a=>achievementPlateHtml(a,{selected:true})).join('')
+    :'<div class="showcase-empty">No elegiste placas todavía.</div>';
+}
+
+function openAchievementInfo(id,sourceAchievements=socialState.achievements){
+  const a=achievementById(id,sourceAchievements);
+  if(!a)return;
+  $('#achievementInfoContent').innerHTML=`
+    <div class="achievement-detail">
+      <span class="achievement-detail-icon">${a.icon}</span>
+      <p class="muted-label">${esc(a.group)} · ${String(a.rarity||'common').toUpperCase()}</p>
+      <h2>${esc(a.name)}</h2>
+      <p>${esc(a.desc)}</p>
+      <div class="achievement-detail-progress-v60"><span>${esc(a.unlocked?'Completado':a.progress_label||'En progreso')}</span><div><i style="width:${a.unlocked?100:Math.max(0,Math.min(100,Number(a.progress||0)))}%"></i></div></div>
+      <span class="achievement-detail-state ${a.unlocked?'unlocked':'locked'}">${a.unlocked?'DESBLOQUEADO':'BLOQUEADO'}</span>
+    </div>`;
+  $('#achievementInfoModal').classList.remove('hidden');syncModalScrollLock();
+}
+
+function openShowcaseSelector(){
+  showcaseDraftIds=[...myShowcaseAchievementIds];
+  renderShowcaseSelector();
+  setStatus($('#showcaseStatus'),'');
+  $('#showcaseAchievementModal').classList.remove('hidden');syncModalScrollLock();
+}
+
+function renderShowcaseSelector(){
+  const rows=(socialState.achievements||[]).filter(a=>a.unlocked);
+  $('#showcaseSelectorCount').textContent=`${showcaseDraftIds.length} / 3 seleccionados`;
+  $('#showcaseSelectorList').innerHTML=rows.length?rows.map(a=>{
+    const selected=showcaseDraftIds.includes(a.id);
+    return `<button class="showcase-selector-item ${selected?'selected':''}" data-toggle-showcase="${a.id}" type="button">
+      <span class="showcase-selector-emblem">${achievementEmblemHtml(a,true)}</span>
+      <div><strong>${esc(a.name)}</strong><small>${esc(a.desc)}</small></div>
+      <b>${selected?'✓':'＋'}</b>
+    </button>`;
+  }).join(''):'<div class="loading-row">Todavía no desbloqueaste logros.</div>';
+}
+
+async function saveShowcaseSelection(){
+  const btn=$('#saveShowcaseAchievements');
+  btn.disabled=true;
+  setStatus($('#showcaseStatus'),'Guardando…');
+  try{
+    await setShowcaseAchievements(showcaseDraftIds);
+    myShowcaseAchievementIds=[...showcaseDraftIds];
+    renderMyShowcaseAchievements();
+    setStatus($('#showcaseStatus'),'Placas guardadas.','ok');
+    setTimeout(()=>$('#showcaseAchievementModal').classList.add('hidden'),350);
+  }catch(err){
+    setStatus($('#showcaseStatus'),err.message,'error');
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+function matchModalityV60(m){
+  const raw=String(m?.modality||m?.tournament_modality||m?.match_type||'').toLowerCase();
+  return raw.includes('double')||raw.includes('doble')?'doubles':'individual';
+}
+
+async function ensureHistorySeasonsV60(){
+  if(v60State.historySeasons?.length)return v60State.historySeasons;
+  try{v60State.historySeasons=await getHistorySeasonsV60()}catch(err){console.warn('Temporadas historial V60:',err);v60State.historySeasons=[]}
+  const select=$('#historySeasonV60');
+  if(select){
+    const current=String(v60State.historySeason||'all');
+    const options=['<option value="all">Todas las temporadas</option>'];
+    for(const row of v60State.historySeasons||[]){
+      const isCurrent=seasonState&&new Date().getTime()>=new Date(row.starts_at).getTime()&&new Date().getTime()<=new Date(row.ends_at).getTime();
+      options.push(`<option value="${esc(String(row.season_id))}">${esc(row.season_name||'Temporada')}${isCurrent?' · actual':''}</option>`);
+    }
+    select.innerHTML=options.join('');
+    select.value=[...select.options].some(o=>o.value===current)?current:'all';
+    v60State.historySeason=select.value;
+  }
+  return v60State.historySeasons;
+}
+
+async function loadHistoryPage(){
+  if(!session?.user||!$('#matchHistoryList'))return;
+  try{
+    if(!socialState.matches.length && getRating('individual').matches_played)await loadSocialState();
+    await ensureHistorySeasonsV60();
+
+    const allConfirmed=(socialState.matches||[])
+      .filter(m=>m.result_status==='confirmed');
+
+    const opponentQuery=($('#historyOpponentSearch')?.value||'').trim().toLowerCase();
+    const selectedSeason=(v60State.historySeasons||[]).find(x=>String(x.season_id)===String(v60State.historySeason));
+    const dateFrom=v60State.historyDateFrom?new Date(`${v60State.historyDateFrom}T00:00:00`).getTime():null;
+    const dateTo=v60State.historyDateTo?new Date(`${v60State.historyDateTo}T23:59:59.999`).getTime():null;
+
+    let matches=allConfirmed.filter(m=>{
+      const other=m.player1_id===session.user.id?m.player2:m.player1;
+      const source=String(m.source_type||m.origin||'').toLowerCase();
+      const isTournament=source.includes('tournament')||m.tournament_match_id;
+      const modeOk=historyModeFilter==='all'
+        ||(historyModeFilter==='tournament'&&isTournament)
+        ||(historyModeFilter==='ranked'&&!isTournament&&(m.match_type||'ranked')==='ranked')
+        ||(historyModeFilter==='casual'&&!isTournament&&m.match_type==='casual');
+      const isAbandon=m.completion_type==='abandonment';
+      const won=m.winner_id===session.user.id;
+      const result=isAbandon?'abandonment':won?'victory':'defeat';
+      const resultOk=historyResultFilter==='all'||historyResultFilter===result;
+      const name=`${other?.first_name||''} ${other?.last_name||''} ${other?.username||''}`.toLowerCase();
+      const modalityOk=v60State.historyModality==='all'||matchModalityV60(m)===v60State.historyModality;
+      const ts=new Date(m.played_at||m.confirmed_at||m.created_at).getTime();
+      const seasonOk=!selectedSeason||(ts>=new Date(selectedSeason.starts_at).getTime()&&ts<=new Date(selectedSeason.ends_at).getTime());
+      const datesOk=(!dateFrom||ts>=dateFrom)&&(!dateTo||ts<=dateTo);
+      return modeOk&&resultOk&&modalityOk&&seasonOk&&datesOk&&(!opponentQuery||name.includes(opponentQuery));
+    });
+
+    const sort=v60State.historySort||'recent';
+    matches.sort((a,b)=>{
+      const ad=new Date(a.played_at||a.confirmed_at||a.created_at).getTime();
+      const bd=new Date(b.played_at||b.confirmed_at||b.created_at).getTime();
+      if(sort==='oldest')return ad-bd;
+      if(sort==='longest')return Number(b.duration_seconds??-1)-Number(a.duration_seconds??-1)||bd-ad;
+      if(sort==='shortest'){
+        const av=a.duration_seconds===null||a.duration_seconds===undefined?Number.MAX_SAFE_INTEGER:Number(a.duration_seconds);
+        const bv=b.duration_seconds===null||b.duration_seconds===undefined?Number.MAX_SAFE_INTEGER:Number(b.duration_seconds);
+        return av-bv||bd-ad;
+      }
+      return bd-ad;
+    });
+
+    const ratingByMatch=new Map((socialState.ratingHistory||[]).map(r=>[Number(r.match_id),r]));
+    const reviewByMatch=new Map((socialState.reviewsAuthored||[]).map(r=>[Number(r.match_id),r]));
+    let wins=0,losses=0,abandons=0;
+    for(const m of allConfirmed){if(m.completion_type==='abandonment')abandons++;else if(m.winner_id===session.user.id)wins++;else losses++}
+    $('#historyMatchesCount').textContent=allConfirmed.length;
+    $('#historyWinsCount').textContent=wins;
+    $('#historyLossesCount').textContent=losses;
+    $('#historyAbandonsCount').textContent=abandons;
+
+    $('#matchHistoryList').innerHTML=matches.length?matches.map(m=>{
+      const other=m.player1_id===session.user.id?m.player2:m.player1;
+      const isAbandon=m.completion_type==='abandonment';
+      const won=m.winner_id===session.user.id;
+      const type=isAbandon?'abandonment':won?'victory':'defeat';
+      const label=isAbandon?'ABANDONO':won?'VICTORIA':'DERROTA';
+      const mySets=m.player1_id===session.user.id?m.player1_sets:m.player2_sets;
+      const otherSets=m.player1_id===session.user.id?m.player2_sets:m.player1_sets;
+      const rh=ratingByMatch.get(Number(m.id));
+      const delta=rh?Number(rh.rating_change):null;
+      const review=reviewByMatch.get(Number(m.id));
+      const fmt=m.match_format==='bo5'?'Bo5':m.match_format==='bo3'?'Bo3':'1 set';
+      const modality=matchModalityV60(m);
+      return `<article class="history-match-card ${type}">
+        <div class="history-result-band"><span>${label}</span><div class="history-result-meta-v59">${m.duration_seconds!==null&&m.duration_seconds!==undefined?`<em>⏱ ${formatDurationV59(m.duration_seconds)}</em>`:''}${delta!==null?`<strong>${delta>=0?'+':''}${delta} Elo</strong>`:''}</div></div>
+        <div class="history-match-main">
+          ${avatarHtml(other,'history-opponent-avatar')}
+          <div class="history-opponent"><small>VS · <b class="v60-history-modality">${modality==='doubles'?'DOBLES':'INDIVIDUAL'}</b></small><strong>${esc(other?.first_name||'Jugador')} ${esc(other?.last_name||'')}</strong><span>@${esc(other?.username||'usuario')} · ${fmt} · <b class="inline-match-mode ${matchTypeClass(m.match_type)}">${matchTypeLabel(m.match_type)}</b> · ${formatMatchDate(m)}</span></div>
+          <div class="history-score"><strong>${mySets||0}<i>–</i>${otherSets||0}</strong><small>${isAbandon?(m.abandoned_by===session.user.id?'Abandonaste':'Rival abandonó'):'Resultado final'}</small></div>
+        </div>
+        <div class="history-match-actions"><button type="button" data-rematch="${m.id}">↻ Revancha</button><button type="button" data-review-match="${m.id}">${review?`★ Tu valoración: ${review.stars}`:'☆ Valorar rival'}</button><button type="button" data-match-detail="${m.id}">Ver partido</button><button type="button" data-open-player="${other?.id}">Ver perfil</button></div>
+      </article>`;
+    }).join(''):'<div class="history-empty"><strong>No hay partidos que coincidan con estos filtros.</strong><span>Probá limpiar algún filtro o ampliar el período.</span></div>';
+    animateListV601($('#matchHistoryList'),'.history-match-card',16);
+  }catch(err){
+    console.error(err);recordClientErrorV60(err,'history');
+    $('#matchHistoryList').innerHTML='<div class="loading-row">No se pudo cargar el historial.</div>';
+  }
+}
+
+async function openMatchDetail(matchId){
+  const m=(socialState.matches||[]).find(x=>Number(x.id)===Number(matchId));
+  if(!m)return;
+  const other=m.player1_id===session.user.id?m.player2:m.player1;
+  const rh=(socialState.ratingHistory||[]).find(r=>Number(r.match_id)===Number(matchId));
+  const won=m.winner_id===session.user.id;
+  const mySets=m.player1_id===session.user.id?m.player1_sets:m.player2_sets;
+  const otherSets=m.player1_id===session.user.id?m.player2_sets:m.player1_sets;
+  let setRows='';
+  try{
+    const {data}=await supabase.from('match_sets').select('*').eq('match_id',matchId).order('set_number');
+    setRows=(data||[]).map(s=>{
+      const mine=m.player1_id===session.user.id?s.player1_points:s.player2_points;
+      const theirs=m.player1_id===session.user.id?s.player2_points:s.player1_points;
+      return `<div class="match-detail-set"><span>Set ${s.set_number}</span><strong>${mine}–${theirs}</strong></div>`;
+    }).join('');
+  }catch(e){}
+  $('#matchDetailContent').innerHTML=`
+    <div class="match-detail-head ${won?'victory':'defeat'}">
+      <p class="muted-label">${won?'VICTORIA':'DERROTA'}</p>
+      <h2>${mySets||0} – ${otherSets||0}</h2>
+      <span>vs ${esc(other?.first_name||'Jugador')} ${esc(other?.last_name||'')}</span>
+    </div>
+    <div class="match-detail-meta">
+      <span>${matchTypeLabel(m.match_type)}</span>
+      <span>${m.match_format==='bo5'?'Bo5':m.match_format==='bo3'?'Bo3':'1 set'}</span>
+      <span>${formatMatchDate(m)}</span>
+      ${m.duration_seconds!==null&&m.duration_seconds!==undefined?`<span class="match-detail-duration-v59">⏱ ${formatDurationV59(m.duration_seconds)} oficial</span>`:''}
+      ${m.gameplay_seconds!==null&&m.gameplay_seconds!==undefined?`<span class="match-detail-gameplay-v59">Resultado cargado en ${formatDurationV59(m.gameplay_seconds)}</span>`:''}
+    </div>
+    <div class="match-detail-sets">${setRows||'<div class="compact-empty">Sets no disponibles</div>'}</div>
+    ${rh?`<div class="match-detail-elo">
+      <div><span>Elo antes</span><strong>${rh.previous_rating}</strong></div>
+      <div><span>Cambio</span><strong class="${Number(rh.rating_change)>=0?'positive':'negative'}">${Number(rh.rating_change)>=0?'+':''}${rh.rating_change}</strong></div>
+      <div><span>Elo después</span><strong>${rh.new_rating}</strong></div>
+    </div>`:''}
+    <button class="btn btn-start" data-rematch="${m.id}" type="button">REVANCHA</button>`;
+  $('#matchDetailModal').classList.remove('hidden');syncModalScrollLock();
+}
+
+async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Rival'}){
+  if(!matchId)return;
+
+  if(!(socialState.matches||[]).some(x=>Number(x.id)===Number(matchId))){
+    try{socialState.matches=await getMyMatches(session.user.id)}catch{}
+  }
+
+  let summary=null;
+  try{summary=await getPostMatchSummary(matchId)}catch(e){console.error(e)}
+  let m=(socialState.matches||[]).find(x=>Number(x.id)===Number(matchId));
+  if(!m){
+    try{m=(await getMyMatches(session.user.id)).find(x=>Number(x.id)===Number(matchId))||null}catch(e){}
+  }
+  if(!rankTiers.length){
+    try{rankTiers=await getRankTiers()}catch{}
+  }
+
+  const isCasual=(summary?.match_type||m?.match_type)==='casual';
+  const delta=Number(summary?.rating_change ?? ((newRating??0)-(oldRating??0)));
+  const current=Number(summary?.current_rating ?? newRating ?? getRating('individual').rating);
+  const previous=Number(summary?.previous_rating ?? oldRating ?? current);
+  const rank=summary?.current_rank||rankForRating(current);
+  const pos=summary?.position;
+  const newBest=!!(summary?.is_new_best ?? summary?.personal_best);
+  const bestRating=Number(summary?.best_rating??summary?.best_after??current);
+  const format=summary?.match_format||m?.match_format||'bo3';
+  const formatLabel=format==='bo5'?'Mejor de 5':format==='bo3'?'Mejor de 3':'1 set';
+  const other=m?(m.player1_id===session.user.id?m.player2:m.player1):null;
+  const opponent=other?.first_name||opponentName||'Rival';
+  const mySets=m?(m.player1_id===session.user.id?Number(m.player1_sets||0):Number(m.player2_sets||0)):null;
+  const otherSets=m?(m.player1_id===session.user.id?Number(m.player2_sets||0):Number(m.player1_sets||0)):null;
+
+  const tierIndex=Math.max(0,rankTiers.findIndex(t=>t.name===rank));
+  const tier=rankTiers[tierIndex]||null;
+  const nextTier=rankTiers[tierIndex+1]||null;
+  const nextRank=summary?.next_rank ?? summary?.next_rank_name ?? nextTier?.name ?? null;
+  const toNext=Number(summary?.to_next_rank ?? summary?.next_rank_remaining ?? (nextTier?Math.max(0,Number(nextTier.min_rating)-current):0));
+  const tierMin=Number(tier?.min_rating??current);
+  const nextMin=Number(nextTier?.min_rating??current);
+  const rankProgress=nextTier&&nextMin>tierMin
+    ?Math.max(0,Math.min(100,((current-tierMin)/(nextMin-tierMin))*100))
+    :100;
+
+  const rewards=recentRewardsV60.filter(x=>Date.now()-Number(x.at||0)<45000).slice(-4);
+  const streakMult=Number(summary?.streak_boost_multiplier||1);
+  const breakerMult=Number(summary?.streak_breaker_multiplier||1);
+  let highlightHtml='';
+  if(newBest&&!isCasual){
+    highlightHtml=`<section class="v71-highlight record"><span>✦</span><div><small>NUEVO RÉCORD PERSONAL</small><strong>${bestRating} Elo</strong><p>Superaste tu mejor marca histórica.</p></div></section>`;
+  }else if(summary?.protection_used){
+    highlightHtml=`<section class="v71-highlight shield"><span>🛡️</span><div><small>PROTECCIÓN ACTIVADA</small><strong>Tu Elo quedó protegido</strong><p>El escudo evitó una pérdida de ${Number(summary.protected_elo||0)} Elo.</p></div></section>`;
+  }else if(won&&!isCasual&&streakMult>1){
+    highlightHtml=`<section class="v71-highlight streak"><span>${breakerMult>=2?'⚡':'🔥'}</span><div><small>${breakerMult>=2?'RACHA CORTADA':'BONUS DE RACHA'}</small><strong>Multiplicador x${streakMult.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')}</strong><p>${breakerMult>=2?'Terminaste la racha de tu rival.':'Tu rendimiento consecutivo aumentó la ganancia.'}</p></div></section>`;
+  }else if(rewards.length){
+    const reward=rewards[rewards.length-1];
+    highlightHtml=`<section class="v71-highlight reward"><span>${esc(reward.icon||'✦')}</span><div><small>PROGRESO CONSEGUIDO</small><strong>${esc(reward.name)}</strong><p>${esc(reward.kicker||reward.detail||'Nueva recompensa desbloqueada.')}</p></div></section>`;
+  }
+
+  const resultLabel=isCasual?'PARTIDO CASUAL':won?'VICTORIA':'DERROTA';
+  const eloLabel=isCasual?'Sin cambio de Elo':summary?.protection_used?'0 Elo':`${delta>=0?'+':''}${delta} Elo`;
+  const resultClass=isCasual?'casual':won?'victory':'defeat';
+
+  $('#postMatchContent').innerHTML=`
+    <div class="v71-result-shell ${resultClass}">
+      <header class="v71-result-hero">
+        <div class="v71-result-kicker"><span></span>${resultLabel}<span></span></div>
+        <h2 id="postMatchTitleV71">${isCasual?'PARTIDO COMPLETADO':won?'GANASTE':'ESTA VEZ NO'}</h2>
+        ${m?`<div class="v71-score" aria-label="Resultado final: ${mySets??0} a ${otherSets??0}">
+          <div><small>VOS</small><strong>${mySets??0}</strong></div>
+          <span>—</span>
+          <div><small>${esc(opponent)}</small><strong>${otherSets??0}</strong></div>
+        </div>`:''}
+        <div class="v71-format"><span>${formatLabel}</span><span>${isCasual?'Casual':'Ranked'}</span></div>
+      </header>
+
+      <main class="v71-result-body">
+        <section class="v71-elo-card ${isCasual?'is-casual':''}">
+          <div class="v71-elo-change">
+            <small>${isCasual?'RESULTADO REGISTRADO':'CAMBIO DE ELO'}</small>
+            <strong>${eloLabel}</strong>
+          </div>
+          ${!isCasual?`<div class="v71-elo-journey" aria-label="Elo anterior ${previous}, Elo actual ${current}">
+            <span><small>ANTES</small><b>${previous}</b></span>
+            <i>→</i>
+            <span class="current"><small>AHORA</small><b>${current}</b></span>
+          </div>`:`<p>Este partido cuenta en tu historial sin modificar el ranking.</p>`}
+        </section>
+
+        ${!isCasual?`<section class="v71-rank-card">
+          <div class="v71-rank-head">
+            <div><small>RANGO ACTUAL</small><strong>${esc(rank)}</strong></div>
+            <div class="v71-position"><small>POSICIÓN</small><strong>${pos?`#${pos}`:'—'}</strong></div>
+          </div>
+          <div class="v71-rank-track" role="progressbar" aria-label="Progreso hacia ${esc(nextRank||'el rango máximo')}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(rankProgress)}"><i style="width:${rankProgress}%"></i></div>
+          <p>${nextRank?`${toNext} Elo para <strong>${esc(nextRank)}</strong>`:'Alcanzaste el rango máximo'}</p>
+        </section>`:''}
+
+        ${highlightHtml}
+
+        <div class="v71-match-meta">
+          ${m?.duration_seconds!==null&&m?.duration_seconds!==undefined?`<span>⏱ ${formatDurationV59(m.duration_seconds)}</span>`:''}
+          ${!isCasual&&Number(summary?.protection_earned||0)>0?`<span>🛡 +${Number(summary.protection_earned)} protección</span>`:''}
+          ${!isCasual?`<span>Máximo: ${bestRating} Elo</span>`:''}
+        </div>
+
+        <section class="v71-coach"><span>✦</span><div><small>TT COACH</small><p>${esc(buildV28CoachText())}</p></div></section>
+
+        <div class="v71-actions">
+          <button class="btn btn-start v71-rematch" data-rematch="${matchId}" type="button">↻ ${won?'OFRECER':'PEDIR'} REVANCHA</button>
+          <button class="btn v71-continue" type="button" data-close-post-match>CONTINUAR</button>
+          <p class="v73-rematch-status" data-rematch-status-v73="${matchId}" aria-live="polite"></p>
+        </div>
+      </main>
+    </div>`;
+
+  $('#postMatchModal').classList.remove('hidden');
+  animatePostMatchV601($('#postMatchModal'),{won,positive:delta>0,protectedElo:!!summary?.protection_used,hasRewards:!!highlightHtml});
+  syncModalScrollLock();
+  loadChallenges().catch(err=>console.warn('P7.4.5 revancha entrante:',err));
+  const telemetryOpponentId=m?(m.player1_id===session.user.id?m.player2_id:m.player1_id):null;
+  recordProductEventV70('post_match_opened',{matchId,opponentId:telemetryOpponentId,metadata:{match_type:summary?.match_type||m?.match_type||'ranked',match_format:format,ui_version:'p7.1'}}).catch(()=>{});
+}
+
+async function requestRematch(matchId,button){
+  let m=(socialState.matches||[]).find(x=>Number(x.id)===Number(matchId));
+  if(!m){
+    try{m=(await getMyMatches(session.user.id)).find(x=>Number(x.id)===Number(matchId))||null}catch{}
+  }
+  if(!m)return alert('No se pudo recuperar el partido para crear la revancha.');
+
+  const opponentId=m.player1_id===session.user.id?m.player2_id:m.player1_id;
+  const status=$(`[data-rematch-status-v73="${matchId}"]`);
+  const old=button.textContent;
+  button.disabled=true;
+  button.textContent='Enviando revancha…';
+  button.classList.remove('is-pending');
+  if(status){status.className='v73-rematch-status';status.textContent='Comprobando desafíos pendientes…'}
+
+  try{
+    const result=await createRematchChallengeV73(matchId,{
+      challengerId:session.user.id,
+      challengedId:opponentId,
+      format:m.match_format||'bo3',
+      matchType:m.match_type||'ranked',
+      scheduledDate:null,
+      scheduledTime:null,
+      location:null
+    });
+    const challenge=result.challenge;
+    if(challenge?.id){
+      pendingRematchV744={challengeId:Number(challenge.id),matchId:Number(matchId)};
+    }
+    recordProductEventV70('rematch_requested',{
+      matchId,
+      challengeId:challenge?.id||null,
+      opponentId,
+      metadata:{
+        match_type:m.match_type||'ranked',
+        match_format:m.match_format||'bo3',
+        reused:!!result.reused,
+        backend_v73:!!result.backend
+      }
+    }).catch(()=>{});
+
+    button.textContent=result.reused?'✓ REVANCHA YA PENDIENTE':'✓ REVANCHA ENVIADA';
+    button.classList.add('is-pending');
+    if(status){
+      status.className='v73-rematch-status success';
+      status.textContent=result.reused
+        ?'Ya existe una solicitud pendiente entre ustedes.'
+        :'El rival recibió un desafío vinculado a este partido.';
+    }
+    await Promise.all([loadChallenges(),loadActivityCenter()]);
+  }catch(err){
+    button.disabled=false;
+    button.textContent=old;
+    if(status){status.className='v73-rematch-status error';status.textContent=friendly(err.message)}
+    else alert(friendly(err.message));
+  }
+}
+
+async function openReviewModal(matchId){
+  const m=(socialState.matches||[]).find(x=>Number(x.id)===Number(matchId));
+  if(!m)return;
+  const other=m.player1_id===session.user.id?m.player2:m.player1;
+  const sameMatch=(socialState.reviewsAuthored||[]).find(r=>Number(r.match_id)===Number(matchId));
+  const previousForPlayer=(socialState.reviewsAuthored||[]).find(r=>r.reviewed_id===other?.id);
+  reviewTargetMatch=m;
+  reviewStarsLockedV62=!!previousForPlayer;
+  selectedReviewStars=previousForPlayer?Number(previousForPlayer.stars||0):(sameMatch?Number(sameMatch.stars||0):0);
+  selectedReviewTagsV58=new Set();
+  try{
+    const tags=await getMyReviewTagsV58(Number(matchId));
+    (tags||[]).forEach(x=>selectedReviewTagsV58.add(typeof x==='string'?x:x.tag_key));
+  }catch{}
+  $('#reviewModalTitle').textContent=reviewStarsLockedV62?`Destacá a ${other?.first_name||'tu rival'}`:`Valorá a ${other?.first_name||'tu rival'}`;
+  if($('#reviewIntroV62'))$('#reviewIntroV62').textContent=reviewStarsLockedV62?'La valoración general ya fue realizada. Ahora podés destacar lo que hizo bien tu rival en este partido.':'La puntuación representa deportividad, respeto y experiencia general. No evalúa el nivel de juego.';
+  $('#reviewStarsSectionV62')?.classList.toggle('hidden',reviewStarsLockedV62);
+  $('#reviewStarsLockedV62')?.classList.toggle('hidden',!reviewStarsLockedV62);
+  const save=$('#saveReviewButton');if(save)save.textContent=reviewStarsLockedV62?'GUARDAR DESTACADOS':'GUARDAR VALORACIÓN';
+  setStatus($('#reviewStatus'),'');
+  paintReviewStars();
+  paintReviewTagsV58();
+  $('#reviewModal').classList.remove('hidden');syncModalScrollLock();
+}
+
+function paintReviewStars(){
+  $$('#reviewStars [data-review-star]').forEach(b=>{
+    b.classList.toggle('selected',Number(b.dataset.reviewStar)<=selectedReviewStars);
+    b.disabled=reviewStarsLockedV62;
+  });
+  const save=$('#saveReviewButton');
+  if(save)save.disabled=reviewStarsLockedV62?selectedReviewTagsV58.size===0:!selectedReviewStars;
+  if($('#reviewStarText'))$('#reviewStarText').textContent=selectedReviewStars?`${selectedReviewStars} de 5 estrellas`:'Elegí de 1 a 5 estrellas';
+}
+function paintReviewTagsV58(){
+  $$('[data-review-tag-v58]').forEach(b=>b.classList.toggle('selected',selectedReviewTagsV58.has(b.dataset.reviewTagV58)));
+}
+
+async function saveCurrentReview(){
+  if(!reviewTargetMatch)return;
+  if(!reviewStarsLockedV62&&!selectedReviewStars)return;
+  if(reviewStarsLockedV62&&!selectedReviewTagsV58.size)return;
+  const btn=$('#saveReviewButton');
+  btn.disabled=true;
+  setStatus($('#reviewStatus'),'Guardando…');
+  try{
+    await submitPlayerReviewV58(Number(reviewTargetMatch.id),reviewStarsLockedV62?null:selectedReviewStars,[...selectedReviewTagsV58]);
+    socialState.reviewsAuthored=await getReviewsAuthoredByUser(session.user.id);
+    socialState.reviewsReceived=await getReviewsForUser(session.user.id).catch(()=>socialState.reviewsReceived);
+    await refreshOwnCompetitiveTitlesV58().catch(()=>[]);
+    titleState=await getPlayerTitles(session.user.id).catch(()=>titleState);
+    trackTitleUnlocksV60(titleState.items||[]);
+    populate();
+    renderEquippedTitle();
+    setStatus($('#reviewStatus'),reviewStarsLockedV62?'Destacados guardados.':'Valoración guardada.','ok');
+    await loadHistoryPage();
+    setTimeout(()=>$('#reviewModal').classList.add('hidden'),450);
+  }catch(err){
+    setStatus($('#reviewStatus'),err.message,'error');
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+async function openPublicPlayerProfile(userId){
+  if(!userId)return;
+  const modal=$('#playerProfileModal');
+  modal.classList.remove('hidden');syncModalScrollLock();
+  const box=$('#publicPlayerProfileContent');
+  box.innerHTML='<div class="loading-row">Cargando perfil…</div>';
+
+  try{
+    const [p,showcaseIds,publicPrefs,cosmetics,seasons,records,h2hAdvanced,publicTitles,reliability,adminFlagV37,publicStreaks]=await Promise.all([
+      getPublicPlayerCard(userId),
+      getShowcaseAchievements(userId).catch(()=>[]),
+      getPublicProfilePreferences(userId).catch(()=>({})),
+      getPublicProfilePreferences(userId).catch(()=>({})),
+      getPublicPlayerSeasons(userId).catch(()=>({})),
+      getPlayerRecords(userId).catch(()=>({})),
+      userId===session.user.id?Promise.resolve(null):getCompetitiveRivalryV74(userId).catch(()=>null),
+      getPlayerTitles(userId).catch(()=>({equipped:null,items:[]})),
+      getPlayerReliabilityV34(userId).catch(()=>({reliability:100,completed_matches:0,abandoned_matches:0,total_matches:0,provisional:true,label:'Jugador fiable'})),
+      getPublicAdminFlagV37(userId).catch(()=>false),
+      getPlayerCompetitiveStreaksV74(userId).catch(()=>null)
+    ]);
+
+    await refreshPresenceV60([p.id]).catch(()=>{});
+    const rank=rankForRating(p.individual_rating);
+    const isMe=userId===session.user.id;
+    const rep=p.reputation_count?`★ ${Number(p.reputation_average).toFixed(1)}`:'★ Sin valorar';
+    const member=new Date(p.member_since).toLocaleDateString(undefined,{month:'long',year:'numeric'});
+
+    const publicAchievements=achievementDefinitions({
+      totalMatches:p.total_matches,
+      wins:p.wins,
+      maxStreak:publicStreaks?.individual?.best??p.max_streak,
+      maxElo:p.max_elo,
+      casualMatches:p.casual_matches,
+      rankedMatches:p.ranked_matches,
+      reputationCount:p.reputation_count,
+      reputationAverage:p.reputation_average||0,
+      followingCount:p.following
+    });
+    const unlockedCount=publicAchievements.filter(a=>a.unlocked).length;
+    const selectedPlates=(showcaseIds||[]).map(id=>achievementById(id,publicAchievements)).filter(Boolean);
+
+    box.dataset.publicAchievements=JSON.stringify(publicAchievements);
+
+    box.innerHTML=`
+      <section class="public-profile-v17">
+        <div class="public-profile-cover ${rankCss(rank)}"></div>
+
+        <div class="public-profile-v17-head">
+          ${publicFramedAvatarV44(p,(cosmetics||publicPrefs)?.equipped_frame_id||'none')}
+          <div class="public-profile-v17-identity">
+            <p class="muted-label">PERFIL DE JUGADOR</p>
+            <h2>${esc(p.first_name)} ${esc(p.last_name)}</h2>
+            ${(()=>{const t=(publicTitles.items||[]).find(x=>x.id===publicTitles.equipped);return t?`<div class="public-equipped-title-v58 rarity-${t.rarity}" title="${esc(t.description||t.name)}"><span>${esc(t.icon||'✦')}</span><strong>${esc(t.name)}</strong><small>${esc(titleRarityLabel(t.rarity))}</small></div>`:''})()}
+            <p>@${esc(p.username)}</p>
+            <span class="v60-public-presence ${isOnlineV35(p.id)?'is-online':''}" data-presence-text-v60="${p.id}">${esc(presenceLabelV60(p.id))}</span>
+            ${adminBadgeV37(adminFlagV37||isAdminV38(p.id))}
+            <div class="public-profile-chips">
+              <span>${esc(rank)}</span>
+              <span>${rep}</span>
+              <span>🔥 Racha competitiva ${publicStreaks?.individual?.current??p.current_streak}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="public-profile-social-row">
+          <div class="public-profile-social-counts">
+            <span><strong>${p.followers}</strong> seguidores</span>
+            <span><strong>${p.following}</strong> siguiendo</span>
+            <span>Miembro desde <strong>${esc(member)}</strong></span>
+          </div>
+          ${!isMe?`<button class="follow-player-button ${p.is_following?'following':''}" data-follow-player="${p.id}" data-is-following="${p.is_following?'1':'0'}" type="button">${p.is_following?'Siguiendo ✓':'＋ Seguir jugador'}</button>`:'<span class="own-profile-chip">Tu perfil</span>'}
+        </div>
+
+        ${reliabilityHtmlV34(reliability)}
+
+        <div class="public-profile-highlight-grid">
+          <article><span>Elo individual</span><strong>${p.individual_rating}</strong><small>#${p.ranking_position||'—'} ranking</small></article>
+          <article><span>Elo máximo</span><strong>${p.max_elo}</strong><small>récord histórico</small></article>
+          <article><span>Reputación</span><strong>${rep}</strong><small>${p.reputation_count} valoraciones</small></article>
+          <article><span>Logros</span><strong>${unlockedCount}</strong><small>de 50</small></article>
+        </div>
+
+        <section class="public-showcase-section">
+          <div class="public-showcase-head"><p class="muted-label">PLACAS DESTACADAS</p><span>${selectedPlates.length} / 3</span></div>
+          <div class="showcase-achievements public-showcase">
+            ${selectedPlates.length
+              ?selectedPlates.map(a=>achievementPlateHtml(a,{selected:true})).join('')
+              :'<div class="showcase-empty">Este jugador todavía no eligió placas.</div>'}
+          </div>
+        </section>
+
+        <section class="public-profile-sport">
+          ${publicPrefs?.show_playing_style===false?'':`<div><span>Estilo</span><strong>${esc(cap(p.playing_style))}</strong></div>`}
+          ${publicPrefs?.show_dominant_hand===false?'':`<div><span>Mano hábil</span><strong>${esc(cap(p.dominant_hand))}</strong></div>`}
+          ${publicPrefs?.show_club===false?'':`<div><span>Club</span><strong>${esc(p.club_name||'N/A')}</strong></div>`}
+          <div><span>Dobles</span><strong>${p.doubles_rating} Elo</strong></div>
+        </section>
+
+        <section class="public-profile-record">
+          <div class="public-record-title"><p class="muted-label">ESTADÍSTICAS</p><strong>${p.win_rate===null?'—':p.win_rate+'%'} victorias</strong></div>
+          <div class="public-record-grid">
+            <article><span>Ranking</span><strong>${p.ranked_matches}</strong></article>
+            <article><span>Casuales</span><strong>${p.casual_matches}</strong></article>
+            <article><span>Totales</span><strong>${p.total_matches}</strong></article>
+            <article><span>Victorias</span><strong>${p.wins}</strong></article>
+            <article><span>Derrotas</span><strong>${p.losses}</strong></article>
+            <article><span>Mejor racha oficial</span><strong>${publicStreaks?.individual?.best??p.max_streak}</strong></article>
+          </div>
+        </section>
+
+        <section class="public-seasons-v20">
+          <div class="public-showcase-head"><p class="muted-label">TEMPORADAS</p><span>${seasons?.championships||0} campeonatos · ${seasons?.podiums||0} podios</span></div>
+          <div class="public-season-grid">
+            ${seasonCardHtml(seasons?.last_season,'ÚLTIMA TEMPORADA')}
+            ${seasonCardHtml(seasons?.best_season,'MEJOR TEMPORADA')}
+          </div>
+        </section>
+
+        <section id="publicPalmaresV63" class="public-palmares-v63">
+          <div class="loading-row">Cargando palmarés…</div>
+        </section>
+
+        <section class="public-records-v20">
+          <p class="muted-label">RÉCORDS</p>
+          <div class="public-records-grid-v20">
+            <div><span>Elo máximo</span><strong>${records?.max_elo||p.max_elo}</strong></div>
+            <div><span>Mejor temporada</span><strong>${records?.best_season_position?`#${records.best_season_position}`:'—'}</strong></div>
+            <div><span>Torneos ganados</span><strong>${records?.tournaments_won||0}</strong></div>
+            <div><span>Finales</span><strong>${records?.finals_played||0}</strong></div>
+          </div>
+        </section>
+
+        ${!isMe?`
+          <section class="public-h2h-v20">
+            <div class="public-h2h-title"><p class="muted-label">CARA A CARA</p><span>${h2hAdvanced?.total||0} enfrentamientos</span></div>
+            <div class="h2h-scoreboard">
+              <strong>Vos <b>${h2hAdvanced?.wins||0}</b></strong>
+              <div><span>SETS OFICIALES</span><b>${h2hAdvanced?.my_sets||0} – ${h2hAdvanced?.opponent_sets||0}</b></div>
+              <strong><b>${h2hAdvanced?.losses||0}</b> ${esc(p.first_name)}</strong>
+            </div>
+            <div class="h2h-details">
+              <span>Tu mejor racha ante este rival <b>${h2hAdvanced?.best_win_streak||0}</b></span>
+              <span>Elo neto <b class="${Number(h2hAdvanced?.net_elo||0)>=0?'positive':'negative'}">${Number(h2hAdvanced?.net_elo||0)>=0?'+':''}${h2hAdvanced?.net_elo||0}</b></span>
+            </div>
+            <div class="h2h-recent">
+              ${(h2hAdvanced?.recent||[]).length?(h2hAdvanced.recent||[]).map(x=>`<span class="${x.won?'win':'loss'}" title="${x.my_sets}-${x.opponent_sets}">${x.won?'V':'D'}</span>`).join(''):'<small>Todavía no jugaron partidos competitivos verificados.</small>'}
+            </div>
+          </section>
+
+          <div class="public-profile-actions-v17">
+            <button class="btn btn-start" type="button" data-public-challenge="${p.id}" data-name="${esc(p.first_name)} ${esc(p.last_name)}" data-user="${esc(p.username)}">DESAFIAR</button>
+            ${p.is_following?`<button class="primary-rival-button ${p.is_primary_rival?'active':''}" data-primary-rival="${p.id}" data-is-primary="${p.is_primary_rival?'1':'0'}" type="button">${p.is_primary_rival?'★ Rival favorito ✓':'☆ Marcar como favorito'}</button>`:''}
+          </div>
+        `:''}
+      </section>
+    `;
+    ensureV63Module().then(mod=>mod.loadPublicPalmaresV63?.(userId)).catch(()=>{});
+  }catch(err){
+    console.error(err);
+    box.innerHTML='<div class="loading-row">No se pudo cargar el perfil.</div>';
+  }
+}
+
+function updateLiveResultBoard(){
+  if(!currentMatch)return;
+  const rows=[...$('#setInputs').querySelectorAll('.v28-score-row')];
+  let p1wins=0,p2wins=0;
+  let seriesFinished=false;
+  let abandonment=false;
+  const need=currentMatch.match_format==='bo5'?3:currentMatch.match_format==='bo3'?2:1;
+
+  rows.forEach((row,idx)=>{
+    const a=row.querySelector('[data-p1-set]');
+    const b=row.querySelector('[data-p2-set]');
+    const skip=row.querySelector('[data-unplayed-set]');
+
+    row.classList.remove('auto-unplayed','abandonment-row');
+    delete row.dataset.winner;
+
+    if(seriesFinished||abandonment){
+      row.classList.add('auto-unplayed');
+      if(skip)skip.checked=true;
+      a.disabled=true;
+      b.disabled=true;
+      return;
+    }
+
+    a.disabled=false;
+    b.disabled=false;
+
+    if(skip?.checked){
+      // Si el usuario marca un set como no jugado, los posteriores también quedan fuera.
+      seriesFinished=true;
+      return;
+    }
+
+    if(a.value===''&&b.value==='')return;
+    if(a.value===''||b.value==='')return;
+
+    const x=Number(a.value),y=Number(b.value);
+    if(!Number.isFinite(x)||!Number.isFinite(y)||x===y)return;
+
+    const high=Math.max(x,y);
+    const low=Math.min(x,y);
+
+    // Ninguno llegó a 11: se interpreta visualmente como abandono.
+    // No suma un set al marcador: el backend define al ganador del partido por abandono.
+    if(high<11){
+      abandonment=true;
+      row.classList.add('abandonment-row');
+      row.dataset.winner=x>y?'p1':'p2';
+      return;
+    }
+
+    // Sólo contamos como set ganado si es reglamentario.
+    if(high-low>=2){
+      if(x>y){p1wins++;row.dataset.winner='p1'}
+      else{p2wins++;row.dataset.winner='p2'}
+      if(p1wins>=need||p2wins>=need)seriesFinished=true;
+    }
+  });
+
+  if($('#v28LiveP1Sets'))$('#v28LiveP1Sets').textContent=p1wins;
+  if($('#v28LiveP2Sets'))$('#v28LiveP2Sets').textContent=p2wins;
+
+  const status=$('#v28LiveMatchState');
+  if(status){
+    if(abandonment){
+      status.textContent='ABANDONO';
+      status.className='v28-live-state abandonment';
+    }else if(p1wins>=need||p2wins>=need){
+      status.textContent='PARTIDO DEFINIDO';
+      status.className='v28-live-state finished';
+    }else{
+      status.textContent='CARGANDO RESULTADO';
+      status.className='v28-live-state';
+    }
+  }
+}
+
+function openMatchModal(matchId,matches=[]){
+  const id=Number(matchId);
+  const m=(matches||[]).find(x=>Number(x.id)===id);
+  if(!m){alert('No se pudo abrir este partido. Actualizá la pantalla e intentá nuevamente.');return}
+  if(m.result_status!=='pending'){alert('Este partido ya no está pendiente de resultado.');loadMatches();return}
+
+  currentMatch=m;
+  const p1=m.player1,p2=m.player2;
+  const best=m.match_format==='bo5'?5:m.match_format==='bo3'?3:1;
+  const need=Math.floor(best/2)+1;
+  const p1name=`${p1?.first_name||'Jugador 1'} ${p1?.last_name||''}`.trim();
+  const p2name=`${p2?.first_name||'Jugador 2'} ${p2?.last_name||''}`.trim();
+
+  $('#matchModalTitle').textContent='Cargar resultado';
+  $('#matchModalFormat').innerHTML=`<span>${best===1?'1 SET':`MEJOR DE ${best}`}</span><b>${matchTypeLabel(m.match_type)}</b><small>Primero en ganar ${need} ${need===1?'set':'sets'}</small>`;
+
+  $('#setInputs').innerHTML=`
+    <div class="v28-live-score">
+      <div><small>${esc(p1name)}</small><strong id="v28LiveP1Sets">0</strong></div>
+      <span>SETS</span>
+      <div><small>${esc(p2name)}</small><strong id="v28LiveP2Sets">0</strong></div>
+    </div>
+    <div id="v28LiveMatchState" class="v28-live-state">CARGANDO RESULTADO</div>
+    <div class="v28-score-head"><span>SET</span><span>${esc(p1?.first_name||'J1')}</span><span>${esc(p2?.first_name||'J2')}</span><span></span></div>
+    ${Array.from({length:best},(_,i)=>`
+      <div class="v28-score-row" data-set-number="${i+1}">
+        <strong>SET ${i+1}</strong>
+        <input type="number" min="0" max="99" inputmode="numeric" data-p1-set="${i+1}" aria-label="${esc(p1name)} set ${i+1}">
+        <input type="number" min="0" max="99" inputmode="numeric" data-p2-set="${i+1}" aria-label="${esc(p2name)} set ${i+1}">
+        <label class="v28-unplayed"><input type="checkbox" data-unplayed-set="${i+1}"><span>No jugado</span></label>
+      </div>`).join('')}`;
+
+  $('#setInputs').oninput=updateLiveResultBoard;
+  $('#setInputs').onchange=updateLiveResultBoard;
+  setStatus($('#matchResultStatus'),'');
+  $('#matchModal').classList.add('v28-result-modal');
+  $('#matchModal').classList.remove('hidden');
+  syncModalScrollLock();
+}
+
+function closeMatchModal(){currentMatch=null;$('#matchModal').classList.add('hidden');syncModalScrollLock()}
+
+let cachedMatches=[];
+async function refreshMatchesCache(){cachedMatches=await getMyMatches(session.user.id);return cachedMatches}
+
+
+
+function tournamentStageLabel(stage){
+  return ({groups:'Fase de grupos',r32:'Dieciseisavos',r16:'Octavos',qf:'Cuartos de final',sf:'Semifinales',final:'Final'})[stage]||stage;
+}
+function tournamentPresetLabel(preset){
+  return ({simple:'Simple · 1 set',intermediate:'Intermedio · Mejor de 3',extended:'Extenso · Mejor de 5',custom:'Personalizado'})[preset]||preset;
+}
+function tournamentBestOf(t,stage){
+  if(t.preset==='simple')return 1;
+  if(t.preset==='intermediate')return 3;
+  if(t.preset==='extended')return 5;
+  return Number(t.stage_sets?.[stage]||3);
+}
+
+function t30EntryCountFromPlayers(players,modality=tournamentDraft.modality){
+  const n=Math.max(0,Number(players)||0);
+  return modality==='doubles'?Math.floor(n/2):n;
+}
+function t30BalancedGroupSizes(entryCount){
+  const n=Math.max(0,Number(entryCount)||0);
+  if(!n)return [];
+  const groups=Math.max(1,Math.ceil(n/4));
+  const base=Math.floor(n/groups);
+  const extra=n%groups;
+  return Array.from({length:groups},(_,i)=>base+(i<extra?1:0));
+}
+function t30RecommendedStage(total){
+  if(total<=2)return 'final';
+  if(total<=4)return 'sf';
+  if(total<=8)return 'qf';
+  if(total<=16)return 'r16';
+  return 'r32';
+}
+function updateTournamentAutoGroupsV30(){
+  const maxEl=$('#tournamentMaxPlayers');if(!maxEl)return;
+  let players=Math.max(0,Number(maxEl.value)||0);
+  if(tournamentDraft.modality==='doubles'&&players%2!==0)players++;
+  const entries=t30EntryCountFromPlayers(players);
+  const sizes=t30BalancedGroupSizes(entries);
+  const count=sizes.length;
+  if($('#autoGroupCountLabel'))$('#autoGroupCountLabel').textContent=count?`${count} ${count===1?'grupo':'grupos'}`:'—';
+  if($('#autoGroupDistribution')){
+    $('#autoGroupDistribution').textContent=sizes.length
+      ?`Distribución prevista: ${sizes.map((n,i)=>`Grupo ${i+1}: ${n}`).join(' · ')}`
+      :'Elegí los cupos para calcular la distribución.';
+  }
+  const q=Math.max(1,Number($('#tournamentQualifiers')?.value)||1);
+  if($('#tournamentAfterGroupsStage')&&count){
+    $('#tournamentAfterGroupsStage').value=t30RecommendedStage(count*q);
+  }
+}
+function updateTournamentVisibilityV30(){
+  const isPrivate=$('#tournamentVisibility')?.value==='private';
+  $('#tournamentPrivateCodeWrap')?.classList.toggle('hidden',!isPrivate);
+  if($('#tournamentPrivateCode'))$('#tournamentPrivateCode').required=isPrivate;
+}
+function openTournamentHubPanelV30(mode){
+  tournamentHubModeV30=mode==='discover'?'discover':'history';
+  $$('[data-tournament-hub-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tournamentHubTab===tournamentHubModeV30));
+  $('#tournamentHubHistory')?.classList.toggle('hidden',tournamentHubModeV30!=='history');
+  $('#tournamentHubDiscover')?.classList.toggle('hidden',tournamentHubModeV30!=='discover');
+  if(tournamentHubModeV30==='discover')loadTournamentDiscoveryV30();
+  else loadMyTournamentHistoryV30();
+}
+async function loadMyTournamentHistoryV30(){
+  const box=$('#myTournamentHistoryV30');if(!box)return;
+  box.innerHTML='<div class="loading-row">Cargando tu historial…</div>';
+  try{
+    const rows=await getMyTournamentHistoryV30();
+    box.innerHTML=rows.length?rows.map(t=>{
+      const active=t.status==='active';
+      return `<article class="t30-history-card ${active?'active-tournament':''}" data-open-tournament="${t.tournament_id}">
+        <div class="t30-history-main">
+          <span class="t30-history-icon">${active?'●':'🏓'}</span>
+          <div>
+            ${active?'<b class="t30-active-badge">TORNEO ACTIVO</b>':''}
+            <strong>${esc(t.name)}</strong>
+            <small>${t.modality==='doubles'?'2vs2':'1vs1'} · ${tournamentPresetLabel(t.preset)} · ${t.participant_count||0} participantes</small>
+            ${!active&&t.champion?'<em>🏆 Campeón</em>':(!active&&t.final_position?`<em>Puesto #${t.final_position}</em>`:'')}
+          </div>
+        </div>
+        <span>→</span>
+      </article>`;
+    }).join(''):'<div class="loading-row">Todavía no participaste en ningún torneo.</div>';
+  }catch(err){
+    console.error(err);
+    box.innerHTML='<div class="loading-row">No se pudo cargar tu historial.</div>';
+  }
+}
+async function loadTournamentDiscoveryV30(){
+  const box=$('#activeTournamentDiscoveryV30');if(!box)return;
+  const q=$('#tournamentDiscoverSearch')?.value.trim()||'';
+  box.innerHTML='<div class="loading-row">Buscando torneos activos…</div>';
+  try{
+    const rows=await searchActiveTournamentsV30(q);
+    box.innerHTML=rows.length?rows.map(t=>{
+      const waiting=!t.started_at&&t.registration_open;
+      const full=waiting&&Number(t.participant_count)>=Number(t.max_players||0);
+      const state=t.started_at?'EN JUEGO':full?'COMPLETO':'INSCRIPCIONES';
+      return `<article class="t30-discovery-card">
+        <button class="t30-discovery-open" type="button" data-open-tournament="${t.tournament_id}">
+          <div>
+            <span class="t30-visibility">${t.visibility==='private'?'🔒 PRIVADO':'🌐 PÚBLICO'}</span>
+            <strong>${esc(t.name)}</strong>
+            <small>Host: ${esc(t.creator_name||'Jugador')} · ${t.modality==='doubles'?'2vs2':'1vs1'} · ${tournamentPresetLabel(t.preset)}</small>
+          </div>
+          <b>${state}</b>
+        </button>
+        <div class="t30-discovery-footer">
+          <span>${t.participant_count||0}/${t.max_players||'—'} jugadores</span>
+          ${t.already_joined
+            ?'<button class="joined" type="button" disabled>YA PARTICIPÁS</button>'
+            :t.can_join
+              ?`<button type="button" data-join-tournament-v30="${t.tournament_id}" data-private="${t.visibility==='private'}" data-name="${esc(t.name)}">UNIRME</button>`
+              :'<button type="button" disabled>INSCRIPCIÓN CERRADA</button>'}
+        </div>
+      </article>`;
+    }).join(''):'<div class="loading-row">No encontramos torneos activos con ese nombre.</div>';
+  }catch(err){
+    console.error(err);
+    box.innerHTML='<div class="loading-row">No se pudieron cargar los torneos activos.</div>';
+  }
+}
+async function loadTournamentHubV30(){
+  if(tournamentHubModeV30==='discover')await loadTournamentDiscoveryV30();
+  else await loadMyTournamentHistoryV30();
+}
+async function joinPublicTournamentV30(tournamentId){
+  try{
+    await joinTournamentV30(tournamentId,null);
+    await Promise.all([loadTournamentDiscoveryV30(),loadMyTournamentHistoryV30()]);
+    alert('Te uniste al torneo.');
+  }catch(err){alert(err.message)}
+}
+function openPrivateJoinV30(id,name){
+  pendingTournamentJoinV30=Number(id);
+  $('#tournamentJoinNameV30').textContent=name||'Torneo privado';
+  $('#tournamentJoinCodeV30').value='';
+  setStatus($('#tournamentJoinStatusV30'),'');
+  $('#tournamentJoinModalV30').classList.remove('hidden');
+  syncModalScrollLock();
+  setTimeout(()=>$('#tournamentJoinCodeV30')?.focus(),80);
+}
+function closePrivateJoinV30(){
+  pendingTournamentJoinV30=null;
+  $('#tournamentJoinModalV30').classList.add('hidden');
+  syncModalScrollLock();
+}
+
+function teamPlayerNameV32(p){return p?`${p.first_name||''} ${p.last_name||''}`.trim()||p.username:'—'}
+function renderTeamRacketsV32(){
+  ['home','away'].forEach(side=>{
+    const box=$(`#team${side==='home'?'Home':'Away'}RacketsV32`);
+    if(!box)return;
+    box.innerHTML=teamDraftV32[side].map((p,i)=>`
+      <div class="team-racket-row-v32">
+        <span class="team-racket-number-v32">R${i+1}</span>
+        <div class="team-player-picker-v32" data-team-side="${side}" data-team-slot="${i}">
+          ${p?`<div class="team-picked-player-v32"><strong>${esc(teamPlayerNameV32(p))}</strong><small>@${esc(p.username||'')}</small><button type="button" data-clear-team-player="${side}:${i}">✕</button></div>`:
+          `<input type="search" data-team-player-search="${side}:${i}" placeholder="Buscar @usuario..." autocomplete="off"><div class="team-player-results-v32 hidden"></div>`}
+        </div>
+      </div>`).join('');
+  });
+  updateTeamDoublesOptionsV32();
+}
+function updateTeamDoublesOptionsV32(){
+  const ids=[
+    ['home','teamHomeD1AV32'],['home','teamHomeD1BV32'],['home','teamHomeD2AV32'],['home','teamHomeD2BV32'],
+    ['away','teamAwayD1AV32'],['away','teamAwayD1BV32'],['away','teamAwayD2AV32'],['away','teamAwayD2BV32']
+  ];
+  ids.forEach(([side,id])=>{
+    const el=$('#'+id);if(!el)return;
+    const old=el.value;
+    el.innerHTML='<option value="">Elegir</option>'+teamDraftV32[side].map((p,i)=>p?`<option value="${p.id}">R${i+1} · ${esc(teamPlayerNameV32(p))}</option>`:'').join('');
+    if([...el.options].some(o=>o.value===old))el.value=old;
+  });
+}
+function resetTeamTournamentBuilderV32(){
+  teamDraftV32={home:[null,null,null,null],away:[null,null,null,null]};
+  $('#teamHomeNameV32').value='';
+  $('#teamAwayNameV32').value='';
+  ['teamHomeD1AV32','teamHomeD1BV32','teamHomeD2AV32','teamHomeD2BV32','teamAwayD1AV32','teamAwayD1BV32','teamAwayD2AV32','teamAwayD2BV32'].forEach(id=>{if($('#'+id))$('#'+id).value=''});
+  setStatus($('#teamTournamentCreateStatusV32'),'');
+  renderTeamRacketsV32();
+}
+async function searchTeamPlayerV32(input){
+  const [side,slotRaw]=input.dataset.teamPlayerSearch.split(':');
+  const slot=Number(slotRaw);
+  const results=input.parentElement.querySelector('.team-player-results-v32');
+  const q=input.value.trim();
+  if(q.length<1){results.classList.add('hidden');results.innerHTML='';return}
+  clearTimeout(teamSearchTimerV32);
+  teamSearchTimerV32=setTimeout(async()=>{
+    try{
+      let users=await searchTournamentUsersV8(q);
+      // V48: repetir jugadores es una herramienta exclusiva de Admin.
+      // Para cuentas normales ni siquiera mostramos usuarios ya elegidos.
+      if(!v35Flags?.is_test_admin){
+        const used=new Set([...teamDraftV32.home,...teamDraftV32.away].filter(Boolean).map(p=>String(p.id)));
+        users=users.filter(u=>!used.has(String(u.id)));
+      }
+      users=users.slice(0,8);
+      results.innerHTML=users.length?users.map(u=>`<button type="button" data-pick-team-player="${side}:${slot}:${u.id}" data-name="${esc(`${u.first_name||''} ${u.last_name||''}`.trim())}" data-user="${esc(u.username||'')}"><strong>${esc(`${u.first_name||''} ${u.last_name||''}`.trim()||u.username)}</strong><small>@${esc(u.username||'')}</small></button>`).join(''):'<span>No encontramos usuarios disponibles.</span>';
+      results.classList.remove('hidden');
+    }catch(err){results.innerHTML=`<span>${esc(err.message)}</span>`;results.classList.remove('hidden')}
+  },220);
+}
+async function loadTeamTournamentListV32(){
+  const box=$('#teamTournamentListV32');if(!box)return;
+  box.innerHTML='<div class="loading-row">Cargando enfrentamientos…</div>';
+  try{
+    const rows=await listMyTeamTournamentsV32();
+    box.innerHTML=rows.length?rows.map(t=>`
+      <button class="team-series-history-v32" type="button" data-open-team-tournament="${t.tournament_id}">
+        <div><span>${t.status==='completed'?'✓':t.status==='draw'?'＝':'●'}</span><div><strong>${esc(t.home_name)} vs ${esc(t.away_name)}</strong><small>${t.home_score}–${t.away_score} · ${t.status==='tied_pending'?'Desempate pendiente':t.status==='draw'?'Empate':t.status==='completed'?'Finalizado':'En juego'}</small></div></div><b>→</b>
+      </button>`).join(''):'<div class="loading-row">Todavía no tenés torneos por equipos.</div>';
+  }catch(err){box.innerHTML='<div class="loading-row">No se pudieron cargar los enfrentamientos.</div>'}
+}
+function openTeamTournamentBuilderV32(){
+  hideAllTournamentPanelsV32();
+  const builder=$('#teamTournamentBuilderV32');
+  const isAdminTest=!!v35Flags?.is_test_admin;
+  builder.classList.remove('hidden');
+  builder.classList.toggle('team-test-mode-v32',isAdminTest);
+  $('#teamTestBannerV48')?.classList.toggle('hidden',!isAdminTest);
+  resetTeamTournamentBuilderV32();
+  loadTeamTournamentListV32();
+  loadTeamTournamentHistoryV33();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+function teamPersonMapV32(data){
+  return new Map((data.players||[]).map(p=>[p.user_id,p]));
+}
+function teamParticipantLabelV32(match,map,side){
+  const u1=map.get(match[`${side}_user1_id`]);
+  const u2=map.get(match[`${side}_user2_id`]);
+  if(match.match_type==='doubles')return `${u1?.name||'—'} / ${u2?.name||'—'}`;
+  return u1?.name||'—';
+}
+async function openTeamTournamentDetailV32(id){
+  try{
+    selectedTeamTournamentV32=await getTeamTournamentV32(id);
+    hideAllTournamentPanelsV32();
+    $('#teamTournamentDetailV32').classList.remove('hidden');
+    renderTeamTournamentDetailV32();
+    window.scrollTo({top:0,behavior:'instant'});
+  }catch(err){alert(err.message)}
+}
+function renderTeamTournamentDetailV32(){
+  const data=selectedTeamTournamentV32;if(!data)return;
+  const t=data.tournament,map=teamPersonMapV32(data);
+
+  const statusLabel=t.status==='completed'
+    ?'FINALIZADO'
+    :t.status==='draw'
+      ?'EMPATE'
+      :t.series_decided
+        ?'RESULTADO DEFINIDO'
+        :t.status==='tied_pending'
+          ?'5–5 · DECISIÓN'
+          :'EN JUEGO';
+
+  $('#teamTournamentScoreboardV32').innerHTML=`
+    <div class="team-score-status-v32 ${t.series_decided&&t.status==='active'?'decided':''}">${statusLabel}</div>
+    <div class="team-main-score-v32">
+      <div><span>LOCATARIO</span><strong>${esc(t.home_name)}</strong></div>
+      <b>${t.home_score} <small>—</small> ${t.away_score}</b>
+      <div class="away"><span>VISITANTE</span><strong>${esc(t.away_name)}</strong></div>
+    </div>
+    <p>${t.series_decided&&t.status==='active'
+      ?`La serie ya tiene ganador. ${t.is_host?'Finalizá el torneo para guardar el resultado oficial.':'Esperando al organizador para cerrar el torneo.'}`
+      :'Primero en llegar a <strong>6 partidos</strong> · Todos los encuentros al mejor de 3 sets.'}</p>`;
+
+  $('#teamTournamentMatchesV32').innerHTML=(data.matches||[]).map(m=>{
+    const home=teamParticipantLabelV32(m,map,'home');
+    const away=teamParticipantLabelV32(m,map,'away');
+    const type=m.match_type==='doubles'?'DOBLES':'INDIVIDUAL';
+    return `<article class="team-match-card-v32 ${m.status} ${m.winner_side?`winner-${m.winner_side}`:''}">
+      <div class="team-match-no-v32"><span>P${m.match_no}</span><small>${type}</small></div>
+      <div class="team-match-side-v32 ${m.winner_side==='home'?'winner':''}">
+        <strong>${esc(home)}</strong>${m.status==='completed'?`<b>${m.home_sets}</b>`:''}
+      </div>
+      <span class="team-match-vs-v32">VS</span>
+      <div class="team-match-side-v32 away ${m.winner_side==='away'?'winner':''}">
+        <strong>${esc(away)}</strong>${m.status==='completed'?`<b>${m.away_sets}</b>`:''}
+      </div>
+      <div class="team-match-action-v32">
+        ${m.status==='pending'&&t.is_host&&!t.series_decided
+          ?`<button type="button" data-team-match-result="${m.id}">Cargar resultado</button>`
+          :m.status==='completed'
+            ?'<span>✓ Finalizado</span>'
+            :m.status==='unplayed'
+              ?'<span>No jugado</span>'
+              :'<span>Pendiente</span>'}
+      </div>
+    </article>`;
+  }).join('');
+
+  const tb=$('#teamTournamentTiebreakV32');
+  if(t.status==='tied_pending'&&t.is_host){
+    tb.classList.remove('hidden');
+    tb.innerHTML=`<div class="team-tiebreak-decision-v32">
+      <div>
+        <p class="muted-label">5–5</p>
+        <h3>¿Cómo termina la serie?</h3>
+        <span>Podés jugar un dobles decisivo o cerrar oficialmente el torneo como empate.</span>
+      </div>
+      <div>
+        <button type="button" data-open-team-tiebreak>⚔ DESEMPATE</button>
+        <button class="draw" type="button" data-finalize-team-draw>FINALIZAR 5–5</button>
+      </div>
+    </div>`;
+  }else{
+    tb.classList.add('hidden');
+  }
+
+  const fin=$('#teamTournamentFinalizeV33');
+  if(t.series_decided&&t.status==='active'){
+    fin.classList.remove('hidden');
+    const winner=t.winner_side==='home'?t.home_name:t.away_name;
+    fin.innerHTML=t.is_host
+      ?`<div class="team-finalize-panel-v33">
+          <div>
+            <p class="muted-label">SERIE DEFINIDA</p>
+            <h3>🏆 ${esc(winner)} ganó ${t.home_score}–${t.away_score}</h3>
+            <span>Confirmá el cierre para guardar oficialmente el resultado y mostrar el resumen final.</span>
+          </div>
+          <button type="button" data-finalize-team-v33>FINALIZAR TORNEO</button>
+        </div>`
+      :`<div class="team-finalize-panel-v33 waiting">
+          <div>
+            <p class="muted-label">SERIE DEFINIDA</p>
+            <h3>${esc(winner)} ganó ${t.home_score}–${t.away_score}</h3>
+            <span>Esperando a que el organizador finalice el torneo.</span>
+          </div>
+        </div>`;
+  }else{
+    fin.classList.add('hidden');
+  }
+
+  const summary=$('#teamTournamentSummaryV32');
+  if(['completed','draw'].includes(t.status)){
+    summary.classList.remove('hidden');
+    const winner=t.status==='draw'?'EMPATE':t.winner_side==='home'?t.home_name:t.away_name;
+    summary.innerHTML=`<div class="section-title-row">
+        <div><p class="muted-label">RESUMEN FINAL</p><h3>${t.status==='draw'?'Serie empatada':`🏆 ${esc(winner)}`}</h3></div>
+        <strong>${t.home_score}–${t.away_score}</strong>
+      </div>
+      ${v35Flags?.is_test_admin&&t.test_mode?'<div class="team-elo-test-v33">🧪 Modo prueba: los resultados no modificaron Elo.</div>':''}
+      <div class="team-elo-summary-v32">${(data.elo_summary||[]).map(s=>`<article>
+        <strong>${esc(s.name)}</strong>
+        <small>${s.matches_played} PJ · ${s.wins}V–${s.losses}D</small>
+        <div>
+          <span>Individual <b class="${s.individual_change>=0?'positive':'negative'}">${s.individual_change>=0?'+':''}${s.individual_change}</b></span>
+          <span>Dobles <b class="${s.doubles_change>=0?'positive':'negative'}">${s.doubles_change>=0?'+':''}${s.doubles_change}</b></span>
+        </div>
+        <em>TOTAL ${s.total_change>=0?'+':''}${s.total_change} Elo</em>
+      </article>`).join('')}</div>`;
+  }else{
+    summary.classList.add('hidden');
+  }
+}
+function openTeamMatchModalV32(matchId){
+  const data=selectedTeamTournamentV32;if(!data)return;
+  currentTeamMatchV32=(data.matches||[]).find(m=>Number(m.id)===Number(matchId));
+  if(!currentTeamMatchV32)return;
+  const map=teamPersonMapV32(data),t=data.tournament;
+  const home=teamParticipantLabelV32(currentTeamMatchV32,map,'home');
+  const away=teamParticipantLabelV32(currentTeamMatchV32,map,'away');
+  $('#teamMatchModalTitleV32').textContent=`Partido ${currentTeamMatchV32.match_no} · ${currentTeamMatchV32.match_type==='doubles'?'Dobles':'Individual'}`;
+  $('#teamMatchModalSubtitleV32').textContent=`${home} vs ${away}`;
+  $('#teamModalHomeV32').textContent=t.home_name;
+  $('#teamModalAwayV32').textContent=t.away_name;
+  $('#teamSetInputsV32').innerHTML=[1,2,3].map(n=>`<div class="team-set-row-v32"><strong>SET ${n}</strong><input type="number" min="0" max="99" inputmode="numeric" data-team-home-set="${n}" placeholder="0"><span>—</span><input type="number" min="0" max="99" inputmode="numeric" data-team-away-set="${n}" placeholder="0"></div>`).join('');
+  setStatus($('#teamMatchStatusV32'),'');
+  $('#teamMatchModalV32').classList.remove('hidden');syncModalScrollLock();
+}
+function populateTeamTiebreakV32(){
+  const data=selectedTeamTournamentV32;if(!data)return;
+  ['home','away'].forEach(side=>{
+    const arr=(data.players||[]).filter(p=>p.side===side).sort((a,b)=>a.racket_no-b.racket_no);
+    const prefix=side==='home'?'Home':'Away';
+    [`teamTiebreak${prefix}AV32`,`teamTiebreak${prefix}BV32`].forEach(id=>{
+      $('#'+id).innerHTML=arr.map(p=>`<option value="${p.user_id}">R${p.racket_no} · ${esc(p.name)}</option>`).join('');
+    });
+  });
+}
+
+function hideAllTournamentPanelsV32(){
+  [
+    '#tournamentModeChooser',
+    '#tournamentPresetChooser',
+    '#tournamentBuilder',
+    '#tournamentDetail',
+    '#teamTournamentBuilderV32',
+    '#teamTournamentDetailV32'
+  ].forEach(sel=>$(sel)?.classList.add('hidden'));
+}
+function showTournamentModesV32(){
+  hideAllTournamentPanelsV32();
+  $('#tournamentModeChooser')?.classList.remove('hidden');
+  tournamentDraft.modality=null;
+  tournamentDraft.preset=null;
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+async function loadTeamTournamentHistoryV33(){
+  const box=$('#teamTournamentHistoryV33');if(!box)return;
+  box.innerHTML='<div class="loading-row">Cargando historial…</div>';
+  try{
+    const rows=await listMyTeamTournamentHistoryV33();
+    box.innerHTML=rows.length?rows.map(t=>{
+      const draw=t.status==='draw';
+      const result=`${t.home_score}–${t.away_score}`;
+      const winner=draw?'Empate':t.winner_side==='home'?t.home_name:t.away_name;
+      return `<button class="team-history-card-v33" type="button" data-open-team-tournament="${t.tournament_id}">
+        <div class="team-history-result-v33">
+          <strong>${esc(t.home_name)}</strong>
+          <b>${result}</b>
+          <strong>${esc(t.away_name)}</strong>
+        </div>
+        <div class="team-history-meta-v33">
+          <span>${draw?'＝ EMPATE':`🏆 ${esc(winner)}`}</span>
+          <small>${t.completed_at?new Date(t.completed_at).toLocaleDateString('es-UY'):''}${v35Flags?.is_test_admin&&t.test_mode?' · 🧪 prueba':''}</small>
+        </div>
+      </button>`;
+    }).join(''):'<div class="loading-row">Todavía no tenés resultados de torneos por equipos.</div>';
+  }catch(err){
+    console.error(err);
+    box.innerHTML='<div class="loading-row">No se pudo cargar el historial por equipos.</div>';
+  }
+}
+function showTeamVictoryV33(data){
+  if(!data?.tournament)return;
+  const t=data.tournament;
+  const draw=t.status==='draw';
+  const winnerName=draw?'Empate':t.winner_side==='home'?t.home_name:t.away_name;
+
+  $('#teamVictoryTitleV33').textContent=draw?'¡Partido finalizado!':'¡Felicitaciones!';
+  $('#teamVictoryEyebrowV33').textContent=draw?'TORNEO DE EQUIPOS · EMPATE':'TORNEO DE EQUIPOS 4 VS 4';
+  $('#teamVictoryClubV33').textContent=draw?`${t.home_name} · ${t.away_name}`:winnerName;
+  $('#teamVictoryScoreV33').innerHTML=`${t.home_score} <small>—</small> ${t.away_score}`;
+  $('#teamVictoryHomeV33').textContent=t.home_name;
+  $('#teamVictoryAwayV33').textContent=t.away_name;
+
+  const badge=$('.team-victory-emblem-v33 b');
+  if(badge)badge.textContent=draw?'EMPATE':'CAMPEÓN';
+
+  $('#teamVictoryOverlayV33').classList.remove('hidden');
+  syncModalScrollLock();
+}
+function closeTeamVictoryV33(){
+  $('#teamVictoryOverlayV33')?.classList.add('hidden');
+  syncModalScrollLock();
+}
+function showTeamEloV33(){
+  const data=selectedTeamTournamentV32;if(!data)return;
+  const t=data.tournament;
+  closeTeamVictoryV33();
+
+  $('#teamEloSubtitleV33').textContent=`${t.home_name} ${t.home_score}–${t.away_score} ${t.away_name}`;
+  $('#teamEloTestNoticeV33').classList.toggle('hidden',!(v35Flags?.is_test_admin&&t.test_mode));
+
+  const rows=data.elo_summary||[];
+  $('#teamEloPlayersV33').innerHTML=rows.length?rows.map(s=>`
+    <article class="team-elo-player-v33">
+      <div>
+        <strong>${esc(s.name)}</strong>
+        <small>${s.matches_played||0} partidos · ${s.wins||0}V–${s.losses||0}D</small>
+      </div>
+      <div class="team-elo-splits-v33">
+        <span>Individual <b class="${s.individual_change>0?'positive':s.individual_change<0?'negative':''}">${s.individual_change>0?'+':''}${s.individual_change||0}</b></span>
+        <span>Dobles <b class="${s.doubles_change>0?'positive':s.doubles_change<0?'negative':''}">${s.doubles_change>0?'+':''}${s.doubles_change||0}</b></span>
+      </div>
+      <em class="${s.total_change>0?'positive':s.total_change<0?'negative':''}">TOTAL ${s.total_change>0?'+':''}${s.total_change||0} Elo</em>
+    </article>`).join(''):'<div class="loading-row">No hay movimientos de Elo para mostrar.</div>';
+
+  $('#teamEloOverlayV33').classList.remove('hidden');
+  syncModalScrollLock();
+}
+function closeTeamEloV33(){
+  $('#teamEloOverlayV33')?.classList.add('hidden');
+  syncModalScrollLock();
+}
+async function finalizeCurrentTeamTournamentV33(){
+  const data=selectedTeamTournamentV32;
+  if(!data?.tournament)return;
+  const t=data.tournament;
+  try{
+    await finalizeTeamTournamentV33(t.id);
+    selectedTeamTournamentV32=await getTeamTournamentV32(t.id);
+    renderTeamTournamentDetailV32();
+    await Promise.all([loadTeamTournamentListV32(),loadTeamTournamentHistoryV33()]);
+    showTeamVictoryV33(selectedTeamTournamentV32);
+  }catch(err){
+    alert(err.message);
+  }
+}
+function resetTournamentWizard(){
+  tournamentDraft={modality:null,preset:null,selectedUsers:[]};
+  hideAllTournamentPanelsV32();
+  $('#tournamentModeChooser').classList.remove('hidden');
+  renderSelectedTournamentPlayers();
+}
+async function loadTournamentList(){
+  const box=$('#tournamentList');if(!box)return;
+  box.innerHTML='<div class="loading-row">Cargando torneos…</div>';
+  try{
+    const rows=await getTournamentsV8();
+    box.innerHTML=rows.length?rows.map(t=>`
+      <div class="tournament-card" data-open-tournament="${t.id}">
+        <div>
+          <strong>${t.modality==='doubles'?'👥':'🏓'} ${esc(t.name)}</strong>
+          <small>${t.modality==='doubles'?'2vs2':'1vs1'} · ${tournamentPresetLabel(t.preset)} · Desde ${tournamentStageLabel(t.start_stage)}</small>
+          <span class="tournament-status ${t.status==='completed'?'completed':'active'}">${t.status==='completed'?'Finalizado':'En juego'}</span>
+        </div><b>→</b>
+      </div>`).join(''):'<div class="loading-row">Todavía no hay torneos.</div>';
+  }catch(err){console.error(err);box.innerHTML='<div class="loading-row">No se pudieron cargar los torneos.</div>'}
+}
+function openTournamentPresetChooser(modality){
+  tournamentDraft.modality=modality;
+  hideAllTournamentPanelsV32();
+  $('#selectedTournamentModeTitle').textContent=modality==='doubles'?'Torneo 2vs2':'Torneo 1vs1';
+  $('#tournamentPresetChooser').classList.remove('hidden');
+  window.scrollTo({top:0,behavior:'instant'});
+}
+function openTournamentBuilder(preset){
+  tournamentDraft.preset=preset;
+  tournamentDraft.selectedUsers=[];
+  hideAllTournamentPanelsV32();
+  $('#tournamentBuilder').classList.remove('hidden');
+  $('#tournamentBuilderTitle').textContent=`${tournamentDraft.modality==='doubles'?'2vs2':'1vs1'} · ${tournamentPresetLabel(preset)}`;
+  $('#customSetOptions').classList.toggle('hidden',preset!=='custom');
+  $('#participantRequirement').textContent='Podrán unirse hasta completar los cupos';
+  $('#tournamentMaxPlayers').min=tournamentDraft.modality==='doubles'?'4':'2';
+  $('#tournamentMaxPlayers').step=tournamentDraft.modality==='doubles'?'2':'1';
+  $('#tournamentMaxPlayers').value=tournamentDraft.modality==='doubles'?'8':'8';
+  $('#tournamentVisibility').value='public';
+  $('#tournamentPrivateCode').value='';
+  $('#tournamentHostPlays').checked=true;
+  updateTournamentVisibilityV30();
+  updateTournamentAutoGroupsV30();
+  renderSelectedTournamentPlayers();
+}
+function updateGroupOptions(){
+  $('#groupOptions').classList.toggle('hidden',$('#tournamentStartStage').value!=='groups');
+  updateTournamentAutoGroupsV30();
+}
+function renderSelectedTournamentPlayers(){
+  const box=$('#selectedTournamentPlayers');if(!box)return;
+  $('#selectedParticipantCount').textContent=`${tournamentDraft.selectedUsers.length} ${tournamentDraft.selectedUsers.length===1?'invitado':'invitados'}`;
+  box.innerHTML=tournamentDraft.selectedUsers.map(p=>`<div class="player-chip"><span>${esc(p.first_name)} ${esc(p.last_name)} · @${esc(p.username)}</span><button type="button" data-remove-selected-player="${p.id}">×</button></div>`).join('');
+}
+async function searchTournamentPlayers(){
+  const q=$('#tournamentPlayerSearch').value.trim(),box=$('#tournamentPlayerSearchResults');
+  if(!q){box.innerHTML='';return}
+  try{
+    const already=new Set(tournamentDraft.selectedUsers.map(x=>x.id));
+    const rows=(await searchTournamentUsersV8(q)).filter(p=>!already.has(p.id));
+    box.innerHTML=rows.length?rows.map(p=>`<div class="player-row"><div><strong>${esc(p.first_name)} ${esc(p.last_name)}</strong><small>@${esc(p.username)}</small></div><button type="button" data-add-selected-player="${p.id}" data-first="${esc(p.first_name)}" data-last="${esc(p.last_name)}" data-user="${esc(p.username)}">Agregar</button></div>`).join(''):'<div class="loading-row">No se encontraron usuarios.</div>';
+  }catch(err){box.innerHTML='<div class="loading-row">No se pudo buscar.</div>'}
+}
+function collectCustomStageSets(){
+  const o={};$$('[data-custom-stage]').forEach(s=>o[s.dataset.customStage]=Number(s.value));return o;
+}
+async function openTournament(tournamentId){
+  const all=await getTournamentsV8();
+  selectedTournament=all.find(t=>t.id===Number(tournamentId));if(!selectedTournament)return;
+  $('#tournamentModeChooser').classList.add('hidden');
+  $('#tournamentPresetChooser').classList.add('hidden');
+  $('#tournamentBuilder').classList.add('hidden');
+  $('#tournamentDetail').classList.remove('hidden');
+  $('#tournamentDetailName').textContent=selectedTournament.name;
+  $('#tournamentDetailMeta').textContent=`${selectedTournament.modality==='doubles'?'2vs2':'1vs1'} · ${tournamentPresetLabel(selectedTournament.preset)} · Desde ${tournamentStageLabel(selectedTournament.start_stage)}`;
+  await renderTournamentBracket();
+  await renderTournamentSummaryV20();
+  $('#tournamentDetail').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function memberNamesForEntry(entry,members){
+  const names=members.filter(m=>m.entry_id===entry.id).map(m=>m.profile?`${m.profile.first_name} ${m.profile.last_name}`:'').filter(Boolean);
+  return names.length?names.join(' / '):entry.display_name;
+}
+
+function tournamentStageLabelV31(stage){
+  return {groups:'Fase de grupos',r32:'Dieciseisavos',r16:'Octavos',qf:'Cuartos de final',sf:'Semifinal',final:'Final'}[stage]||stage;
+}
+function tournamentStageOrderV31(stage){
+  return {groups:0,r32:1,r16:2,qf:3,sf:4,final:5}[stage]??9;
+}
+function renderTournamentStandingsV31(standings=[]){
+  if(!standings.length)return '';
+  const groups=new Map();
+  standings.forEach(r=>{
+    if(!groups.has(r.group_no))groups.set(r.group_no,[]);
+    groups.get(r.group_no).push(r);
+  });
+  return [...groups.entries()].map(([g,rows])=>`
+    <section class="t31-group-table-card">
+      <div class="t31-group-title"><span>GRUPO ${g}</span><small>Todos contra todos</small></div>
+      <div class="t31-table">
+        <div class="t31-table-head"><span>#</span><span>Jugador</span><span>PG</span><span>DS</span><span>DP</span></div>
+        ${rows.sort((a,b)=>a.position-b.position).map(r=>`
+          <div class="t31-table-row ${r.position<=Number(selectedTournament.qualifiers_per_group||1)?'qualified':''}">
+            <b>${r.position}</b><strong>${esc(r.display_name)}</strong><span>${r.wins}</span>
+            <span>${r.set_diff>0?'+':''}${r.set_diff}</span>
+            <span>${r.point_diff>0?'+':''}${r.point_diff}</span>
+          </div>`).join('')}
+      </div>
+      <p class="t31-tiebreak-note">Desempate: partidos ganados → enfrentamiento directo → diferencia de sets → diferencia de puntos → sorteo.</p>
+    </section>`).join('');
+}
+function renderKnockoutV31(games=[],entryMap=new Map()){
+  const stages=[...new Set(games.filter(g=>g.stage!=='groups').map(g=>g.stage))]
+    .sort((a,b)=>tournamentStageOrderV31(a)-tournamentStageOrderV31(b));
+  return `<section class="t31-bracket">${stages.map(stage=>{
+    const stageGames=games.filter(g=>g.stage===stage).sort((a,b)=>a.match_index-b.match_index);
+    return `<div class="t31-stage-column ${stage==='final'?'final-stage':''}">
+      <div class="t31-stage-heading"><span>${tournamentStageLabelV31(stage)}</span><b>${stageGames.length} ${stageGames.length===1?'partido':'partidos'}</b></div>
+      <div class="t31-stage-games">${stageGames.map(g=>{
+        const e1=entryMap.get(g.entry1_id),e2=entryMap.get(g.entry2_id);
+        const bye=g.status==='bye';
+        return `<article class="t31-match-card ${bye?'bye-match':''}">
+          ${bye?'<span class="t31-bye-badge">PASE DIRECTO</span>':''}
+          <div class="${g.winner_entry_id===g.entry1_id?'winner':''}"><span>${esc(e1?.display_name||'—')}</span>${g.winner_entry_id===g.entry1_id?'<b>✓</b>':''}</div>
+          <div class="${g.winner_entry_id===g.entry2_id?'winner':''}"><span>${esc(e2?.display_name||'—')}</span>${g.winner_entry_id===g.entry2_id?'<b>✓</b>':''}</div>
+          ${g.status==='pending'?`<button type="button" data-t8-result="${g.id}">Registrar resultado</button>`:g.status==='completed'?'<small>Finalizado</small>':bye?'<small>Avanza automáticamente</small>':'<small>Esperando clasificados</small>'}
+        </article>`;
+      }).join('')}</div>
+    </div>`;
+  }).join('')}</section>`;
+}
+async function renderTournamentBracket(){
+  if(!selectedTournament)return;
+  const box=$('#tournamentBracket');
+
+  if(!selectedTournament.started_at){
+    try{
+      const lobby=await getTournamentLobbyV30(selectedTournament.id);
+      const people=lobby.participants||[];
+      box.innerHTML=`<section class="t30-lobby">
+        <div class="t30-lobby-head">
+          <div><p class="muted-label">INSCRIPCIONES ${lobby.registration_open?'ABIERTAS':'CERRADAS'}</p><h4>${lobby.participant_count||0}/${lobby.max_players||'—'} jugadores</h4></div>
+          <span>${lobby.visibility==='private'?'🔒 Privado':'🌐 Público'}</span>
+        </div>
+        <div class="t30-lobby-people">${people.length?people.map(p=>`<div><span>${p.photo?`<img src="${esc(p.photo)}" alt="">`:esc((p.name||'TT').slice(0,2).toUpperCase())}</span><strong>${esc(p.name||p.username||'Jugador')}</strong><small>@${esc(p.username||'')}</small></div>`).join(''):'<p class="loading-row">Todavía no hay participantes.</p>'}</div>
+        ${lobby.is_host?`<div class="t30-host-actions"><button class="btn btn-start" type="button" data-start-tournament-v30="${selectedTournament.id}">INICIAR TORNEO</button><small>La estructura se adaptará automáticamente a la cantidad real de participantes.</small></div>`:lobby.already_joined?'<div class="t30-waiting-host">✓ Estás inscripto. Esperando al organizador.</div>':''}
+      </section>`;
+    }catch(err){
+      box.innerHTML=`<div class="t30-structure-error"><strong>No se pudo cargar el torneo.</strong><span>${esc(err.message||'Intentá nuevamente.')}</span><button type="button" data-retry-tournament-v30>Reintentar</button></div>`;
+    }
+    $('#groupCloseArea').classList.add('hidden');
+    $('#finalizeTournamentArea').classList.add('hidden');
+    $('#finalStandingsArea').classList.add('hidden');
+    return;
+  }
+
+  try{
+    const [entries,games,standings]=await Promise.all([
+      getTournamentEntriesV8(selectedTournament.id),
+      getTournamentGamesV8(selectedTournament.id),
+      getTournamentStandingsV31(selectedTournament.id)
+    ]);
+    const entryMap=new Map(entries.map(e=>[e.id,e]));
+    const groupGames=games.filter(g=>g.stage==='groups');
+    const knockout=games.filter(g=>g.stage!=='groups');
+    let html='';
+
+    if(groupGames.length){
+      html+=`<section class="t31-groups-wrap">
+        <div class="t31-section-head"><div><p class="muted-label">FASE DE GRUPOS</p><h4>${selectedTournament.group_count||1} ${Number(selectedTournament.group_count||1)===1?'grupo':'grupos'}</h4></div><span>Todos contra todos</span></div>
+        ${renderTournamentStandingsV31(standings)}
+        <div class="t31-group-matches">
+          ${[...new Set(groupGames.map(g=>g.group_no))].sort((a,b)=>a-b).map(groupNo=>`
+            <div class="t31-group-match-list"><strong>Partidos · Grupo ${groupNo}</strong>
+              ${groupGames.filter(g=>g.group_no===groupNo).map(g=>{
+                const e1=entryMap.get(g.entry1_id),e2=entryMap.get(g.entry2_id);
+                return `<button class="t31-group-game ${g.status==='completed'?'completed':''}" type="button" ${g.status==='completed'?'disabled':`data-t8-result="${g.id}"`}>
+                  <span>${esc(e1?.display_name||'—')}</span><b>VS</b><span>${esc(e2?.display_name||'—')}</span><small>${g.status==='completed'?'Finalizado':'Cargar resultado'}</small>
+                </button>`;
+              }).join('')}
+            </div>`).join('')}
+        </div>
+      </section>`;
+    }
+
+    if(knockout.length)html+=renderKnockoutV31(knockout,entryMap);
+
+    box.innerHTML=html||`<div class="t30-structure-error"><strong>No se generó una estructura válida.</strong><span>Reintentá la carga.</span><button type="button" data-retry-tournament-v30>Reintentar</button></div>`;
+
+    const groupsPending=groupGames.some(g=>g.status!=='completed');
+    const finalDone=knockout.some(g=>g.stage==='final'&&g.status==='completed');
+    $('#groupCloseArea').classList.toggle('hidden',!groupGames.length||groupsPending||knockout.length>0);
+    $('#finalizeTournamentArea').classList.toggle('hidden',!finalDone||selectedTournament.status==='completed');
+    $('#finalStandingsArea').classList.toggle('hidden',selectedTournament.status!=='completed');
+    if(selectedTournament.status==='completed'){
+      try{
+        const finalRows=await getTournamentStandingsV8(selectedTournament.id);
+        renderFinalStandings(finalRows);
+      }catch(standErr){
+        console.error('tabla final',standErr);
+        $('#tournamentStandings').innerHTML='<div class="loading-row">No se pudo cargar la tabla final.</div>';
+      }
+    }
+  }catch(err){
+    console.error(err);
+    box.innerHTML=`<div class="t30-structure-error"><strong>No se pudo construir la vista del torneo.</strong><span>${esc(err.message||'Error inesperado.')}</span><button type="button" data-retry-tournament-v30>Reintentar</button></div>`;
+  }
+}
+
+async function renderTournamentSummaryV20(){
+  const box=$('#tournamentSummaryV20');if(!box||!selectedTournament)return;
+  if(selectedTournament.status!=='completed'){box.classList.add('hidden');return}
+  try{
+    const s=await getTournamentSummary(selectedTournament.id);
+    box.classList.remove('hidden');
+    box.innerHTML=`<div class="tournament-summary-head"><p class="muted-label">RESUMEN DEL TORNEO</p><strong>${esc(s.champion||'Campeón')}</strong></div>
+      <div class="tournament-summary-grid">
+        <article><span>Partidos</span><strong>${s.games_played||0}</strong></article>
+        <article><span>Sets</span><strong>${s.sets_played||0}</strong></article>
+        <article><span>Finalista</span><strong>${esc(s.runner_up||'—')}</strong></article>
+        <article><span>Jugador destacado</span><strong>${esc(s.mvp?.name||'—')}</strong><small>${s.mvp?`${s.mvp.wins} victorias · dif. sets ${Number(s.mvp.set_diff)>=0?'+':''}${s.mvp.set_diff}`:''}</small></article>
+      </div>
+      ${s.closest_match?`<div class="closest-tournament-match"><span>PARTIDO MÁS AJUSTADO</span><strong>${esc(s.closest_match.player1)} ${s.closest_match.sets1}–${s.closest_match.sets2} ${esc(s.closest_match.player2)}</strong><small>${tournamentStageLabel(s.closest_match.stage)}</small></div>`:''}`;
+  }catch(err){console.error(err);box.classList.add('hidden')}
+}
+
+async function duplicateSelectedTournament(){
+  if(!selectedTournament)return;
+  try{
+    const profiles=await getTournamentParticipantProfilesV8(selectedTournament.id);
+    tournamentDraft={
+      modality:selectedTournament.modality,
+      preset:selectedTournament.preset,
+      selectedUsers:profiles.map(p=>({id:p.id,first_name:p.first_name,last_name:p.last_name,username:p.username}))
+    };
+    $('#tournamentDetail').classList.add('hidden');
+    $('#tournamentModeChooser').classList.add('hidden');
+    $('#tournamentPresetChooser').classList.add('hidden');
+    $('#tournamentBuilder').classList.remove('hidden');
+    $('#tournamentBuilderTitle').textContent=`Duplicar · ${selectedTournament.name}`;
+    $('#tournamentName').value=`${selectedTournament.name} · Nueva edición`;
+    $('#tournamentStartStage').value=selectedTournament.start_stage;
+    $('#tournamentMaxPlayers').value=selectedTournament.max_players||Math.max(2,profiles.length);
+    $('#tournamentVisibility').value=selectedTournament.visibility||'public';
+    $('#tournamentPrivateCode').value='';
+    $('#tournamentHostPlays').checked=profiles.some(p=>p.id===session.user.id);
+    updateTournamentVisibilityV30();
+    updateGroupOptions();
+    updateTournamentAutoGroupsV30();
+    if(selectedTournament.qualifiers_per_group)$('#tournamentQualifiers').value=selectedTournament.qualifiers_per_group;
+    if(selectedTournament.after_groups_stage)$('#tournamentAfterGroupsStage').value=selectedTournament.after_groups_stage;
+    $('#customSetOptions').classList.toggle('hidden',selectedTournament.preset!=='custom');
+    if(selectedTournament.preset==='custom'&&selectedTournament.stage_sets){
+      $$('[data-custom-stage]').forEach(el=>{
+        if(selectedTournament.stage_sets[el.dataset.customStage])el.value=selectedTournament.stage_sets[el.dataset.customStage];
+      });
+    }
+    renderSelectedTournamentPlayers();
+    $('#tournamentBuilder').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(err){alert('No se pudo duplicar el torneo: '+err.message)}
+}
+
+function gameHtml(g,entryMap,t){
+  const e1=entryMap.get(g.entry1_id),e2=entryMap.get(g.entry2_id);
+  const n1=e1?.display_name||'—',n2=e2?.display_name||'—';
+  const done=g.status==='completed',bye=g.status==='bye',waiting=g.status==='waiting';
+  return `<div class="bracket-game">
+    <div class="bracket-game-header"><span>Partido ${g.match_index}</span><span>${tournamentBestOf(t,g.stage)===1?'1 set':`Mejor de ${tournamentBestOf(t,g.stage)}`}</span></div>
+    <div class="bracket-participant ${done&&g.winner_entry_id===g.entry1_id?'winner':''}"><span>${esc(n1)}</span><span>${done?g.entry1_sets:''}</span></div>
+    <div class="bracket-participant ${done&&g.winner_entry_id===g.entry2_id?'winner':''}"><span>${esc(n2)}</span><span>${done?g.entry2_sets:''}</span></div>
+    ${g.status==='pending'&&g.entry1_id&&g.entry2_id&&t.creator_id===session.user.id?`<button class="bracket-result-btn" data-t8-result="${g.id}">Colocar resultado</button>`:''}
+    <div class="bracket-status">${done?'✓ Resultado cerrado':bye?'Pase automático':waiting?'Esperando clasificados':'Pendiente'}</div>
+  </div>`;
+}
+function renderFinalStandings(rows){
+  $('#tournamentStandings').innerHTML=`<table class="standings-table"><thead><tr><th>#</th><th>Participante</th><th>PJ</th><th>G</th><th>P</th><th>Sets</th><th>Etapa</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td class="standing-pos">${r.final_position||i+1}</td><td><strong>${esc(r.display_name)}</strong></td><td>${r.played}</td><td>${r.wins}</td><td>${r.losses}</td><td>${r.sets_for}-${r.sets_against}</td><td>${r.stage_reached==='champion'?'🏆 Campeón':tournamentStageLabel(r.stage_reached)}</td></tr>`).join('')}</tbody></table>`;
+}
+async function openTournamentMatchModalV8(gameId){
+  const [games,entries,members]=await Promise.all([
+    getTournamentGamesV8(selectedTournament.id),
+    getTournamentEntriesV8(selectedTournament.id),
+    getTournamentMembersV8(selectedTournament.id)
+  ]);
+  const g=games.find(x=>x.id===Number(gameId));if(!g)return;
+  const map=new Map(entries.map(e=>[e.id,{...e,display_name:memberNamesForEntry(e,members)}]));
+  currentTournamentMatch=g;
+  const best=tournamentBestOf(selectedTournament,g.stage);
+  const e1=map.get(g.entry1_id),e2=map.get(g.entry2_id);
+  $('#tournamentMatchModalTitle').textContent=`${e1?.display_name||'Participante 1'} vs ${e2?.display_name||'Participante 2'}`;
+  $('#tournamentMatchModalFormat').textContent=best===1?'1 set (1×11)':`Mejor de ${best} sets`;
+  $('#tournamentSetInputs').innerHTML=Array.from({length:best},(_,i)=>`<div class="set-row result-set-row"><strong>Set ${i+1}</strong><label>${esc(e1?.display_name||'P1')}<input type="number" min="0" max="99" data-t8p1="${i+1}"></label><label>${esc(e2?.display_name||'P2')}<input type="number" min="0" max="99" data-t8p2="${i+1}"></label><label class="unplayed-toggle"><input type="checkbox" data-t8-unplayed="${i+1}"><span>Set no jugado</span></label></div>`).join('');
+  $('#tournamentSetInputs').insertAdjacentHTML('beforeend','<div class="unplayed-help">Los sets que no se jugaron pueden quedar vacíos o marcarse como <strong>Set no jugado</strong>. Ejemplo: en Bo3, 11-4 / 11-7 se guarda directamente como 2-0.</div>');
+  setStatus($('#tournamentMatchResultStatus'),'');$('#tournamentMatchModal').classList.remove('hidden');
+}
+function closeTournamentMatchModal(){currentTournamentMatch=null;$('#tournamentMatchModal').classList.add('hidden')}
+
+
+
+function renderRatingChart(historyRows){
+  const svg=$('#ratingChart');
+  if(!svg)return;
+
+  // DB comes newest first. Chart must run oldest -> newest.
+  const rows=[...(historyRows||[])].reverse();
+
+  if(!rows.length){
+    $('#ratingChartWrap').classList.add('hidden');
+    $('#ratingChartEmpty').classList.remove('hidden');
+    $('#ratingChartCurrent').textContent=`${getRating('individual').rating} Elo`;
+    $('#ratingChartMin').textContent='—';
+    $('#ratingChartMax').textContent='—';
+    return;
+  }
+
+  $('#ratingChartWrap').classList.remove('hidden');
+  $('#ratingChartEmpty').classList.add('hidden');
+
+  // Include the rating before the first change so the curve has a true starting point.
+  const points=[
+    {
+      rating:Number(rows[0].previous_rating),
+      date:new Date(new Date(rows[0].created_at).getTime()-1000),
+      change:0,
+      label:'Inicio'
+    },
+    ...rows.map(r=>({
+      rating:Number(r.new_rating),
+      date:new Date(r.created_at),
+      change:Number(r.rating_change),
+      label:`${r.rating_change>=0?'+':''}${r.rating_change}`
+    }))
+  ];
+
+  const width=700,height=280;
+  const pad={left:26,right:22,top:24,bottom:30};
+  const ratingsValues=points.map(p=>p.rating);
+  let min=Math.min(...ratingsValues),max=Math.max(...ratingsValues);
+
+  // Make small changes still visually readable.
+  const spread=Math.max(20,max-min);
+  const extra=Math.max(10,spread*.18);
+  min=Math.floor(min-extra);
+  max=Math.ceil(max+extra);
+
+  const x=i=>pad.left+(i/(Math.max(1,points.length-1)))*(width-pad.left-pad.right);
+  const y=v=>pad.top+((max-v)/(max-min))*(height-pad.top-pad.bottom);
+
+  // Curva suavizada de evolución. Visualmente muestra la tendencia como una
+  // curva continua en lugar de una lista plana de cambios.
+  let line=`M ${x(0).toFixed(1)} ${y(points[0].rating).toFixed(1)}`;
+  for(let i=1;i<points.length;i++){
+    const x0=x(i-1),y0=y(points[i-1].rating),x1=x(i),y1=y(points[i].rating);
+    const dx=(x1-x0)*0.42;
+    line+=` C ${(x0+dx).toFixed(1)} ${y0.toFixed(1)}, ${(x1-dx).toFixed(1)} ${y1.toFixed(1)}, ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+  }
+
+  const baseline=height-pad.bottom;
+  const area=`${line} L ${x(points.length-1).toFixed(1)} ${baseline} L ${x(0).toFixed(1)} ${baseline} Z`;
+
+  $('#ratingChartLine').setAttribute('d',line);
+  $('#ratingChartArea').setAttribute('d',area);
+  $('#ratingChartLine').classList.remove('chart-draw');
+  void $('#ratingChartLine').getBoundingClientRect();
+  $('#ratingChartLine').classList.add('chart-draw');
+
+  // Grid
+  const gridLines=4;
+  $('#ratingChartGrid').innerHTML=Array.from({length:gridLines+1},(_,i)=>{
+    const gy=pad.top+(i/gridLines)*(height-pad.top-pad.bottom);
+    const val=Math.round(max-(i/gridLines)*(max-min));
+    return `<line x1="${pad.left}" y1="${gy}" x2="${width-pad.right}" y2="${gy}" class="chart-grid-line"></line>
+            <text x="${pad.left}" y="${gy-5}" class="chart-grid-label">${val}</text>`;
+  }).join('');
+
+  // Dots with data attributes for tooltip.
+  $('#ratingChartDots').innerHTML=points.map((p,i)=>`
+    <circle class="rating-chart-dot ${i===points.length-1?'latest':''}"
+      cx="${x(i)}" cy="${y(p.rating)}" r="${i===points.length-1?6:4}"
+      data-chart-index="${i}"></circle>`).join('');
+
+  $('#ratingChartCurrent').textContent=`${points.at(-1).rating} Elo`;
+  $('#ratingChartMin').textContent=`${Math.min(...ratingsValues)} min`;
+  $('#ratingChartMax').textContent=`${Math.max(...ratingsValues)} max`;
+
+  const tooltip=$('#ratingChartTooltip');
+  $('#ratingChartDots').querySelectorAll('[data-chart-index]').forEach(dot=>{
+    const show=()=>{
+      const p=points[Number(dot.dataset.chartIndex)];
+      tooltip.innerHTML=`<strong>${p.rating} Elo</strong><span>${p.date.toLocaleDateString()}${p.change?` · ${p.change>=0?'+':''}${p.change}`:''}</span>`;
+      tooltip.classList.remove('hidden');
+    };
+    dot.addEventListener('mouseenter',show);
+    dot.addEventListener('click',show);
+    dot.addEventListener('mouseleave',()=>tooltip.classList.add('hidden'));
+  });
+}
+
+// ============================================================
+// V48 — Menú de foto estable: portal + popover/action-sheet.
+// Ya no vive dentro del stacking-context del avatar, por lo que el rating
+// nunca puede dibujarse por encima del menú.
+// ============================================================
+function ensureProfilePhotoMenuPortalV48(){
+  const menu=$('#profilePhotoMenu');
+  if(!menu)return null;
+  if(menu.parentElement!==document.body)document.body.appendChild(menu);
+  menu.classList.add('tt-photo-popover-v48');
+  return menu;
+}
+function ensureProfilePhotoBackdropV48(){
+  let back=$('#profilePhotoBackdropV48');
+  if(!back){
+    back=document.createElement('button');
+    back.id='profilePhotoBackdropV48';
+    back.type='button';
+    back.className='tt-photo-backdrop-v48 hidden';
+    back.setAttribute('aria-label','Cerrar opciones de foto');
+    back.addEventListener('click',closeProfilePhotoMenu);
+    document.body.appendChild(back);
+  }
+  return back;
+}
+function positionProfilePhotoMenuV48(){
+  const menu=ensureProfilePhotoMenuPortalV48();
+  const button=$('#profilePhotoMenuButton');
+  if(!menu||!button||menu.classList.contains('hidden'))return;
+
+  // En móvil/tablet compacto funciona como action sheet inferior.
+  if(window.innerWidth<=900){
+    menu.style.left='';menu.style.right='';menu.style.top='';menu.style.bottom='';
+    return;
+  }
+
+  const r=button.getBoundingClientRect();
+  const gap=12,edge=14;
+  const width=Math.min(300,window.innerWidth-edge*2);
+  menu.style.width=`${width}px`;
+  menu.style.bottom='auto';
+  menu.style.right='auto';
+  menu.style.top='0px';
+  menu.style.left='0px';
+
+  const h=menu.getBoundingClientRect().height||190;
+  let left=r.right+gap;
+  if(left+width>window.innerWidth-edge)left=r.left-width-gap;
+  left=Math.max(edge,Math.min(left,window.innerWidth-width-edge));
+
+  let top=r.top+r.height/2-h/2;
+  top=Math.max(edge,Math.min(top,window.innerHeight-h-edge));
+  menu.style.left=`${Math.round(left)}px`;
+  menu.style.top=`${Math.round(top)}px`;
+}
+function openProfilePhotoMenu(){
+  const menu=ensureProfilePhotoMenuPortalV48();
+  const back=ensureProfilePhotoBackdropV48();
+  if(!menu)return;
+  const opening=menu.classList.contains('hidden');
+  if(!opening){closeProfilePhotoMenu();return}
+  menu.classList.remove('hidden');
+  back?.classList.remove('hidden');
+  $('#profilePhotoMenuButton')?.setAttribute('aria-expanded','true');
+  requestAnimationFrame(positionProfilePhotoMenuV48);
+}
+function closeProfilePhotoMenu(){
+  $('#profilePhotoMenu')?.classList.add('hidden');
+  $('#profilePhotoBackdropV48')?.classList.add('hidden');
+  $('#profilePhotoMenuButton')?.setAttribute('aria-expanded','false');
+}
+async function reloadOwnProfile(){
+  profile=await getMyProfile(session.user.id);
+  populate();
+}
+
+function rankImagePath(name){
+  const file=({Bronce:'bronce',Plata:'plata',Oro:'oro',Platino:'platino',Diamante:'diamante'})[name]||'bronce';
+  return `assets/ranks/${file}.png`;
+}
+function rankIcon(name){
+  return `<img class="rank-art-thumb" src="${rankImagePath(name)}" alt="Rango ${esc(name)}">`;
+}
+async function openRankTable(){
+  try{
+    if(!rankTiers.length)rankTiers=await getRankTiers();
+  }catch(e){console.error(e)}
+  const ind=getRating('individual');
+  const current=rankForRating(ind.rating);
+  const currentIndex=Math.max(0,rankTiers.findIndex(t=>t.name===current));
+  const next=rankTiers[currentIndex+1];
+
+  $('#rankTableCurrent').innerHTML=`
+    <div class="current-rank-art ${current==='Diamante'?'diamond-aura':''}">
+      <img src="${rankImagePath(current)}" alt="Rango ${esc(current)}">
+    </div>
+    <div class="current-rank-copy">
+      <span class="current-rank-kicker">RANGO ACTUAL</span>
+      <strong>${esc(current)}</strong>
+      <small>Rating individual: ${ind.rating}${next?` · Próximo rango a ${next.min_rating}`:' · Rango máximo alcanzado'}</small>
+      ${next?`<div class="rank-progress"><span style="width:${Math.max(0,Math.min(100,((ind.rating-rankTiers[currentIndex].min_rating)/(next.min_rating-rankTiers[currentIndex].min_rating))*100))}%"></span></div>`:''}
+    </div>
+  `;
+
+  $('#rankTierList').innerHTML=rankTiers.map((t,i)=>{
+    const nextTier=rankTiers[i+1];
+    const range=nextTier?`${t.min_rating} – ${nextTier.min_rating-1}`:`${t.min_rating}+`;
+    return `<div class="rank-tier-row rank-${t.name.toLowerCase()} ${t.name===current?'current':''}">
+      <div class="rank-tier-icon">${rankIcon(t.name)}</div>
+      <div class="rank-tier-copy"><strong>${esc(t.name)}</strong><small>${range} puntos de ranking</small></div>
+      <div class="rank-threshold"><span>DESDE</span>${t.min_rating}</div>
+    </div>`;
+  }).join('');
+
+  $('#rankTableModal').classList.remove('hidden');
+}
+function closeRankTable(){$('#rankTableModal').classList.add('hidden')}
+
+
+
+function normalizeClubNameClientV49(value=''){
+  return String(value).trim().replace(/\s+/g,' ');
+}
+function clubByIdV49(id){
+  return (availableClubsV49||[]).find(c=>String(c.id)===String(id))||null;
+}
+
+function clubDirectoryOptionsV50(clubs=[]){
+  const groups=new Map();
+  for(const c of clubs){
+    const dept=c.department||'Otros';
+    if(!groups.has(dept))groups.set(dept,[]);
+    groups.get(dept).push(c);
+  }
+
+  const ordered=[...groups.entries()].sort((a,b)=>{
+    if(a[0]==='Otros')return 1;
+    if(b[0]==='Otros')return -1;
+    return a[0].localeCompare(b[0],'es');
+  });
+
+  return ordered.map(([dept,items])=>`<optgroup label="${esc(dept)}">${
+    items.map(c=>{
+      const place=c.locality&&c.locality!==dept?` · ${esc(c.locality)}`:'';
+      return `<option value="${c.id}">${esc(c.name)}${place}</option>`;
+    }).join('')
+  }</optgroup>`).join('');
+}
+async function loadAvailableClubsV49(preferred=''){
+  const select=$('#clubName');
+  if(!select)return;
+  const previous=preferred||select.value||'';
+
+  try{
+    availableClubsV49=await getClubsV51();
+    const options=[
+      '<option value="">Seleccioná</option>',
+      '<option value="N/A">N/A — No pertenezco a un club</option>',
+      clubDirectoryOptionsV50(availableClubsV49||[]),
+      '<option value="Otro">Otro</option>'
+    ];
+    select.innerHTML=options.join('');
+
+    if(previous&&[...select.options].some(o=>o.value===String(previous)))select.value=String(previous);
+
+    const hint=$('#clubDirectoryHintV47');
+    if(hint)hint.textContent=availableClubsV49.length
+      ?`${availableClubsV49.length} club${availableClubsV49.length===1?'':'es'} oficial${availableClubsV49.length===1?'':'es'} en TT Rivals.`
+      :'Si alguien registra un club nuevo, aparecerá acá automáticamente.';
+  }catch(err){
+    console.error('loadAvailableClubsV49',err);
+    const hint=$('#clubDirectoryHintV47');
+    if(hint)hint.textContent='No se pudo actualizar el directorio de clubes. Podés continuar y escribir “Otro”.';
+  }
+}
+
+async function renderClubSuggestionsV49(input,box,context){
+  if(!input||!box)return;
+  const q=normalizeClubNameClientV49(input.value);
+  if(q.length<2){box.classList.add('hidden');box.innerHTML='';return}
+
+  try{
+    const rows=await suggestClubsV51(q,8);
+    if(!rows.length){box.classList.add('hidden');box.innerHTML='';return}
+    box.innerHTML=`<div class="club-suggestions-head-v49"><strong>¿Ya existe?</strong><small>Elegí el club oficial para evitar duplicados.</small></div>`+
+      rows.map(r=>`<button type="button" data-use-club-v49="${r.id}" data-club-context-v49="${context}">
+        <span>🏓</span>
+        <div><strong>${esc(r.name)}</strong><small>${r.department?`${esc(r.department)}${r.locality&&r.locality!==r.department?` · ${esc(r.locality)}`:''} · `:''}${r.display_alias&&r.display_alias!==r.name?`Perfil: ${esc(r.display_alias)} · `:''}${r.reason==='sigla'?'Coincide por sigla':r.reason==='alias'||r.reason==='alias_visible'?'Nombre alternativo reconocido':'Nombre parecido'}</small></div>
+        <b>USAR</b>
+      </button>`).join('');
+    box.classList.remove('hidden');
+  }catch(err){
+    console.warn('suggestClubsV49',err);
+    box.classList.add('hidden');
+  }
+}
+
+function scheduleClubSuggestionsV49(input,box,context){
+  clearTimeout(clubSuggestionTimerV49);
+  clubSuggestionTimerV49=setTimeout(()=>renderClubSuggestionsV49(input,box,context),220);
+}
+
+function syncCustomClubVisibilityV49(){
+  const c=$('#clubName')?.value==='Otro';
+  $('#customClubWrap')?.classList.toggle('hidden',!c);
+  if($('#customClubName'))$('#customClubName').required=!!c;
+  if(!c){
+    $('#customClubSuggestionsV49')?.classList.add('hidden');
+  }else{
+    setTimeout(()=>$('#customClubName')?.focus(),80);
+  }
+}
+
+async function loadSettingsClubV49(){
+  if($('#prefProfileCountryV100')){
+    await ensureV100Module().then(mod=>mod.initSettingsProfileV100?.());
+    return;
+  }
+  const select=$('#prefProfileClubSelect');
+  if(!select)return;
+
+  const [clubs,current]=await Promise.all([
+    getClubsV51(),
+    getMyClubV51().catch(()=>({club_id:null,name:profile?.club_name||'N/A'}))
+  ]);
+  availableClubsV49=clubs||[];
+  myClubV49=current||{club_id:null,name:'N/A'};
+
+  select.innerHTML=[
+    '<option value="N/A">N/A — No pertenezco a un club</option>',
+    clubDirectoryOptionsV50(availableClubsV49||[]),
+    '<option value="Otro">Otro</option>'
+  ].join('');
+
+  if(myClubV49.club_id&&[...select.options].some(o=>o.value===String(myClubV49.club_id))){
+    select.value=String(myClubV49.club_id);
+  }else{
+    select.value='N/A';
+  }
+
+  $('#prefProfileCustomClubWrapV49')?.classList.add('hidden');
+  $('#prefProfileClubSuggestionsV49')?.classList.add('hidden');
+  const hint=$('#prefProfileClubHintV49');
+  if(hint)hint.textContent=myClubV49.club_id
+    ?`Club oficial: ${myClubV49.name} · En tu perfil: ${myClubV49.display_alias||myClubV49.name}.`
+    :'No pertenecés a un club.';
+}
+
+function syncSettingsClubVisibilityV49(){
+  const isOther=$('#prefProfileClubSelect')?.value==='Otro';
+  $('#prefProfileCustomClubWrapV49')?.classList.toggle('hidden',!isOther);
+  if(!isOther){
+    $('#prefProfileClubSuggestionsV49')?.classList.add('hidden');
+    if($('#prefProfileCustomClubV49'))$('#prefProfileCustomClubV49').value='';
+  }else{
+    setTimeout(()=>$('#prefProfileCustomClubV49')?.focus(),80);
+  }
+}
+
+async function resolveSelectedClubV49(selectId,customInputId){
+  const select=$(selectId);
+  const value=select?.value||'N/A';
+  if(value==='N/A'||value===''){
+    return {club_id:null,name:'N/A',created:false};
+  }
+  if(value==='Otro'){
+    const raw=normalizeClubNameClientV49($(customInputId)?.value||'');
+    if(raw.length<2)throw new Error('Escribí el nombre del club.');
+    const result=await ensureClubV51(raw);
+    if(!result?.club_id)throw new Error('No se pudo registrar el club.');
+    return result;
+  }
+  const club=clubByIdV49(value);
+  if(!club)throw new Error('El club seleccionado ya no está disponible. Actualizá la lista.');
+  return {club_id:Number(club.id),name:club.name,created:false};
+}
+
+$('#clubName').onchange=syncCustomClubVisibilityV49;
+$('#customClubName')?.addEventListener('input',()=>scheduleClubSuggestionsV49(
+  $('#customClubName'),
+  $('#customClubSuggestionsV49'),
+  'onboarding'
+));
+$('#prefProfileClubSelect')?.addEventListener('change',syncSettingsClubVisibilityV49);
+$('#prefProfileCustomClubV49')?.addEventListener('input',()=>scheduleClubSuggestionsV49(
+  $('#prefProfileCustomClubV49'),
+  $('#prefProfileClubSuggestionsV49'),
+  'settings'
+));
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-use-club-v49]');
+  if(!b)return;
+  const id=String(b.dataset.useClubV49||'');
+  const context=b.dataset.clubContextV49;
+
+  if(context==='onboarding'){
+    const select=$('#clubName');
+    if(select&&[...select.options].some(o=>o.value===id)){
+      select.value=id;
+      syncCustomClubVisibilityV49();
+      $('#customClubName').value='';
+    }
+  }else if(context==='settings'){
+    const select=$('#prefProfileClubSelect');
+    if(select&&[...select.options].some(o=>o.value===id)){
+      select.value=id;
+      syncSettingsClubVisibilityV49();
+    }
+  }
+});
+
+async function ensureLegalConfigV57(force=false){
+  if(legalConfigV57&&!force)return legalConfigV57;
+  legalConfigV57=await getPublicLegalConfigV57();
+  return legalConfigV57;
+}
+
+async function openLegalModalV57(type='terms'){
+  currentLegalTabV57=type==='privacy'?'privacy':'terms';
+  const modal=$('#legalModalV57'),body=$('#legalModalBodyV57');
+  if(!modal||!body)return;
+
+  modal.classList.remove('hidden');
+  syncModalScrollLock();
+  body.innerHTML='<div class="loading-row">Cargando documento…</div>';
+
+  $$('[data-legal-tab-v57]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.legalTabV57===currentLegalTabV57);
+  });
+
+  try{
+    const cfg=await ensureLegalConfigV57();
+    body.innerHTML=renderLegalDocumentV57(currentLegalTabV57,cfg);
+    $('#legalModalTitleV57').textContent=currentLegalTabV57==='terms'
+      ?'Términos y Condiciones'
+      :'Política de Privacidad';
+    body.scrollTop=0;
+  }catch(err){
+    body.innerHTML=`<div class="compact-empty">${esc(err.message||'No se pudo cargar el documento.')}</div>`;
+  }
+}
+
+function closeLegalModalV57(){
+  $('#legalModalV57')?.classList.add('hidden');
+  syncModalScrollLock();
+}
+
+async function loadLegalStatusV57(){
+  if(!session?.user)return;
+  const badge=$('#legalAcceptanceBadgeV57');
+  const accept=$('#acceptCurrentLegalV57');
+
+  try{
+    legalStatusV57=await getMyLegalStatusV57();
+    const accepted=!!legalStatusV57.accepted;
+
+    if(badge){
+      badge.textContent=accepted
+        ?`Aceptado · ${new Date(legalStatusV57.accepted_at).toLocaleDateString('es-UY')}`
+        :'Aceptación pendiente';
+      badge.classList.toggle('ok',accepted);
+      badge.classList.toggle('pending',!accepted);
+    }
+
+    accept?.classList.toggle('hidden',accepted);
+  }catch(err){
+    if(badge)badge.textContent='No se pudo verificar';
+  }
+}
+
+async function loadAdminLegalConfigV57(){
+  if(!v35Flags?.is_test_admin)return;
+
+  try{
+    const cfg=await ensureLegalConfigV57(true);
+    if($('#adminLegalResponsibleV57'))$('#adminLegalResponsibleV57').value=cfg.responsible_name||'TT Rivals';
+    if($('#adminLegalAddressV571'))$('#adminLegalAddressV571').value=cfg.responsible_address||'';
+    if($('#adminLegalEmailV57'))$('#adminLegalEmailV57').value=cfg.privacy_email||'';
+    if($('#adminLegalInfrastructureV57'))$('#adminLegalInfrastructureV57').value=cfg.infrastructure_destination||'';
+
+    if(!cfg.complete){
+      setStatus(
+        $('#adminLegalConfigStatusV57'),
+        'Completá responsable, domicilio, email de privacidad y región real de infraestructura antes de abrir TT Rivals al público.',
+        'error'
+      );
+    }else{
+      setStatus($('#adminLegalConfigStatusV57'),'Información legal completa.','ok');
+    }
+  }catch(err){
+    setStatus($('#adminLegalConfigStatusV57'),err.message,'error');
+  }
+}
+
+function downloadJsonV57(data,filename){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function renderSecurityAuditV57(audit){
+  const box=$('#securityAuditResultV57');
+  if(!box)return;
+
+  const s=audit?.summary||{};
+  const rls=(audit?.rls_disabled_tables||[]);
+  const anon=(audit?.anon_grants||[]);
+  const auth=(audit?.authenticated_write_grants||[]);
+  const definer=(audit?.security_definer_without_search_path||[]);
+
+  const card=(label,value,state,detail)=>`<article class="security-audit-card-v57 ${state}">
+    <span>${label}</span>
+    <strong>${value}</strong>
+    <small>${detail}</small>
+  </article>`;
+
+  box.innerHTML=`
+    <div class="security-audit-grid-v57">
+      ${card('RLS habilitado',`${Number(s.rls_enabled||0)}/${Number(s.public_tables||0)}`,Number(s.rls_disabled||0)===0?'ok':'warn',Number(s.rls_disabled||0)===0?'Todas las tablas públicas detectadas usan RLS.':`${s.rls_disabled} tabla(s) requieren revisión.`)}
+      ${card('Grants anon',Number(s.anon_grants||0),Number(s.anon_grants||0)===0?'ok':'warn','Permisos SQL visibles para el rol anon.')}
+      ${card('Escritura authenticated',Number(s.authenticated_write_grants||0),'info','Deben estar limitados por RLS/policies.')}
+      ${card('SECURITY DEFINER',Number(s.security_definer_without_search_path||0),Number(s.security_definer_without_search_path||0)===0?'ok':'danger','Funciones sin search_path fijado.')}
+    </div>
+
+    <details ${rls.length?'open':''}>
+      <summary>Tablas sin RLS (${rls.length})</summary>
+      <pre>${esc(rls.length?rls.join('\n'):'Ninguna detectada')}</pre>
+    </details>
+    <details>
+      <summary>Grants para anon (${anon.length})</summary>
+      <pre>${esc(anon.length?anon.map(x=>`${x.table}: ${x.privilege}`).join('\n'):'Ninguno detectado')}</pre>
+    </details>
+    <details>
+      <summary>Escritura directa para authenticated (${auth.length})</summary>
+      <pre>${esc(auth.length?auth.map(x=>`${x.table}: ${x.privilege}`).join('\n'):'Ninguna detectada')}</pre>
+    </details>
+    <details ${definer.length?'open':''}>
+      <summary>SECURITY DEFINER sin search_path (${definer.length})</summary>
+      <pre>${esc(definer.length?definer.map(x=>`${x.function}(${x.arguments||''})`).join('\n'):'Ninguna detectada')}</pre>
+    </details>
+    <p class="security-audit-note-v57">Un grant no es automáticamente una vulnerabilidad: debe evaluarse junto con RLS y sus políticas.</p>`;
+}
+
+let emailVerificationTimerV76=null;
+let emailVerificationConfigV76={enabled:false,otp_minutes:10,resend_seconds:60};
+
+function emailOtpInputsV76(){
+  return $$('#emailOtpGridV76 input');
+}
+
+function emailOtpValueV76(){
+  return emailOtpInputsV76().map(input=>String(input.value||'').replace(/\D/g,'')).join('').slice(0,6);
+}
+
+function startEmailResendTimerV76(){
+  clearInterval(emailVerificationTimerV76);
+  const update=()=>{
+    const pending=getPendingRegistrationV76();
+    const button=$('#resendEmailCodeV76');
+    if(!button||!pending)return;
+    const seconds=Math.max(0,Math.ceil((Number(pending.resendAt||0)-Date.now())/1000));
+    button.disabled=seconds>0;
+    button.textContent=seconds>0?`Reenviar en ${seconds} s`:'Reenviar código';
+    if(seconds<=0)clearInterval(emailVerificationTimerV76);
+  };
+  update();
+  emailVerificationTimerV76=setInterval(update,1000);
+}
+
+function showEmailVerificationV76(pending,config=emailVerificationConfigV76){
+  if(!pending)return false;
+  emailVerificationConfigV76={...emailVerificationConfigV76,...(config||{})};
+  const mask=$('#emailVerificationMaskV76');
+  if(mask)mask.textContent=maskEmailV76(pending.email);
+  const expiry=$('#emailVerificationExpiryV76');
+  if(expiry)expiry.textContent=`El código vence en ${Number(emailVerificationConfigV76.otp_minutes||10)} minutos.`;
+  emailOtpInputsV76().forEach(input=>{input.value=''});
+  setStatus($('#emailVerificationStatusV76'),'');
+  showView('emailVerificationViewV76');
+  startEmailResendTimerV76();
+  setTimeout(()=>emailOtpInputsV76()[0]?.focus(),80);
+  return true;
+}
+
+async function openPendingRegistrationV76(){
+  const pending=getPendingRegistrationV76();
+  if(!pending)return false;
+  try{
+    const config=await getRegistrationConfigV76();
+    if(!config?.enabled)return false;
+    return showEmailVerificationV76(pending,config);
+  }catch{
+    return false;
+  }
+}
+
+async function changePendingRegistrationEmailV76(){
+  const pending=getPendingRegistrationV76();
+  const status=$('#emailVerificationStatusV76');
+  const buttons=[$('#changeRegistrationEmailV76'),$('#emailVerificationBackV76')].filter(Boolean);
+  try{
+    buttons.forEach(button=>button.disabled=true);
+    setStatus(status,'Liberando el registro pendiente…');
+    if(pending)await cancelPendingRegistrationV76(pending);
+    clearPendingRegistrationV76();
+    if($('#firstName'))$('#firstName').value=pending?.firstName||'';
+    if($('#lastName'))$('#lastName').value=pending?.lastName||'';
+    if($('#username'))$('#username').value=pending?.username||'';
+    if($('#registerEmail'))$('#registerEmail').value='';
+    if($('#registerPassword'))$('#registerPassword').value='';
     if($('#confirmPassword'))$('#confirmPassword').value='';
     showView('registerView');
     setStatus($('#registerStatus'),'Ingresá el correo correcto para comenzar nuevamente.','ok');
@@ -4336,8 +8833,10 @@ setupPwaV573().catch(err=>{recordClientErrorV60(err,'pwa-v60');console.error('PW
 async function bootApplicationV741(){
   const recoveryHint=new URLSearchParams(window.location.search).get('recovery')==='1';
 
-  document.body.dataset.ttBootStage='session';
-  setBootMessageV572('Comprobando sesión…');
+  setBootStageV742('session','Comprobando sesión…',{
+    timeoutMs:50000,
+    timeoutMessage:'La comprobación de la sesión no respondió. Podés reintentar sin perder tu cuenta.'
+  });
   const startupSession=await getSession({timeoutMs:18000});
 
   if(recoveryHint){
@@ -4367,7 +8866,10 @@ async function bootApplicationV741(){
       finalError=error;
       console.warn(`P7.4.1 inicio intento ${attempt+1}:`,error);
       if(attempt===0){
-        setBootMessageV572('Reconectando con tu cuenta…');
+        setBootStageV742('session-retry','Reconectando con tu cuenta…',{
+          timeoutMs:25000,
+          timeoutMessage:'La reconexión con tu cuenta no respondió. Podés reintentar sin perder la sesión guardada.'
+        });
         stopLiveNotificationStream();
         session=null;profile=null;ratings=[];
         await new Promise(resolve=>setTimeout(resolve,700));
@@ -4414,4 +8916,3 @@ document.addEventListener('click',e=>{
   if(e.target.closest?.('#closeMetricInfoV101')){closeMetricInfoV101();return}
   if(e.target?.id==='metricInfoModalV101')closeMetricInfoV101();
 });
-
