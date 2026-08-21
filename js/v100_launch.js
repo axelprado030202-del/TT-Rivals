@@ -1,5 +1,6 @@
 import {supabase} from './supabase.js';
-import {getClubsV51,getMyClubV51} from './profile.js';
+import {filterVisibleRowsV76} from './v76_visibility.js';
+import {getClubsV51,getMyClubV51} from './profile.js?v=1.0.1-p7.4r.3';
 
 // TT-Rivals Versión 1.0 — módulo aislado de comunidad.
 // Si este archivo falla, el núcleo competitivo de TT Rivals sigue iniciando.
@@ -454,7 +455,7 @@ async function searchAdminTesterV100(){
   const box=$('#adminTesterResultsV100'),q=$('#adminTesterSearchV100')?.value?.trim()||'';if(!box)return;
   if(q.length<2){box.innerHTML='<div class="compact-empty">Escribí al menos 2 caracteres.</div>';return}
   box.innerHTML='<div class="loading-row">Buscando…</div>';
-  try{const rows=await rpc('admin_search_users_v100',{p_query:q})||[];box.innerHTML=rows.length?rows.map(u=>`<article class="admin-tester-row-v100"><div class="admin-tester-avatar-v100">${u.profile_photo_url?`<img src="${esc(u.profile_photo_url)}" alt="">`:'🧪'}</div><div><strong>${esc(u.display_name||u.username)}</strong><small>@${esc(u.username)} · ${u.current_elo} Elo · ${u.recognitions} reconocimientos</small><em>${u.tester_granted?'✓ Tester otorgado':'Sin reconocimiento Tester'}</em></div><button class="${u.tester_granted?'danger':''}" data-admin-tester-v100="${u.user_id}" data-grant="${u.tester_granted?'false':'true'}">${u.tester_granted?'Retirar':'Otorgar Tester'}</button></article>`).join(''):'<div class="compact-empty">No encontramos usuarios.</div>';}catch(err){box.innerHTML=`<div class="compact-empty">${esc(err.message)}</div>`}
+  try{const found=await rpc('admin_search_users_v100',{p_query:q})||[];const rows=await filterVisibleRowsV76(found,['user_id']);box.innerHTML=rows.length?rows.map(u=>`<article class="admin-tester-row-v100"><div class="admin-tester-avatar-v100">${u.profile_photo_url?`<img src="${esc(u.profile_photo_url)}" alt="">`:'🧪'}</div><div><strong>${esc(u.display_name||u.username)}</strong><small>@${esc(u.username)} · ${u.current_elo} Elo · ${u.recognitions} reconocimientos</small><em>${u.tester_granted?'✓ Tester otorgado':'Sin reconocimiento Tester'}</em></div><button class="${u.tester_granted?'danger':''}" data-admin-tester-v100="${u.user_id}" data-grant="${u.tester_granted?'false':'true'}">${u.tester_granted?'Retirar':'Otorgar Tester'}</button></article>`).join(''):'<div class="compact-empty">No encontramos usuarios.</div>';}catch(err){box.innerHTML=`<div class="compact-empty">${esc(err.message)}</div>`}
 }
 
 function openMergePickerV100(kind,id){

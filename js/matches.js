@@ -9,10 +9,10 @@ export async function getMyMatches(userId,{force=false}={}){
     if(error)throw error;
     if(!rows?.length)return[];
     const ids=[...new Set(rows.flatMap(r=>[r.player1_id,r.player2_id]))];
-    const {data:profiles,error:e2}=await supabase.from('profiles').select('id,username,first_name,last_name,profile_photo_url').in('id',ids);
+    const {data:profiles,error:e2}=await supabase.from('visible_profiles_v76').select('id,username,first_name,last_name,profile_photo_url').in('id',ids);
     if(e2)throw e2;
     const map=new Map((profiles||[]).map(p=>[p.id,p]));
-    return rows.map(r=>({...r,player1:map.get(r.player1_id),player2:map.get(r.player2_id)}));
+    return rows.map(r=>({...r,player1:map.get(r.player1_id),player2:map.get(r.player2_id)})).filter(r=>r.player1&&r.player2);
   },{force});
 }
 

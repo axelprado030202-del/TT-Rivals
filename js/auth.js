@@ -3,7 +3,8 @@ import {checkAccessGateV75,checkSessionAccessV75} from './v75_access_control.js'
 import {getInstallationIdV58} from './v58_competition.js';
 export async function signUpUser({
   email,password,firstName,lastName,username,
-  legalTermsVersion=null,legalPrivacyVersion=null
+  legalTermsVersion=null,legalPrivacyVersion=null,
+  registrationCancelToken=null
 }){
   await checkAccessGateV75({email});
   return supabase.auth.signUp({
@@ -18,7 +19,8 @@ export async function signUpUser({
         legal_terms_accepted:true,
         legal_privacy_acknowledged:true,
         legal_terms_version:legalTermsVersion,
-        legal_privacy_version:legalPrivacyVersion
+        legal_privacy_version:legalPrivacyVersion,
+        registration_cancel_token:registrationCancelToken
       }
     }
   });

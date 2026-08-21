@@ -46,13 +46,13 @@ export async function getTournamentMembersV8(tournamentId) {
   if (!ids.length) return [];
 
   const { data: profiles, error: pError } = await supabase
-    .from('profiles')
+    .from('visible_profiles_v76')
     .select('id,username,first_name,last_name,profile_photo_url')
     .in('id', ids);
   if (pError) throw pError;
 
   const map = new Map((profiles || []).map(p => [p.id, p]));
-  return (data || []).map(x => ({ ...x, profile: map.get(x.user_id) }));
+  return (data || []).map(x => ({ ...x, profile: map.get(x.user_id) })).filter(x=>x.profile);
 }
 
 export async function getTournamentGamesV8(tournamentId) {
@@ -104,7 +104,7 @@ export async function searchTournamentUsersV8(query) {
   const q = query.trim().toLowerCase();
   if (!q) return [];
   const { data, error } = await supabase
-    .from('profiles')
+    .from('visible_profiles_v76')
     .select('id,username,first_name,last_name')
     .limit(100);
   if (error) throw error;

@@ -1,5 +1,6 @@
 
 import {supabase} from './supabase.js';
+import {filterVisibleRowsV76} from './v76_visibility.js';
 
 export async function getMyV35Flags(){
   const {data,error}=await supabase.rpc('get_my_v35_flags');
@@ -17,7 +18,7 @@ export async function getNearbyPlayersV35(lat,lon,maxKm=50,limit=30){
     p_lat:Number(lat),p_lon:Number(lon),p_limit:Number(limit),p_max_km:Number(maxKm)
   });
   if(error)throw error;
-  return data||[];
+  return filterVisibleRowsV76(data||[],['user_id']);
 }
 export function createPresenceManagerV35(userId,onChange,{trackSelf=true}={}){
   let channel=null,ids=new Set();

@@ -1,5 +1,5 @@
 import {supabase} from './supabase.js';
-import {searchPlayers} from './profile.js';
+import {searchPlayers} from './profile.js?v=1.0.1-p7.4r.3';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=(v='')=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -64,7 +64,7 @@ function statusLabel(status){return ({pending:'Esperando respuestas',accepted:'A
 async function loadProfiles(ids=[]){
   const clean=[...new Set(ids.filter(Boolean))];if(!clean.length)return;
   const missing=clean.filter(id=>!profileMap.has(id));if(!missing.length)return;
-  const {data}=await supabase.from('profiles').select('id,username,first_name,last_name,profile_photo_url').in('id',missing);
+  const {data}=await supabase.from('visible_profiles_v76').select('id,username,first_name,last_name,profile_photo_url').in('id',missing);
   (data||[]).forEach(p=>profileMap.set(p.id,p));
 }
 function teamText(c,team){

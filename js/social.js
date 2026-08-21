@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import {getVisibleUserIdSetV76,filterVisibleRowsV76} from './v76_visibility.js';
 
 export async function getReviewsForUser(userId){
   const {data,error}=await supabase
@@ -30,7 +31,7 @@ export async function submitPlayerReview(matchId,stars){
 
 export async function getPlayerProfile(userId){
   const {data,error}=await supabase
-    .from('profiles')
+    .from('visible_profiles_v76')
     .select('id,username,first_name,last_name,profile_photo_url,playing_style,dominant_hand,club_name')
     .eq('id',userId)
     .single();
@@ -72,7 +73,9 @@ export async function getFollowingIds(userId){
     .eq('follower_id',userId)
     .order('created_at',{ascending:false});
   if(error)throw error;
-  return data||[];
+  const rows=data||[];
+  const visible=await getVisibleUserIdSetV76(rows.map(row=>row.followed_id));
+  return rows.filter(row=>visible.has(String(row.followed_id)));
 }
 
 export async function getFollowingRanking(userId,modality='individual',search=''){
@@ -89,17 +92,16 @@ export async function getFollowingRanking(userId,modality='individual',search=''
   if(e1)throw e1;
 
   const {data:profiles,error:e2}=await supabase
-    .from('profiles')
+    .from('visible_profiles_v76')
     .select('id,username,first_name,last_name,profile_photo_url,is_test_admin')
     .in('id',ids);
   if(e2)throw e2;
 
   const map=new Map((profiles||[]).map(p=>[p.id,p]));
-  let rows=(ratings||[]).map((r,i)=>({
-    position:i+1,
+  let rows=(ratings||[]).map(r=>({
     rating:r.rating,
     profile:map.get(r.user_id)
-  })).filter(x=>x.profile);
+  })).filter(x=>x.profile).map((row,i)=>({...row,position:i+1}));
 
   const q=search.trim().toLowerCase();
   if(q){
@@ -115,6 +117,8 @@ export async function getFollowingRanking(userId,modality='individual',search=''
 }
 
 export async function getPublicPlayerCard(userId){
+  const visible=await getVisibleUserIdSetV76([userId]);
+  if(!visible.has(String(userId)))throw new Error('Este perfil no está disponible.');
   const {data,error}=await supabase.rpc('get_public_player_card',{p_user_id:userId});
   if(error)throw error;
   return data;
@@ -123,7 +127,7 @@ export async function getPublicPlayerCard(userId){
 export async function getFollowingFeed(limit=30){
   const {data,error}=await supabase.rpc('get_following_feed',{p_limit:limit});
   if(error)throw error;
-  return data||[];
+  return filterVisibleRowsV76(data||[],['user_id','actor_id','player_id','profile_id','followed_id']);
 }
 
 export async function setPrimaryRival(userId){

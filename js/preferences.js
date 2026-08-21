@@ -1,4 +1,5 @@
 import {supabase} from './supabase.js';
+import {filterVisibleRowsV76} from './v76_visibility.js';
 
 export async function getPreferences(){
   const {data,error}=await supabase.rpc('ensure_user_preferences');
@@ -53,7 +54,7 @@ export async function getSeasonHistory(limit=12){
 export async function getRecommendedRivals(limit=6){
   const {data,error}=await supabase.rpc('get_recommended_rivals',{p_limit:limit});
   if(error)throw error;
-  return data||[];
+  return filterVisibleRowsV76(data||[],['user_id']);
 }
 
 export async function getPlayerPercentiles(){

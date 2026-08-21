@@ -30,8 +30,9 @@
   <link rel="stylesheet" href="css/v74_rivalries.css?v=1.0.1-p7.4r.0">
   <link rel="stylesheet" href="css/v74_admin_decision.css?v=1.0.1-p7.4r.2">
   <link rel="stylesheet" href="css/v75_access_control.css?v=1.0.1-p7.4r.2">
+  <link rel="stylesheet" href="css/v76_moderation_email.css?v=1.0.1-p7.4r.3">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.2-access-control" data-active-tab-v101="home" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.3-moderation-email" data-active-tab-v101="home" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -164,6 +165,35 @@
 
           <button class="btn btn-start" type="submit">CREAR CUENTA</button>
           <p id="registerStatus" class="status"></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="emailVerificationViewV76" class="view">
+      <div class="panel form-panel v76-email-panel">
+        <button id="emailVerificationBackV76" class="back-btn" type="button">← Cambiar correo</button>
+        <div class="v76-email-shield" aria-hidden="true">✦</div>
+        <p class="eyebrow">SEGURIDAD TT RIVALS</p>
+        <h2>Verificá tu cuenta</h2>
+        <p class="v76-email-copy">Enviamos un código de 6 dígitos a</p>
+        <strong id="emailVerificationMaskV76" class="v76-email-mask">—</strong>
+        <form id="emailVerificationFormV76" class="v76-otp-form" novalidate>
+          <div id="emailOtpGridV76" class="v76-otp-grid" aria-label="Código de verificación">
+            <input inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="Dígito 1">
+            <input inputmode="numeric" maxlength="1" aria-label="Dígito 2">
+            <input inputmode="numeric" maxlength="1" aria-label="Dígito 3">
+            <input inputmode="numeric" maxlength="1" aria-label="Dígito 4">
+            <input inputmode="numeric" maxlength="1" aria-label="Dígito 5">
+            <input inputmode="numeric" maxlength="1" aria-label="Dígito 6">
+          </div>
+          <button class="btn btn-start" type="submit">VERIFICAR</button>
+          <div class="v76-email-actions">
+            <span class="v76-email-note">¿No llegó?</span>
+            <button id="resendEmailCodeV76" class="v76-email-link" type="button">Reenviar código</button>
+            <button id="changeRegistrationEmailV76" class="v76-email-link" type="button">Cambiar email</button>
+          </div>
+          <small id="emailVerificationExpiryV76" class="v76-email-note">El código vence en 10 minutos.</small>
+          <p id="emailVerificationStatusV76" class="status" aria-live="polite"></p>
         </form>
       </div>
     </section>
@@ -1871,6 +1901,7 @@
           <button data-admin-category-v60="integrity" type="button"><span>◎</span><strong>Integridad</strong><small id="adminCountIntegrityV60">0 señales</small></button>
           <button data-admin-category-v60="multi" type="button"><span>🔗</span><strong>Multi-cuentas</strong><small id="adminCountMultiV60">0 vínculos</small></button>
           <button data-admin-category-v60="users" type="button"><span>👤</span><strong>Usuarios</strong><small>Buscar perfiles</small></button>
+          <button data-admin-category-v60="suspended" type="button"><span>⛔</span><strong>Suspendidos</strong><small id="adminCountSuspendedV76">0 suspendidos</small></button>
           <button data-admin-category-v60="suspicious" type="button"><span>⏱</span><strong>Partidos sospechosos</strong><small id="adminCountSuspiciousV60">0 alertas</small></button>
           <button data-admin-category-v60="community" type="button"><span>🏓</span><strong>Comunidad</strong><small>Clubes, lugares y testers</small></button>
           <button data-admin-category-v60="metrics" type="button"><span>▥</span><strong>Métricas</strong><small id="adminCountMetricsV70">P7 · producto</small></button>
@@ -1896,6 +1927,14 @@
           <div class="section-title-row"><div><p class="muted-label">USUARIOS</p><h3>Buscar jugadores</h3><p>Abrí perfiles y revisá rápidamente cuentas desde Administración.</p></div></div>
           <div class="search-box"><span>⌕</span><input id="adminUserSearchV60" type="search" placeholder="Nombre o @usuario..."></div>
           <div id="adminUserResultsV60" class="v60-admin-user-results"><div class="compact-empty">Escribí para buscar usuarios.</div></div>
+        </section>
+
+        <section id="adminSuspendedV76" class="section-card v76-suspended-card" data-admin-panel-v60="suspended">
+          <div class="v76-suspended-toolbar">
+            <div><p class="muted-label">MODERACIÓN</p><h3>Cuentas suspendidas</h3><p>Estas cuentas están ocultas del resto de TT Rivals, pero conservan su historial y auditoría.</p></div>
+            <span id="adminPendingAppealsV76" class="v76-pending-badge">0 apelaciones pendientes</span>
+          </div>
+          <div id="adminSuspendedListV76" class="v76-suspended-list"><div class="loading-row">Abrí Suspendidos para cargar el panel.</div></div>
         </section>
 
         <section id="adminDiagnosticsV60" class="section-card v60-admin-diagnostics" data-admin-panel-v60="system">
@@ -2871,7 +2910,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=1.0.1-p7.4r.2"></script>
+  <script type="module" src="js/app.js?v=1.0.1-p7.4r.3"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>

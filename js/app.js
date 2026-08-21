@@ -1,24 +1,31 @@
 import { supabase } from './supabase.js';
-import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.1-p7.4r.2';
+import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.1-p7.4r.3';
 import {initAccessControlV75} from './v75_access_control.js?v=1.0.1-p7.4r.2';
-import {getMyProfile,getMyRatings,completeSportsProfile,getClubsV47,ensureClubV47,getClubsV49,getClubsV50,getClubsV51,suggestClubsV49,suggestClubsV50,suggestClubsV51,ensureClubV49,ensureClubV51,setMyClubV49,setMyClubV51,getMyClubV49,getMyClubV51,adminListClubsV49,adminListClubsV51,adminMergeClubsV49,adminMergeClubsV51,adminRenameClubV49,adminCreateClubV51,adminUpdateClubV51,getRanking,searchPlayers,getRatingHistory,getRankTiers,setProfilePhotoUrl,uploadProfilePhoto,deleteProfilePhotoByUrl} from './profile.js';
-import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges,invalidateChallengesCacheV60} from './challenges.js?v=1.0.1-p7.4';
-import {getMyMatches,submitMatchResult,confirmMatchResult,disputeMatchResult,getMyDurationStatsV59,adminListMatchIntegrityV59,invalidateMatchesCacheV60} from './matches.js?v=1.0.1-p7.4';
-import {createTournamentV8,getTournamentsV8,getTournamentEntriesV8,getTournamentMembersV8,getTournamentGamesV8,getTournamentStandingsV8,getTournamentStandingsV31,submitTournamentGameResultV8,closeGroupStageV8,finalizeTournamentV8,searchTournamentUsersV8,getTournamentParticipantProfilesV8,createTournamentV30,getMyTournamentHistoryV30,searchActiveTournamentsV30,joinTournamentV30,leaveTournamentV30,startTournamentV30,getTournamentLobbyV30} from './tournaments.js';
-import {getReviewsForUser,getReviewsAuthoredByUser,submitPlayerReview,getPlayerProfile,getPlayerRatings,followPlayer,unfollowPlayer,getFollowingIds,getFollowingRanking,getPublicPlayerCard,getFollowingFeed,setPrimaryRival,clearPrimaryRival,getMyPrimaryRival,getShowcaseAchievements,setShowcaseAchievements,getPlayerReliabilityV34} from './social.js';
-import {getPreferences,updatePreferences,getFrames,equipFrame,getSeasonDashboard,getSeasonHistory,getRecommendedRivals,getPlayerPercentiles,getPublicProfilePreferences} from './preferences.js';
-import {getSeasonChampions,getPublicPlayerSeasons,getH2HAdvanced,getPlayerRecords,getTournamentSummary} from './history.js';
+import {
+  initModerationEmailV76,showAccessBlockedV76,clearAccessBlockedActionV76,
+  loadAdminSuspendedV76,createRegistrationCancelTokenV76,maskEmailV76,
+  savePendingRegistrationV76,getPendingRegistrationV76,clearPendingRegistrationV76,
+  getRegistrationConfigV76,verifyRegistrationCodeV76,resendRegistrationCodeV76,
+  cancelPendingRegistrationV76
+} from './v76_moderation_email.js?v=1.0.1-p7.4r.3';
+import {getMyProfile,getMyRatings,completeSportsProfile,getClubsV47,ensureClubV47,getClubsV49,getClubsV50,getClubsV51,suggestClubsV49,suggestClubsV50,suggestClubsV51,ensureClubV49,ensureClubV51,setMyClubV49,setMyClubV51,getMyClubV49,getMyClubV51,adminListClubsV49,adminListClubsV51,adminMergeClubsV49,adminMergeClubsV51,adminRenameClubV49,adminCreateClubV51,adminUpdateClubV51,getRanking,searchPlayers,getRatingHistory,getRankTiers,setProfilePhotoUrl,uploadProfilePhoto,deleteProfilePhotoByUrl} from './profile.js?v=1.0.1-p7.4r.3';
+import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges,invalidateChallengesCacheV60} from './challenges.js?v=1.0.1-p7.4r.3';
+import {getMyMatches,submitMatchResult,confirmMatchResult,disputeMatchResult,getMyDurationStatsV59,adminListMatchIntegrityV59,invalidateMatchesCacheV60} from './matches.js?v=1.0.1-p7.4r.3';
+import {createTournamentV8,getTournamentsV8,getTournamentEntriesV8,getTournamentMembersV8,getTournamentGamesV8,getTournamentStandingsV8,getTournamentStandingsV31,submitTournamentGameResultV8,closeGroupStageV8,finalizeTournamentV8,searchTournamentUsersV8,getTournamentParticipantProfilesV8,createTournamentV30,getMyTournamentHistoryV30,searchActiveTournamentsV30,joinTournamentV30,leaveTournamentV30,startTournamentV30,getTournamentLobbyV30} from './tournaments.js?v=1.0.1-p7.4r.3';
+import {getReviewsForUser,getReviewsAuthoredByUser,submitPlayerReview,getPlayerProfile,getPlayerRatings,followPlayer,unfollowPlayer,getFollowingIds,getFollowingRanking,getPublicPlayerCard,getFollowingFeed,setPrimaryRival,clearPrimaryRival,getMyPrimaryRival,getShowcaseAchievements,setShowcaseAchievements,getPlayerReliabilityV34} from './social.js?v=1.0.1-p7.4r.3';
+import {getPreferences,updatePreferences,getFrames,equipFrame,getSeasonDashboard,getSeasonHistory,getRecommendedRivals,getPlayerPercentiles,getPublicProfilePreferences} from './preferences.js?v=1.0.1-p7.4r.3';
+import {getSeasonChampions,getPublicPlayerSeasons,getH2HAdvanced,getPlayerRecords,getTournamentSummary} from './history.js?v=1.0.1-p7.4r.3';
 import {getPlayerTitles,equipCompetitiveTitle,refreshOwnCompetitiveTitlesV58,getTournamentHistory,getComparativeStats,getPostMatchSummary} from './v21.js';
 import {getV28Dashboard,getV28LastSeasonRecap,getDailyMissionsV101} from './v28.js';
-import {getMyV35Flags,updateMyLocationV35,getNearbyPlayersV35,createPresenceManagerV35} from './v35_social.js';
+import {getMyV35Flags,updateMyLocationV35,getNearbyPlayersV35,createPresenceManagerV35} from './v35_social.js?v=1.0.1-p7.4r.3';
 import {getPublicAdminFlagV37,getPublicAdminIdsV38} from './v36_live.js';
 import {getFrameFitsV44,saveFrameFitV44,resetFrameFitV44,subscribeAvatarLiveV44} from './v44_avatar_fit.js';
 import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,submitTeamTournamentMatchResultV32,createTeamTiebreakV32,finalizeTeamTournamentDrawV32,finalizeTeamTournamentV33,listMyTeamTournamentHistoryV33} from './team_tournaments.js';
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js';
-import {APP_VERSION,APP_BUILD} from './version.js';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.3';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.3';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
@@ -141,7 +148,7 @@ function showPlayModeV62(mode=null){
 async function ensureDoublesModuleV62(){
   if(doublesModuleV62)return doublesModuleV62;
   if(!doublesModulePromiseV62){
-    doublesModulePromiseV62=import(`./v62_doubles.js?v=${encodeURIComponent(APP_VERSION)}`)
+    doublesModulePromiseV62=import('./v62_doubles.js?v=1.0.1-p7.4r.3')
       .then(mod=>{doublesModuleV62=mod;mod.initDoublesV62?.();return mod})
       .catch(error=>{doublesModulePromiseV62=null;recordClientErrorV60(error,'v62-doubles');console.error('Dobles V62:',error);throw error});
   }
@@ -169,7 +176,7 @@ let v100ModulePromise=null;
 async function ensureV100Module(){
   if(v100Module)return v100Module;
   if(!v100ModulePromise){
-    v100ModulePromise=import(`./v100_launch.js?v=${encodeURIComponent(APP_VERSION)}`)
+    v100ModulePromise=import('./v100_launch.js?v=1.0.1-p7.4r.3')
       .then(mod=>{v100Module=mod;return mod})
       .catch(error=>{v100ModulePromise=null;recordClientErrorV60(error,'v100-community');console.error('TT-Rivals 1.0:',error);throw error});
   }
@@ -1935,6 +1942,19 @@ async function route(prefetchedSession=undefined){
   session=prefetchedSession===undefined?await getSession():prefetchedSession;
 
   if(!session?.user){
+    const pending=getPendingRegistrationV76();
+    if(pending){
+      try{
+        const config=await getRegistrationConfigV76();
+        if(config?.enabled){
+          showEmailVerificationV76(pending,config);
+          closeBootScreenV572();
+          return;
+        }
+      }catch(error){
+        console.warn('Registro pendiente V76:',error);
+      }
+    }
     showView('welcomeView');
     setStatus($('#globalStatus'),'');
     closeBootScreenV572();
@@ -1951,7 +1971,9 @@ async function route(prefetchedSession=undefined){
     session=null;
     showView('loginView');
     if($('#loginEmail'))$('#loginEmail').value=email;
-    setStatus($('#loginStatus'),error.message||'No podés acceder a TT Rivals.','error');
+    if(!showAccessBlockedV76(error,email,$('#loginStatus'))){
+      setStatus($('#loginStatus'),error.message||'No podés acceder a TT Rivals.','error');
+    }
     closeBootScreenV572();
     return;
   }
@@ -2072,6 +2094,7 @@ function activateTab(tab,{source='tap'}={}){
     if(tab==='admin'&&v35Flags?.is_test_admin)runTabLoadV74('admin',()=>Promise.all([
       loadAdminClubsV49(),loadAdminLegalConfigV57(),loadAdminDisputesV58(),
       loadAdminLinkedAccountsV58(),loadAdminIntegrityV59(),loadAdminReviewTagsV58(),
+      loadAdminSuspendedV76(),
       ensureV100Module().then(mod=>mod.loadAdminCommunityV100?.())
     ]),{ttl:15000});
   });
@@ -2819,13 +2842,14 @@ function setupAdminPanelsV60(){
   setAdminCategoryV60(v60State.adminCategory||'disputes');
 }
 function setAdminCategoryV60(category='disputes'){
-  const allowed=new Set(['disputes','integrity','multi','users','suspicious','community','metrics','system']);
+  const allowed=new Set(['disputes','integrity','multi','users','suspended','suspicious','community','metrics','system']);
   const clean=allowed.has(category)?category:'disputes';
   v60State.adminCategory=clean;
   $$('[data-admin-category-v60]').forEach(b=>b.classList.toggle('active',b.dataset.adminCategoryV60===clean));
   $$('[data-admin-panel-v60]').forEach(panel=>panel.classList.toggle('hidden',panel.dataset.adminPanelV60!==clean));
   if(clean==='system'&&v35Flags?.is_test_admin)runAdminDiagnosticsV60().catch(()=>{});
   if(clean==='metrics'&&v35Flags?.is_test_admin)loadAdminProductMetricsV70().catch(()=>{});
+  if(clean==='suspended'&&v35Flags?.is_test_admin)loadAdminSuspendedV76().catch(()=>{});
 }
 
 let adminUserSearchTimerV60=null;
@@ -6244,7 +6268,176 @@ function renderSecurityAuditV57(audit){
     <p class="security-audit-note-v57">Un grant no es automáticamente una vulnerabilidad: debe evaluarse junto con RLS y sus políticas.</p>`;
 }
 
-$('#goRegister').onclick=()=>showView('registerView');
+let emailVerificationTimerV76=null;
+let emailVerificationConfigV76={enabled:false,otp_minutes:10,resend_seconds:60};
+
+function emailOtpInputsV76(){
+  return $$('#emailOtpGridV76 input');
+}
+
+function emailOtpValueV76(){
+  return emailOtpInputsV76().map(input=>String(input.value||'').replace(/\D/g,'')).join('').slice(0,6);
+}
+
+function startEmailResendTimerV76(){
+  clearInterval(emailVerificationTimerV76);
+  const update=()=>{
+    const pending=getPendingRegistrationV76();
+    const button=$('#resendEmailCodeV76');
+    if(!button||!pending)return;
+    const seconds=Math.max(0,Math.ceil((Number(pending.resendAt||0)-Date.now())/1000));
+    button.disabled=seconds>0;
+    button.textContent=seconds>0?`Reenviar en ${seconds} s`:'Reenviar código';
+    if(seconds<=0)clearInterval(emailVerificationTimerV76);
+  };
+  update();
+  emailVerificationTimerV76=setInterval(update,1000);
+}
+
+function showEmailVerificationV76(pending,config=emailVerificationConfigV76){
+  if(!pending)return false;
+  emailVerificationConfigV76={...emailVerificationConfigV76,...(config||{})};
+  const mask=$('#emailVerificationMaskV76');
+  if(mask)mask.textContent=maskEmailV76(pending.email);
+  const expiry=$('#emailVerificationExpiryV76');
+  if(expiry)expiry.textContent=`El código vence en ${Number(emailVerificationConfigV76.otp_minutes||10)} minutos.`;
+  emailOtpInputsV76().forEach(input=>{input.value=''});
+  setStatus($('#emailVerificationStatusV76'),'');
+  showView('emailVerificationViewV76');
+  startEmailResendTimerV76();
+  setTimeout(()=>emailOtpInputsV76()[0]?.focus(),80);
+  return true;
+}
+
+async function openPendingRegistrationV76(){
+  const pending=getPendingRegistrationV76();
+  if(!pending)return false;
+  try{
+    const config=await getRegistrationConfigV76();
+    if(!config?.enabled)return false;
+    return showEmailVerificationV76(pending,config);
+  }catch{
+    return false;
+  }
+}
+
+async function changePendingRegistrationEmailV76(){
+  const pending=getPendingRegistrationV76();
+  const status=$('#emailVerificationStatusV76');
+  const buttons=[$('#changeRegistrationEmailV76'),$('#emailVerificationBackV76')].filter(Boolean);
+  try{
+    buttons.forEach(button=>button.disabled=true);
+    setStatus(status,'Liberando el registro pendiente…');
+    if(pending)await cancelPendingRegistrationV76(pending);
+    clearPendingRegistrationV76();
+    if($('#firstName'))$('#firstName').value=pending?.firstName||'';
+    if($('#lastName'))$('#lastName').value=pending?.lastName||'';
+    if($('#username'))$('#username').value=pending?.username||'';
+    if($('#registerEmail'))$('#registerEmail').value='';
+    if($('#registerPassword'))$('#registerPassword').value='';
+    if($('#confirmPassword'))$('#confirmPassword').value='';
+    showView('registerView');
+    setStatus($('#registerStatus'),'Ingresá el correo correcto para comenzar nuevamente.','ok');
+    setTimeout(()=>$('#registerEmail')?.focus(),80);
+  }catch(error){
+    setStatus(status,error?.message||'No se pudo cambiar el correo.','error');
+  }finally{
+    buttons.forEach(button=>button.disabled=false);
+  }
+}
+
+emailOtpInputsV76().forEach((input,index,inputs)=>{
+  input.addEventListener('input',()=>{
+    const digits=String(input.value||'').replace(/\D/g,'');
+    if(digits.length>1){
+      digits.slice(0,6).split('').forEach((digit,offset)=>{
+        if(inputs[index+offset])inputs[index+offset].value=digit;
+      });
+      inputs[Math.min(inputs.length-1,index+digits.length-1)]?.focus();
+      return;
+    }
+    input.value=digits.slice(-1);
+    if(input.value&&index<inputs.length-1)inputs[index+1].focus();
+  });
+  input.addEventListener('keydown',event=>{
+    if(event.key==='Backspace'&&!input.value&&index>0)inputs[index-1].focus();
+    if(event.key==='ArrowLeft'&&index>0)inputs[index-1].focus();
+    if(event.key==='ArrowRight'&&index<inputs.length-1)inputs[index+1].focus();
+  });
+  input.addEventListener('paste',event=>{
+    const digits=event.clipboardData?.getData('text')?.replace(/\D/g,'').slice(0,6)||'';
+    if(!digits)return;
+    event.preventDefault();
+    inputs.forEach((item,i)=>{item.value=digits[i]||''});
+    inputs[Math.min(digits.length,inputs.length)-1]?.focus();
+  });
+});
+
+$('#emailVerificationFormV76')?.addEventListener('submit',async event=>{
+  event.preventDefault();
+  const pending=getPendingRegistrationV76();
+  const status=$('#emailVerificationStatusV76');
+  const button=event.currentTarget.querySelector('button[type="submit"]');
+  const token=emailOtpValueV76();
+  if(!pending)return setStatus(status,'El registro pendiente ya no está disponible.','error');
+  if(token.length!==6)return setStatus(status,'Ingresá los 6 dígitos del código.','error');
+  try{
+    button.disabled=true;
+    setStatus(status,'Verificando código…');
+    const {data,error}=await verifyRegistrationCodeV76(pending.email,token);
+    if(error)throw error;
+    session=data?.session||await getSession();
+    if(!session?.user)throw new Error('El correo se verificó, pero no pudimos abrir la sesión.');
+    clearPendingRegistrationV76();
+    clearInterval(emailVerificationTimerV76);
+    try{await recordMyLegalAcceptanceV57()}catch(error){console.warn('Legal V76:',error)}
+    setStatus(status,'Correo verificado. Preparando tu perfil…','ok');
+    setTimeout(()=>showView('sportsProfileView'),250);
+  }catch(error){
+    const message=String(error?.message||'').toLowerCase();
+    setStatus(status,
+      message.includes('expired')||message.includes('invalid')
+        ?'El código es incorrecto o venció. Podés solicitar uno nuevo.'
+        :friendly(error?.message||'No se pudo verificar el código.'),
+      'error'
+    );
+  }finally{
+    button.disabled=false;
+  }
+});
+
+$('#resendEmailCodeV76')?.addEventListener('click',async event=>{
+  const pending=getPendingRegistrationV76();
+  const status=$('#emailVerificationStatusV76');
+  if(!pending)return setStatus(status,'El registro pendiente ya no está disponible.','error');
+  if(Number(pending.resendAt||0)>Date.now())return;
+  try{
+    event.currentTarget.disabled=true;
+    setStatus(status,'Enviando un código nuevo…');
+    const {error}=await resendRegistrationCodeV76(pending.email);
+    if(error)throw error;
+    pending.resendAt=Date.now()+Number(emailVerificationConfigV76.resend_seconds||60)*1000;
+    savePendingRegistrationV76(pending);
+    startEmailResendTimerV76();
+    setStatus(status,`Código reenviado a ${maskEmailV76(pending.email)}.`,'ok');
+  }catch(error){
+    setStatus(status,
+      /rate|limit/i.test(error?.message||'')
+        ?'Esperá un momento antes de solicitar otro código.'
+        :friendly(error?.message||'No se pudo reenviar el código.'),
+      'error'
+    );
+    event.currentTarget.disabled=false;
+  }
+});
+
+$('#changeRegistrationEmailV76')?.addEventListener('click',changePendingRegistrationEmailV76);
+$('#emailVerificationBackV76')?.addEventListener('click',changePendingRegistrationEmailV76);
+
+$('#goRegister').onclick=async()=>{
+  if(await openPendingRegistrationV76())return;
+  showView('registerView');
+};
 $('#goLogin').onclick=()=>showView('loginView');
 $$('[data-back]').forEach(b=>b.onclick=()=>showView(b.dataset.back));
 
@@ -6356,6 +6549,7 @@ $('#registerForm').onsubmit=async e=>{
     username=$('#username').value.trim().toLowerCase(),
     email=$('#registerEmail').value.trim(),
     password=$('#registerPassword').value;
+  const submitButton=e.currentTarget.querySelector('button[type="submit"]');
 
   if(password!==$('#confirmPassword').value){
     return setStatus(st,'Las contraseñas no coinciden.','error');
@@ -6374,25 +6568,76 @@ $('#registerForm').onsubmit=async e=>{
   }
 
   try{
+    submitButton.disabled=true;
+    setStatus(st,'Preparando verificación segura…');
+    const config=await getRegistrationConfigV76();
+    if(!config?.enabled){
+      throw new Error('La verificación de correo todavía se está activando. Intentá nuevamente en unos minutos.');
+    }
+    const cancelToken=createRegistrationCancelTokenV76();
     const {data,error}=await signUpUser({
       email,password,firstName,lastName,username,
       legalTermsVersion:LEGAL_V57.termsVersion,
-      legalPrivacyVersion:LEGAL_V57.privacyVersion
+      legalPrivacyVersion:LEGAL_V57.privacyVersion,
+      registrationCancelToken:cancelToken
     });
 
     if(error)throw error;
-    session=data.session;
+    if(Array.isArray(data?.user?.identities)&&data.user.identities.length===0){
+      throw new Error('Ese correo ya está registrado o no puede utilizarse.');
+    }
+    if(!data?.user?.id)throw new Error('No pudimos crear el registro pendiente.');
 
-    if(session?.user){
-      try{await recordMyLegalAcceptanceV57()}catch(err){console.warn('Legal V57:',err)}
+    const pending=savePendingRegistrationV76({
+      email,userId:data.user.id,cancelToken,firstName,lastName,username,
+      createdAt:Date.now(),
+      resendAt:Date.now()+Number(config.resend_seconds||60)*1000
+    });
+
+    if(data.session){
+      session=data.session;
+      await cancelPendingRegistrationV76(pending).catch(()=>{});
+      await signOutUser().catch(()=>{});
+      session=null;
+      clearPendingRegistrationV76();
+      throw new Error('La confirmación de correo todavía no está habilitada en Supabase. El registro fue cancelado de forma segura.');
     }
 
-    showView('sportsProfileView');
+    emailVerificationConfigV76=config;
+    showEmailVerificationV76(pending,config);
   }catch(err){
+    setStatus(st,friendly(err.message),'error');
+  }finally{
+    submitButton.disabled=false;
+  }
+};
+$('#loginForm').onsubmit=async e=>{
+  e.preventDefault();
+  const st=$('#loginStatus');
+  const email=$('#loginEmail').value.trim();
+  clearAccessBlockedActionV76();
+  try{
+    const {data,error}=await signInUser({email,password:$('#loginPassword').value});
+    if(error)throw error;
+    session=data.session;
+    const p=await getMyProfile(data.user.id);
+    if(!p.profile_completed)return showView('sportsProfileView');
+    await loadApp(data.user.id,p);
+  }catch(err){
+    if(showAccessBlockedV76(err,email,st))return;
+    if(/email.*not.*confirm|confirm.*email/i.test(err?.message||'')){
+      const pending=getPendingRegistrationV76();
+      if(pending&&pending.email.toLowerCase()===email.toLowerCase()){
+        try{
+          const config=await getRegistrationConfigV76();
+          if(config?.enabled)return showEmailVerificationV76(pending,config);
+        }catch{}
+      }
+      return setStatus(st,'Primero tenés que verificar tu correo con el código enviado.','error');
+    }
     setStatus(st,friendly(err.message),'error');
   }
 };
-$('#loginForm').onsubmit=async e=>{e.preventDefault();const st=$('#loginStatus');try{const {data,error}=await signInUser({email:$('#loginEmail').value.trim(),password:$('#loginPassword').value});if(error)throw error;session=data.session;const p=await getMyProfile(data.user.id);if(!p.profile_completed)return showView('sportsProfileView');await loadApp(data.user.id,p)}catch(err){setStatus(st,friendly(err.message),'error')}};
 $('#sportsProfileForm').onsubmit=async e=>{
   e.preventDefault();
   const status=$('#sportsStatus');
@@ -8279,6 +8524,7 @@ startMatchClocksV59();
 initMotionV601();
 initRivalriesV74();
 initAccessControlV75();
+initModerationEmailV76();
 setupPwaV573().catch(err=>{recordClientErrorV60(err,'pwa-v60');console.error('PWA V60:',err)});
 
 async function bootApplicationV741(){

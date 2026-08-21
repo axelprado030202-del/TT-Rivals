@@ -144,14 +144,14 @@ export async function getRanking(modality='individual',search=''){
     const {data:ratings,error:e1}=await supabase.from('ratings').select('user_id,rating').eq('modality',modality).order('rating',{ascending:false}).limit(100);if(e1)throw e1;
     if(!ratings?.length){rankingCacheV101.set(key,{at:Date.now(),rows:[]});base={at:Date.now(),rows:[]}}
     else{
-      const ids=ratings.map(r=>r.user_id);const {data:profiles,error:e2}=await supabase.from('profiles').select('id,username,first_name,last_name,profile_photo_url,is_test_admin').in('id',ids);if(e2)throw e2;
-      const map=new Map((profiles||[]).map(p=>[p.id,p]));const rows=ratings.map((r,i)=>({position:i+1,rating:r.rating,profile:map.get(r.user_id)})).filter(x=>x.profile);
+      const ids=ratings.map(r=>r.user_id);const {data:profiles,error:e2}=await supabase.from('visible_profiles_v76').select('id,username,first_name,last_name,profile_photo_url,is_test_admin').in('id',ids);if(e2)throw e2;
+      const map=new Map((profiles||[]).map(p=>[p.id,p]));const rows=ratings.map(r=>({rating:r.rating,profile:map.get(r.user_id)})).filter(x=>x.profile).map((row,i)=>({...row,position:i+1}));
       base={at:Date.now(),rows};rankingCacheV101.set(key,base);
     }
   }
   let rows=[...(base?.rows||[])];const q=search.trim().toLowerCase();if(q)rows=rows.filter(x=>{const p=x.profile;return p.username?.toLowerCase().includes(q)||p.first_name?.toLowerCase().includes(q)||p.last_name?.toLowerCase().includes(q)||`${p.first_name} ${p.last_name}`.toLowerCase().includes(q)});return rows;
 }
-export async function searchPlayers(query,excludeUserId){const q=query.trim().toLowerCase();if(!q)return[];const {data,error}=await supabase.from('profiles').select('id,username,first_name,last_name,profile_photo_url,is_test_admin').neq('id',excludeUserId).limit(50);if(error)throw error;return(data||[]).filter(p=>p.username?.toLowerCase().includes(q)||p.first_name?.toLowerCase().includes(q)||p.last_name?.toLowerCase().includes(q)||`${p.first_name} ${p.last_name}`.toLowerCase().includes(q)).slice(0,12);}
+export async function searchPlayers(query,excludeUserId){const q=query.trim().toLowerCase();if(!q)return[];const {data,error}=await supabase.from('visible_profiles_v76').select('id,username,first_name,last_name,profile_photo_url,is_test_admin').neq('id',excludeUserId).limit(50);if(error)throw error;return(data||[]).filter(p=>p.username?.toLowerCase().includes(q)||p.first_name?.toLowerCase().includes(q)||p.last_name?.toLowerCase().includes(q)||`${p.first_name} ${p.last_name}`.toLowerCase().includes(q)).slice(0,12);}
 export async function getRatingHistory(userId){const {data,error}=await supabase.from('rating_history').select('id,previous_rating,rating_change,new_rating,created_at,match_id').eq('user_id',userId).eq('modality','individual').order('created_at',{ascending:false}).limit(100);if(error)throw error;return data||[];}
 
 let rankTiersCacheV101=null;
