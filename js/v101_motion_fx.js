@@ -92,7 +92,7 @@ function resize(){
 function currentMode(){
   const main=document.querySelector('#mainApp');
   if(!main||main.classList.contains('hidden'))return null;
-  return MODES[document.body.dataset.activeTabV101||'home']||null;
+  return MODES[document.body.dataset.activeTabV101||'profile']||null;
 }
 function syncMode(force=false){
   const next=preference==='off'?null:currentMode();

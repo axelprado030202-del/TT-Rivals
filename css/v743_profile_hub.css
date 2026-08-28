@@ -1,0 +1,165 @@
+/* P7.4R.4.4 — Perfil unificado y navegación interna. */
+
+.profile-legacy-home-v743{display:none!important}
+
+.profile-hub-v743{position:relative;max-width:1380px;margin:0 auto}
+.profile-hub-view-v743[hidden]{display:none!important}
+
+.profile-hub-titlebar-v743{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  margin:0 0 18px;padding:2px 2px 0
+}
+.profile-hub-title-copy-v743{min-width:0}
+.profile-hub-title-copy-v743 .muted-label{margin-bottom:3px;color:#88a3c7}
+.profile-hub-title-copy-v743 h2{margin:0;font-size:clamp(1.65rem,3vw,2.5rem);letter-spacing:-.035em}
+.profile-hub-title-copy-v743 p:last-child{margin:4px 0 0;color:#7f93aa;font-size:.72rem}
+.profile-hub-back-v743{
+  display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:9px 13px;
+  border:1px solid rgba(96,165,250,.22);border-radius:11px;
+  background:rgba(15,23,42,.68);color:#bfd7f5;font-weight:850
+}
+.profile-hub-back-v743[hidden]{display:none!important}
+.profile-hub-back-v743:hover{border-color:rgba(96,165,250,.42);background:rgba(37,99,235,.12)}
+
+.profile-hub-summary-v743{display:grid;gap:14px}
+.profile-hub-summary-v743>.v44-profile-hero{margin:0}
+.profile-hub-summary-v743>.profile-rating-grid{margin:0}
+.profile-hub-summary-v743 .v44-profile-hero{
+  min-height:190px;border-color:rgba(96,165,250,.25);
+  background:
+    radial-gradient(circle at 88% 30%,rgba(124,58,237,.13),transparent 28%),
+    linear-gradient(135deg,rgba(30,64,175,.14),rgba(15,23,42,.88))
+}
+
+.profile-progress-grid-v743{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.profile-progress-grid-v743>.section-card{height:100%;margin:0}
+.profile-progress-grid-v743 .v28-progression-panel{padding:16px 18px}
+.profile-progress-grid-v743 .v28-home-tools{display:none!important}
+.profile-progress-grid-v743 .profile-protection-v58{padding:16px 18px}
+.profile-progress-grid-v743 .profile-protection-v58 .protection-rules-v58{display:none}
+.profile-progress-grid-v743 .profile-protection-v58>p{margin-bottom:0}
+
+.profile-hub-summary-v743 .v59-objective-only{margin:0}
+.profile-hub-summary-v743 .v15-next-objective{
+  min-height:122px;border-color:rgba(96,165,250,.24);
+  background:linear-gradient(100deg,rgba(15,23,42,.88),rgba(30,64,175,.18))
+}
+
+.profile-hub-menu-wrap-v743{margin-top:4px}
+.profile-hub-menu-head-v743{margin-bottom:10px}
+.profile-hub-menu-head-v743 h3{margin:0 0 4px;font-size:1.1rem}
+.profile-hub-menu-head-v743 p{margin:0;color:#7f93aa;font-size:.68rem}
+.profile-hub-menu-v743{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.profile-hub-menu-v743 button{
+  display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:11px;
+  min-height:78px;padding:12px 13px;border:1px solid rgba(148,163,184,.13);
+  border-radius:14px;background:rgba(15,23,42,.74);color:#f8fbff;text-align:left
+}
+.profile-hub-menu-v743 button:hover,.profile-hub-menu-v743 button:focus-visible{
+  border-color:rgba(96,165,250,.4);background:rgba(37,99,235,.11);transform:translateY(-1px)
+}
+.profile-hub-menu-icon-v743{
+  display:grid;width:42px;height:42px;place-items:center;border-radius:12px;
+  background:rgba(59,130,246,.14);color:#7cb5ff;font-size:1.02rem
+}
+.profile-hub-menu-copy-v743{min-width:0}
+.profile-hub-menu-copy-v743 strong,.profile-hub-menu-copy-v743 small{display:block}
+.profile-hub-menu-copy-v743 strong{margin-bottom:3px;font-size:.78rem}
+.profile-hub-menu-copy-v743 small{overflow:hidden;color:#8297b2;font-size:.55rem;text-overflow:ellipsis;white-space:nowrap}
+.profile-hub-menu-arrow-v743{color:#66809f;font-size:1rem}
+
+.profile-hub-summary-v743>.recommended-rivals-section{margin:0}
+.profile-hub-summary-v743 .recommended-rivals-section .section-title-row{align-items:center}
+.profile-rivals-collapsed-v743 #recommendedRivals>*:nth-child(n+4){display:none!important}
+.profile-rivals-toggle-v743{min-width:104px}
+
+.profile-hub-detail-v743{display:grid;gap:14px}
+.profile-hub-detail-v743>.section-card,.profile-hub-detail-v743>.season-strip,
+.profile-hub-detail-v743>.profile-rating-grid,.profile-hub-detail-v743>.profile-quick-actions-v56{margin:0}
+.profile-hub-detail-intro-v743{
+  display:flex;align-items:end;justify-content:space-between;gap:14px;
+  padding:15px 17px;border:1px solid rgba(96,165,250,.16);border-radius:15px;
+  background:linear-gradient(105deg,rgba(15,23,42,.84),rgba(30,64,175,.1))
+}
+.profile-hub-detail-intro-v743 h3{margin:0 0 4px;font-size:1.18rem}
+.profile-hub-detail-intro-v743 p{margin:0;color:#8195ad;font-size:.66rem}
+
+.profile-hub-stats-v743>.profile-rating-grid{display:none}
+.profile-hub-stats-v743 .profile-quick-actions-v56{order:2}
+.profile-hub-stats-v743 .reliability-card-v34{order:1}
+
+.profile-hub-missions-v743 .v28-missions{margin:0}
+.profile-hub-missions-v743 .v28-week-event{margin:0}
+.profile-hub-missions-v743 #v28MatchWeek{margin:0}
+
+.profile-hub-rivalries-v743 #v28RivalryCard{margin:0}
+.profile-hub-rivalries-v743 .v74r-section,.profile-hub-rivalries-v743 .primary-rival-section{margin:0}
+
+.profile-hub-seasons-v743>.season-strip{order:1}
+.profile-hub-seasons-v743>.profile-season-section{order:2}
+.profile-hub-seasons-v743>.v63-palmares-section{order:3}
+.profile-hub-seasons-v743>.v28-trophy-room{order:4}
+.profile-hub-seasons-v743 .season-strip{padding:15px 17px}
+
+.profile-hub-data-v743 .profile-sports-section-v743,
+.profile-hub-data-v743 .identity-showcase-section,
+.profile-hub-data-v743 .competitive-title-section{margin:0}
+
+.profile-achievement-filters-v743{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 12px}
+.profile-achievement-filters-v743 button{
+  padding:7px 11px;border:1px solid rgba(148,163,184,.14);border-radius:999px;
+  background:rgba(15,23,42,.65);color:#8fa5bf;font-size:.6rem;font-weight:850
+}
+.profile-achievement-filters-v743 button.active{
+  border-color:rgba(96,165,250,.42);background:rgba(37,99,235,.16);color:#dbeafe
+}
+.profile-hub-achievements-v743>.achievements-section{margin:0}
+.profile-hub-achievements-v743 .achievement-card[hidden]{display:none!important}
+.profile-hub-achievements-v743 .achievement-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+.profile-hub-v743 #logoutButton{display:none!important}
+
+@media(max-width:900px){
+  .profile-hub-menu-v743{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .profile-progress-grid-v743{grid-template-columns:1fr}
+  .profile-hub-achievements-v743 .achievement-grid{grid-template-columns:1fr}
+}
+
+@media(max-width:760px){
+  .bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+  .bottom-nav [data-tab="ranking"]{order:1!important}
+  .bottom-nav [data-tab="training"]{order:2!important}
+  .bottom-nav [data-tab="play"]{order:3!important}
+  .bottom-nav [data-tab="history"]{order:4!important}
+  .bottom-nav [data-tab="profile"]{order:5!important}
+
+  .profile-hub-titlebar-v743{align-items:center;margin-bottom:13px}
+  .profile-hub-title-copy-v743 h2{font-size:1.65rem}
+  .profile-hub-title-copy-v743 p:last-child{display:none}
+  .profile-hub-back-v743{min-height:36px;padding:7px 10px;font-size:.63rem}
+
+  .profile-hub-summary-v743{gap:11px}
+  .profile-hub-summary-v743 .v44-profile-hero{min-height:0}
+  .profile-hub-summary-v743>.profile-rating-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .profile-hub-menu-v743{gap:8px}
+  .profile-hub-menu-v743 button{grid-template-columns:minmax(0,1fr) auto;min-height:68px;padding:10px}
+  .profile-hub-menu-icon-v743{display:none}
+  .profile-hub-menu-copy-v743 small{white-space:normal}
+  .profile-hub-menu-arrow-v743{font-size:.85rem}
+
+  .profile-hub-summary-v743 .recommended-rivals-grid{grid-template-columns:1fr!important}
+  .profile-hub-summary-v743 .recommended-rivals-section .section-title-row{align-items:flex-start}
+  .profile-hub-summary-v743 .recommended-rivals-section .section-title-row>button{width:auto!important;min-width:92px}
+
+  .profile-hub-detail-intro-v743{align-items:flex-start;padding:13px 14px}
+  .profile-hub-seasons-v743 .season-strip{grid-template-columns:1fr;gap:10px}
+  .profile-hub-seasons-v743 .season-strip>button{justify-self:start}
+}
+
+@media(max-width:420px){
+  .profile-hub-menu-v743{grid-template-columns:1fr 1fr}
+  .profile-hub-menu-v743 button{min-height:72px}
+  .profile-hub-menu-copy-v743 strong{font-size:.7rem}
+  .profile-hub-menu-copy-v743 small{font-size:.5rem}
+  .profile-hub-detail-intro-v743{display:block}
+}

@@ -2,9 +2,9 @@
   TT Rivals P7.4.3 — navegación móvil progresiva.
   La pantalla sigue el dedo y completa o cancela el gesto con transform/opacity.
 */
-const DEFAULT_TABS=['home','ranking','play','training','history','profile'];
+const DEFAULT_TABS=['ranking','play','training','history','profile'];
 const TAB_LABELS={
-  home:'Inicio',ranking:'Ranking',play:'Jugar',
+  ranking:'Ranking',play:'Jugar',
   training:'Entrenar',history:'Historial',profile:'Perfil'
 };
 const IGNORE_SELECTOR=[
@@ -15,7 +15,7 @@ const IGNORE_SELECTOR=[
 
 export function installSwipeNavigationV74({
   root=document.querySelector('.main-app'),
-  getActiveTab=()=>document.body.dataset.activeTabV101||'home',
+  getActiveTab=()=>document.body.dataset.activeTabV101||'profile',
   activateTab,
   tabs=DEFAULT_TABS,
   threshold=64

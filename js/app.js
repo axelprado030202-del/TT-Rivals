@@ -29,15 +29,15 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.3';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.3';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.4';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.4';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
 import {getCompetitiveProgressV72} from './v72_progress.js';
 import {getHistorySeasonsV60} from './v60_history.js';
 import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,animatePostMatchV601,celebrateRewardV601} from './v60_motion.js?v=1.0.1-p7.3.1';
-import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.1-p7.4r.4.3';
+import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.1-p7.4r.4.4';
 import {
   registerCurrentInstallationV58,
   getMyProtectionV58,
@@ -1092,7 +1092,7 @@ function closeBootScreenV572(){
 }
 
 function showView(id){authShell.classList.remove('hidden');mainApp.classList.add('hidden');views.forEach(v=>v.classList.toggle('active',v.id===id));window.scrollTo(0,0);if(id==='sportsProfileView'){loadAvailableClubsV49().catch(err=>console.warn('Clubes V49:',err));ensureV100Module().then(mod=>mod.initOnboardingV100?.()).catch(err=>console.warn('Onboarding 1.0:',err))}}
-function showMain(){authShell.classList.add('hidden');mainApp.classList.remove('hidden');activateTab('home')}
+function showMain(){authShell.classList.add('hidden');mainApp.classList.remove('hidden');activateTab('profile')}
 function setStatus(el,msg,type=''){el.textContent=msg;el.classList.remove('ok','error');if(type)el.classList.add(type)}
 function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 function formatDurationV59(seconds,{clock=false}={}){
@@ -1463,7 +1463,7 @@ async function loadV35Flags(){
     setupAdminFrameLabV44();
   }else{
     document.body.classList.remove('test-admin-v35');
-    if($('#tab-admin')?.classList.contains('active'))activateTab('home');
+    if($('#tab-admin')?.classList.contains('active'))activateTab('profile');
   }
 }
 async function enableNearbyV35(){
@@ -1941,11 +1941,7 @@ async function loadApp(uid,p=null){
       );
       startLiveNotificationStream();
 
-      const hydrateHome=()=>runTabLoadV74('home',()=>Promise.all([
-        loadHomeDashboard(),loadRecommendedRivals(),loadV28Experience()
-      ]),{ttl:20000});
-      if('requestIdleCallback' in window)requestIdleCallback(hydrateHome,{timeout:1800});
-      else setTimeout(hydrateHome,350);
+      // P7.4R.4.4: el resumen se hidrata al abrir Perfil, ahora destino inicial.
     }catch(err){
       console.error('Carga secundaria V58:',err);
       // La app permanece visible; el usuario puede reintentar navegando.
@@ -2051,12 +2047,189 @@ function recordTabSwitchV74(tab,startedAt,source){
   });
 }
 
+const PROFILE_HUB_META_V743={
+  summary:{title:'Perfil',subtitle:'Tu identidad y progreso competitivo.'},
+  stats:{title:'Estadísticas',subtitle:'Elo, rendimiento, fiabilidad y accesos de análisis.'},
+  missions:{title:'Misiones',subtitle:'Objetivos diarios y actividad competitiva vigente.'},
+  achievements:{title:'Logros',subtitle:'Todos tus hitos, separados del resumen principal.'},
+  rivalries:{title:'Rivalidades',subtitle:'Cara a cara oficiales y rival favorito.'},
+  seasons:{title:'Temporadas y trofeos',subtitle:'Temporada actual, historial, premios y palmarés.'},
+  data:{title:'Datos del jugador',subtitle:'Perfil deportivo e identidad competitiva.'}
+};
+let activeProfileHubViewV743='summary';
+let profileAchievementFilterV743='all';
+
+function applyProfileAchievementFilterV743(filter=profileAchievementFilterV743){
+  profileAchievementFilterV743=filter;
+  $$('#profileAchievementFiltersV743 [data-achievement-filter-v743]').forEach(button=>{
+    button.classList.toggle('active',button.dataset.achievementFilterV743===filter);
+  });
+  $$('#profileAchievements [data-achievement-card]').forEach(card=>{
+    const state=card.dataset.achievementState||'locked';
+    card.hidden=filter!=='all'&&state!==filter;
+  });
+}
+
+function openProfileHubViewV743(view='summary',{scroll=true}={}){
+  const root=$('#tab-profile');
+  if(!root?.dataset.profileHubReadyV743)return;
+  const next=PROFILE_HUB_META_V743[view]?view:'summary';
+  activeProfileHubViewV743=next;
+  root.dataset.profileHubViewV743=next;
+  root.querySelectorAll('[data-profile-hub-view-v743]').forEach(panel=>{
+    panel.hidden=panel.dataset.profileHubViewV743!==next;
+  });
+  const meta=PROFILE_HUB_META_V743[next];
+  if($('#profileHubTitleV743'))$('#profileHubTitleV743').textContent=meta.title;
+  if($('#profileHubSubtitleV743'))$('#profileHubSubtitleV743').textContent=meta.subtitle;
+  if($('#profileHubBackV743'))$('#profileHubBackV743').hidden=next==='summary';
+  if(next==='achievements'){
+    renderAchievements();
+    applyProfileAchievementFilterV743();
+  }
+  if(scroll){
+    root.scrollIntoView({block:'start',behavior:'auto'});
+  }
+}
+
+function setupProfileHubV743(){
+  const root=$('#tab-profile'),home=$('#tab-home');
+  if(!root||root.dataset.profileHubReadyV743)return;
+
+  root.classList.add('profile-hub-v743');
+  root.dataset.profileHubReadyV743='true';
+  home?.classList.add('profile-legacy-home-v743');
+  home?.setAttribute('aria-hidden','true');
+
+  const titlebar=document.createElement('header');
+  titlebar.className='profile-hub-titlebar-v743';
+  titlebar.innerHTML=`
+    <div class="profile-hub-title-copy-v743">
+      <p class="muted-label">MI ESPACIO</p>
+      <h2 id="profileHubTitleV743">Perfil</h2>
+      <p id="profileHubSubtitleV743">Tu identidad y progreso competitivo.</p>
+    </div>
+    <button id="profileHubBackV743" class="profile-hub-back-v743" type="button" hidden>← Volver al perfil</button>`;
+
+  const summary=document.createElement('section');
+  summary.className='profile-hub-view-v743 profile-hub-summary-v743';
+  summary.dataset.profileHubViewV743='summary';
+  summary.id='profileHubViewSummaryV743';
+
+  const createDetail=(key,className)=>{
+    const panel=document.createElement('section');
+    panel.className=`profile-hub-view-v743 profile-hub-detail-v743 ${className}`;
+    panel.dataset.profileHubViewV743=key;
+    panel.id=`profileHubView${key[0].toUpperCase()}${key.slice(1)}V743`;
+    panel.hidden=true;
+    return panel;
+  };
+
+  const stats=createDetail('stats','profile-hub-stats-v743');
+  const missions=createDetail('missions','profile-hub-missions-v743');
+  const achievements=createDetail('achievements','profile-hub-achievements-v743');
+  const rivalries=createDetail('rivalries','profile-hub-rivalries-v743');
+  const seasons=createDetail('seasons','profile-hub-seasons-v743');
+  const data=createDetail('data','profile-hub-data-v743');
+
+  const menuWrap=document.createElement('section');
+  menuWrap.className='profile-hub-menu-wrap-v743';
+  menuWrap.innerHTML=`
+    <div class="profile-hub-menu-head-v743"><h3>Tu información</h3><p>Elegí una categoría para ver sus detalles.</p></div>
+    <nav class="profile-hub-menu-v743" aria-label="Secciones del perfil">
+      <button type="button" data-profile-hub-target-v743="stats"><span class="profile-hub-menu-icon-v743">▥</span><span class="profile-hub-menu-copy-v743"><strong>Estadísticas</strong><small>Elo, rendimiento y fiabilidad</small></span><span class="profile-hub-menu-arrow-v743">›</span></button>
+      <button type="button" data-profile-hub-target-v743="missions"><span class="profile-hub-menu-icon-v743">◎</span><span class="profile-hub-menu-copy-v743"><strong>Misiones</strong><small>Objetivos y evento activo</small></span><span class="profile-hub-menu-arrow-v743">›</span></button>
+      <button type="button" data-profile-hub-target-v743="achievements"><span class="profile-hub-menu-icon-v743">◇</span><span class="profile-hub-menu-copy-v743"><strong>Logros</strong><small>Progreso y placas destacadas</small></span><span class="profile-hub-menu-arrow-v743">›</span></button>
+      <button type="button" data-profile-hub-target-v743="rivalries"><span class="profile-hub-menu-icon-v743">🔥</span><span class="profile-hub-menu-copy-v743"><strong>Rivalidades</strong><small>Cara a cara y rival favorito</small></span><span class="profile-hub-menu-arrow-v743">›</span></button>
+      <button type="button" data-profile-hub-target-v743="seasons"><span class="profile-hub-menu-icon-v743">♛</span><span class="profile-hub-menu-copy-v743"><strong>Temporadas y trofeos</strong><small>Historial, premios y palmarés</small></span><span class="profile-hub-menu-arrow-v743">›</span></button>
+      <button type="button" data-profile-hub-target-v743="data"><span class="profile-hub-menu-icon-v743">◫</span><span class="profile-hub-menu-copy-v743"><strong>Datos del jugador</strong><small>Estilo, club e identidad</small></span><span class="profile-hub-menu-arrow-v743">›</span></button>
+    </nav>`;
+
+  const progressGrid=document.createElement('div');
+  progressGrid.className='profile-progress-grid-v743';
+
+  const hero=root.querySelector(':scope > .v44-profile-hero');
+  const quickActions=root.querySelector(':scope > .profile-quick-actions-v56');
+  const ratingGrid=root.querySelector(':scope > .profile-rating-grid');
+  const protection=$('#profileProtectionV58');
+  const reliability=$('#profileReliabilityV34');
+  const sports=root.querySelector(':scope > .profile-sports-section-v743');
+  const identity=root.querySelector(':scope > .identity-showcase-section');
+  const competitiveTitle=root.querySelector(':scope > .competitive-title-section');
+  const seasonHistory=root.querySelector(':scope > .profile-season-section');
+  const palmares=root.querySelector(':scope > .v63-palmares-section');
+  const realRivalries=root.querySelector(':scope > .v74r-section');
+  const primaryRival=root.querySelector(':scope > .primary-rival-section');
+  const trophyRoom=root.querySelector(':scope > .v28-trophy-room');
+  const achievementSection=root.querySelector(':scope > .achievements-section');
+  const logout=$('#logoutButton');
+
+  const progression=home?.querySelector(':scope > .v28-progression-panel');
+  const missionSection=home?.querySelector(':scope > .v28-missions');
+  const eventSection=home?.querySelector(':scope > .v28-week-event');
+  const matchWeek=$('#v28MatchWeek');
+  const liveRivalry=$('#v28RivalryCard');
+  const seasonStrip=$('#homeSeasonStrip');
+  const objective=home?.querySelector(':scope > .v59-objective-only');
+  const recommended=home?.querySelector(':scope > .recommended-rivals-section');
+
+  [progression,protection].filter(Boolean).forEach(node=>progressGrid.appendChild(node));
+  [hero,ratingGrid,progressGrid,objective,menuWrap,recommended].filter(Boolean).forEach(node=>summary.appendChild(node));
+  [reliability,quickActions].filter(Boolean).forEach(node=>stats.appendChild(node));
+  [missionSection,eventSection,matchWeek].filter(Boolean).forEach(node=>missions.appendChild(node));
+  [liveRivalry,realRivalries,primaryRival].filter(Boolean).forEach(node=>rivalries.appendChild(node));
+  [seasonStrip,seasonHistory,palmares,trophyRoom].filter(Boolean).forEach(node=>seasons.appendChild(node));
+  [sports,identity,competitiveTitle].filter(Boolean).forEach(node=>data.appendChild(node));
+
+  const achievementFilters=document.createElement('nav');
+  achievementFilters.id='profileAchievementFiltersV743';
+  achievementFilters.className='profile-achievement-filters-v743';
+  achievementFilters.setAttribute('aria-label','Filtrar logros');
+  achievementFilters.innerHTML=`
+    <button class="active" type="button" data-achievement-filter-v743="all">Todos</button>
+    <button type="button" data-achievement-filter-v743="unlocked">Desbloqueados</button>
+    <button type="button" data-achievement-filter-v743="progress">En progreso</button>
+    <button type="button" data-achievement-filter-v743="locked">Bloqueados</button>`;
+  achievements.append(achievementFilters);
+  if(achievementSection)achievements.appendChild(achievementSection);
+
+  if(logout)logout.hidden=true;
+  root.prepend(titlebar);
+  root.append(summary,stats,missions,achievements,rivalries,seasons,data);
+
+  if(recommended){
+    recommended.classList.add('profile-rivals-collapsed-v743');
+    const toggle=recommended.querySelector('.section-title-row>button');
+    if(toggle){
+      toggle.removeAttribute('data-go-tab');
+      toggle.classList.add('profile-rivals-toggle-v743');
+      toggle.textContent='Ver los 6';
+      toggle.setAttribute('aria-expanded','false');
+      toggle.addEventListener('click',()=>{
+        const collapsed=recommended.classList.toggle('profile-rivals-collapsed-v743');
+        toggle.textContent=collapsed?'Ver los 6':'Mostrar menos';
+        toggle.setAttribute('aria-expanded',String(!collapsed));
+      });
+    }
+  }
+
+  root.querySelectorAll('[data-profile-hub-target-v743]').forEach(button=>{
+    button.addEventListener('click',()=>openProfileHubViewV743(button.dataset.profileHubTargetV743));
+  });
+  $('#profileHubBackV743')?.addEventListener('click',()=>openProfileHubViewV743('summary'));
+  achievementFilters.querySelectorAll('[data-achievement-filter-v743]').forEach(button=>{
+    button.addEventListener('click',()=>applyProfileAchievementFilterV743(button.dataset.achievementFilterV743));
+  });
+  openProfileHubViewV743('summary',{scroll:false});
+}
+
 function activateTab(tab,{source='tap'}={}){
   const startedAt=performance.now();
-  if(tab==='admin'&&!canUseAdminUIV101())tab='home';
+  if(tab==='home')tab='profile';
+  if(tab==='admin'&&!canUseAdminUIV101())tab='profile';
 
-  const previousTab=document.body.dataset.activeTabV101||'home';
-  document.body.dataset.activeTabV101=tab||'home';
+  const previousTab=document.body.dataset.activeTabV101||'profile';
+  document.body.dataset.activeTabV101=tab||'profile';
   if(!$$('.modal').some(m=>!m.classList.contains('hidden')))lockPageScroll(false);
   $$('.tab-page').forEach(page=>page.classList.toggle('active',page.id===`tab-${tab}`));
   const navigationTab=tab==='tournaments'?'play':tab;
@@ -2068,6 +2241,7 @@ function activateTab(tab,{source='tap'}={}){
   // Render local inmediato. Las consultas se deduplican y respetan TTL.
   if(tab==='play')showPlayModeV62(null);
   if(tab==='profile'){
+    openProfileHubViewV743('summary',{scroll:false});
     renderAchievements();renderPrimaryRival();renderProfileSeasonCards();
     renderEquippedTitle();renderIdentityShowcase();
   }
@@ -2076,10 +2250,6 @@ function activateTab(tab,{source='tap'}={}){
   if(tab==='stats')renderStatsModeV56();
 
   requestAnimationFrame(()=>{
-    if(tab==='home')runTabLoadV74('home',()=>Promise.all([
-      loadHomeDashboard(),loadNearbyPlayersV35(false),loadRecommendedRivals(),loadV28Experience()
-    ]),{ttl:20000});
-
     if(tab==='ranking')runTabLoadV74('ranking',()=>Promise.all([
       loadRanking(),loadChampionsHall()
     ]),{ttl:30000});
@@ -2097,6 +2267,7 @@ function activateTab(tab,{source='tap'}={}){
     ]),{ttl:30000});
 
     if(tab==='profile')runTabLoadV74('profile',()=>Promise.all([
+      loadHomeDashboard(),loadRecommendedRivals(),loadV28Experience(),
       ensureV63Module().then(mod=>mod.loadOwnPalmaresV63?.()),
       ensureV100Module().then(mod=>mod.loadOwnSportsIdentityV100?.()),
       loadRivalriesV74()
@@ -2522,7 +2693,7 @@ async function handleNotificationActionV58(n){
   }
   if(n.action==='titles'){activateTab('profile');setTimeout(openTitleSelector,100);return}
   if(n.action==='history'){activateTab('history');return}
-  if(n.action==='protection'){activateTab('home');return}
+  if(n.action==='protection'){activateTab('profile');return}
   if(n.action==='places'){activateTab('places');return}
   if(n.action==='profile'){activateTab('profile');return}
   if(n.action==='admin_community'&&v35Flags?.is_test_admin){activateTab('admin');setTimeout(()=>ensureV100Module().then(mod=>mod.loadAdminCommunityV100?.()).catch(()=>{}),120);return}
@@ -3420,7 +3591,7 @@ async function handleConfirmedMatchV55(matchRow){
 }
 
 async function refreshVisibleRatingViewsV74(){
-  const active=document.body.dataset.activeTabV101||'home';
+  const active=document.body.dataset.activeTabV101||'profile';
   if(active==='home')await loadHomeDashboard();
   else if(active==='ranking')await loadRanking();
   else if(active==='history')await loadHistoryPage();
@@ -3445,7 +3616,7 @@ async function refreshReviewViewsV55(){
   if(!session?.user)return;
   await loadSocialState();
   invalidateTabLoadsV74('home','history','profile');
-  const active=document.body.dataset.activeTabV101||'home';
+  const active=document.body.dataset.activeTabV101||'profile';
   if(active==='home')await loadHomeDashboard();
   if(active==='history')await loadHistoryPage();
   if(active==='profile'){
@@ -4431,7 +4602,8 @@ function renderAchievements(){
 
   box.innerHTML=rows.map(a=>{
     const progress=Math.max(0,Math.min(100,Number(a.progress??(a.unlocked?100:0))));
-    return `<article class="achievement-card ${a.unlocked?'unlocked':'locked'}" data-achievement-card="${a.id}">
+    const state=a.unlocked?'unlocked':progress>0?'progress':'locked';
+    return `<article class="achievement-card ${a.unlocked?'unlocked':'locked'}" data-achievement-card="${a.id}" data-achievement-state="${state}">
       <button class="achievement-card-main" data-achievement-info="${a.id}" type="button">
         <span class="achievement-icon">${achievementEmblemHtml(a)}</span>
         <div class="achievement-copy-v60"><strong>${esc(a.name)}</strong><small>${esc(a.desc)}</small><span class="achievement-progress-label-v60">${esc(a.unlocked?'Completado':a.progress_label||'En progreso')}</span><span class="achievement-progress-track-v60"><i style="width:${a.unlocked?100:progress}%"></i></span></div>
@@ -4442,6 +4614,7 @@ function renderAchievements(){
   }).join('');
 
   renderMyShowcaseAchievements();
+  applyProfileAchievementFilterV743();
 }
 
 function renderMyShowcaseAchievements(){
@@ -6967,12 +7140,13 @@ $('#sportsProfileForm').onsubmit=async e=>{
   }
 };
 
+setupProfileHubV743();
 $$('.nav-item').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));$$('[data-go-tab]').forEach(b=>b.onclick=()=>activateTab(b.dataset.goTab));
 installSwipeNavigationV74({
   root:$('#mainApp'),
-  getActiveTab:()=>document.body.dataset.activeTabV101||'home',
+  getActiveTab:()=>document.body.dataset.activeTabV101||'profile',
   activateTab,
-  tabs:['home','ranking','play','training','history','profile']
+  tabs:['ranking','play','training','history','profile']
 });
 
 $$('[data-open-legal-v57]').forEach(button=>{
@@ -7080,8 +7254,9 @@ $$('[data-challenge-type]').forEach(b=>b.addEventListener('click',e=>{
 if($('#v28EventBadge'))$('#v28EventBadge').onclick=()=>{
   const action=$('#v28EventBadge').dataset.eventAction;
   if(action==='rivals'){
-    activateTab('home');
+    activateTab('profile');
     setTimeout(()=>{
+      openProfileHubViewV743('summary',{scroll:false});
       const target=$('#recommendedRivals')?.closest('.recommended-rivals-section')||$('#recommendedRivals');
       target?.scrollIntoView({behavior:'smooth',block:'center'});
     },80);
@@ -8500,8 +8675,8 @@ $('#homeTitlesShortcutV59')?.addEventListener('click',()=>{
   setTimeout(()=>openTitleSelector(),120);
 });
 $('#homeProtectionShortcutV59')?.addEventListener('click',()=>{
-  activateTab('home');
-  setTimeout(()=>$('#homeProtectionV58')?.scrollIntoView({behavior:'smooth',block:'center'}),120);
+  activateTab('profile');
+  setTimeout(()=>$('#profileProtectionV58')?.scrollIntoView({behavior:'smooth',block:'center'}),120);
 });
 $('#closeTitleSelector').onclick=()=>{$('#titleSelectorModal').classList.add('hidden');syncModalScrollLock()};
 $('#titleSelectorModal').addEventListener('click',e=>{if(e.target===$('#titleSelectorModal')){$('#titleSelectorModal').classList.add('hidden');syncModalScrollLock()}});

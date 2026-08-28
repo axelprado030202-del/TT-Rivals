@@ -32,8 +32,9 @@
   <link rel="stylesheet" href="css/v75_access_control.css?v=1.0.1-p7.4r.2">
   <link rel="stylesheet" href="css/v76_moderation_email.css?v=1.0.1-p7.4r.3">
   <link rel="stylesheet" href="css/v77_auto_moderation.css?v=1.0.1-p7.4r.4.1">
+  <link rel="stylesheet" href="css/v743_profile_hub.css?v=1.0.1-p7.4r.4.4">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.3-navigation-simplification" data-tt-boot-stage="files" data-active-tab-v101="home" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.4-profile-hub" data-tt-boot-stage="files" data-active-tab-v101="profile" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -429,7 +430,7 @@
     <div id="liveNotificationStack" class="live-notification-stack hidden" aria-live="polite"></div>
 
     <section class="content-area">
-      <section id="tab-home" class="tab-page active">
+      <section id="tab-home" class="tab-page profile-legacy-home-v743" aria-hidden="true">
         <div class="v15-home-layout">
           <section class="v15-player-hero">
             <div class="v15-player-identity">
@@ -1381,7 +1382,7 @@
         </section>
       </section>
 
-      <section id="tab-profile" class="tab-page">
+      <section id="tab-profile" class="tab-page active">
         <section class="v15-profile-hero v44-profile-hero">
           <div class="v44-profile-avatar-slot">
             <div id="profileAvatar" class="tt-avatar-v44 tt-avatar-profile-v44">
@@ -1486,7 +1487,7 @@
           </div>
         </section>
 
-        <section class="section-card">
+        <section class="section-card profile-sports-section-v743">
           <p class="muted-label">PERFIL DEPORTIVO</p>
           <div class="profile-info-list">
             <div><span>Estilo</span><strong id="profileStyle">—</strong></div>
@@ -2649,12 +2650,11 @@
 
     <nav class="bottom-nav">
       <div class="desktop-brand"><strong>TT RIVALS</strong><small>COMPETITIVE TABLE TENNIS</small></div>
-      <button class="nav-item active" data-tab="home"><span>⌂</span><small>Inicio</small></button>
       <button class="nav-item" data-tab="ranking"><span>⌁</span><small>Ranking</small></button>
       <button class="nav-item play-nav" data-tab="play"><span>＋</span><small>Jugar</small></button>
       <button class="nav-item training-nav-v53" data-tab="training"><span>⏱</span><small>Entrenar</small></button>
       <button class="nav-item" data-tab="history"><span>≡</span><small>Historial</small></button>
-      <button class="nav-item profile-nav-item" data-tab="profile">
+      <button class="nav-item profile-nav-item active" data-tab="profile">
         <span class="nav-profile-avatar" id="navProfileAvatar">
           <img id="navProfileAvatarImg" alt="Foto de perfil">
           <b id="navProfileAvatarFallback">TT</b>
@@ -2971,7 +2971,7 @@
     </div>
   </div>
 
-  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.3" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
+  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.4" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>
