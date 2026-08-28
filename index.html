@@ -33,8 +33,9 @@
   <link rel="stylesheet" href="css/v76_moderation_email.css?v=1.0.1-p7.4r.3">
   <link rel="stylesheet" href="css/v77_auto_moderation.css?v=1.0.1-p7.4r.4.1">
   <link rel="stylesheet" href="css/v743_profile_hub.css?v=1.0.1-p7.4r.4.4">
+  <link rel="stylesheet" href="css/v744_profile_card.css?v=1.0.1-p7.4r.4.5">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.4-profile-hub" data-tt-boot-stage="files" data-active-tab-v101="profile" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.5-profile-card" data-tt-boot-stage="files" data-active-tab-v101="profile" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -1405,8 +1406,10 @@
             <div id="profileEquippedTitleV58" class="profile-equipped-title-v58 hidden"></div>
             <div class="v15-profile-tags">
               <span id="profileRankTag">Bronce</span>
-              <span id="profileReputationTag">★ Sin valorar</span>
-              <span id="profileStreakTag">🔥 Racha 0</span>
+              <span id="profileLevelTagV744">Nivel 1</span>
+              <span id="profileClubTagV744">Sin club</span>
+              <span id="profileReputationTag" class="hidden">★ Sin valorar</span>
+              <span id="profileStreakTag" class="hidden">🔥 Racha 0</span>
             </div>
           </div>
         </section>
@@ -1442,10 +1445,10 @@
         </nav>
 
         <div class="profile-rating-grid">
-          <article><span>Individual</span><strong id="profileIndividualRating">1000</strong><small id="profileIndividualRank" class="rank-mini">Bronce</small></article>
-          <article><span>Dobles</span><strong id="profileDoublesRating">1000</strong><small id="profileDoublesRank" class="rank-mini">Bronce</small></article>
-          <article><span>Mejor racha</span><strong id="profileMaxStreak">0</strong><small>victorias seguidas</small></article>
-          <article><span>Reputación</span><strong id="profileReputation">—</strong><small id="profileReviewCount">0 valoraciones</small></article>
+          <article><span>Individual</span><strong id="profileIndividualRating">1000</strong><small>Elo 1vs1</small><small id="profileIndividualRank" class="rank-mini hidden">Bronce</small></article>
+          <article><span>Dobles</span><strong id="profileDoublesRating">1000</strong><small>Elo 2vs2</small><small id="profileDoublesRank" class="rank-mini hidden">Bronce</small></article>
+          <article><span>Ranking global</span><strong id="profileGlobalRankV744">—</strong><small>posición actual</small></article>
+          <article><span>Racha actual</span><strong id="profileCurrentStreakV744">0</strong><small>mejor: <b id="profileMaxStreak">0</b></small></article>
         </div>
         <section id="profileProtectionV58" class="section-card profile-protection-v58">
           <div class="protection-head-v58">
@@ -2971,7 +2974,7 @@
     </div>
   </div>
 
-  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.4" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
+  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.5" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>

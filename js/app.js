@@ -29,8 +29,8 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.4';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.4';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.5';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.5';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
@@ -1580,6 +1580,7 @@ function populate(){
   $('#profileHand').textContent=cap(profile.dominant_hand);
   $('#profileAge').textContent=age(profile.birth_date);
   $('#profileClub').textContent=profile.club_name||'N/A';
+  if($('#profileClubTagV744'))$('#profileClubTagV744').textContent=profile.club_name||'Sin club';
 
   // V43: el componente aislado administra foto + marco en ambas vistas.
   renderOwnAvatarsV44();
@@ -1592,6 +1593,7 @@ function populate(){
     $('#profileStreakTag').textContent=`🔥 Racha competitiva ${streak}`;
     $('#profileStreakTag').title='Cuenta partidos individuales oficiales con Elo. Las casuales no suman ni cortan la racha.';
   }
+  if($('#profileCurrentStreakV744'))$('#profileCurrentStreakV744').textContent=Number(socialState.streak.current||0);
   if($('#profileMaxStreak'))$('#profileMaxStreak').textContent=socialState.streak.max;
   if($('#profileReputation'))$('#profileReputation').textContent=rep.count?rep.average.toFixed(1):'—';
   if($('#profileReviewCount'))$('#profileReviewCount').textContent=`${rep.count} ${rep.count===1?'valoración':'valoraciones'}`;
@@ -1754,6 +1756,7 @@ async function retryDailyMissionsV101(){
 function renderV28Dashboard(){
   const d=v28Dashboard||{};
   if($('#v28Level'))$('#v28Level').textContent=d.level||1;
+  if($('#profileLevelTagV744'))$('#profileLevelTagV744').textContent=`Nivel ${d.level||1}`;
   if($('#v28XpText'))$('#v28XpText').textContent=`${d.level_progress||0} / ${d.level_goal||500} XP`;
   if($('#v28XpBar'))animateProgressV601($('#v28XpBar'),Math.min(100,((d.level_progress||0)/(d.level_goal||500))*100));
 
@@ -2083,6 +2086,7 @@ function openProfileHubViewV743(view='summary',{scroll=true}={}){
   if($('#profileHubTitleV743'))$('#profileHubTitleV743').textContent=meta.title;
   if($('#profileHubSubtitleV743'))$('#profileHubSubtitleV743').textContent=meta.subtitle;
   if($('#profileHubBackV743'))$('#profileHubBackV743').hidden=next==='summary';
+  if($('#profileHubEditV744'))$('#profileHubEditV744').hidden=next!=='summary';
   if(next==='achievements'){
     renderAchievements();
     applyProfileAchievementFilterV743();
@@ -2109,7 +2113,10 @@ function setupProfileHubV743(){
       <h2 id="profileHubTitleV743">Perfil</h2>
       <p id="profileHubSubtitleV743">Tu identidad y progreso competitivo.</p>
     </div>
-    <button id="profileHubBackV743" class="profile-hub-back-v743" type="button" hidden>← Volver al perfil</button>`;
+    <div class="profile-hub-actions-v744">
+      <button id="profileHubEditV744" class="profile-hub-edit-v744" type="button"><span aria-hidden="true">✎</span> Editar perfil</button>
+      <button id="profileHubBackV743" class="profile-hub-back-v743" type="button" hidden>← Volver al perfil</button>
+    </div>`;
 
   const summary=document.createElement('section');
   summary.className='profile-hub-view-v743 profile-hub-summary-v743';
@@ -2147,6 +2154,8 @@ function setupProfileHubV743(){
 
   const progressGrid=document.createElement('div');
   progressGrid.className='profile-progress-grid-v743';
+  const profileCard=document.createElement('section');
+  profileCard.className='profile-summary-card-v744';
 
   const hero=root.querySelector(':scope > .v44-profile-hero');
   const quickActions=root.querySelector(':scope > .profile-quick-actions-v56');
@@ -2173,8 +2182,9 @@ function setupProfileHubV743(){
   const objective=home?.querySelector(':scope > .v59-objective-only');
   const recommended=home?.querySelector(':scope > .recommended-rivals-section');
 
+  [hero,ratingGrid].filter(Boolean).forEach(node=>profileCard.appendChild(node));
   [progression,protection].filter(Boolean).forEach(node=>progressGrid.appendChild(node));
-  [hero,ratingGrid,progressGrid,objective,menuWrap,recommended].filter(Boolean).forEach(node=>summary.appendChild(node));
+  [profileCard,progressGrid,objective,menuWrap,recommended].filter(Boolean).forEach(node=>summary.appendChild(node));
   [reliability,quickActions].filter(Boolean).forEach(node=>stats.appendChild(node));
   [missionSection,eventSection,matchWeek].filter(Boolean).forEach(node=>missions.appendChild(node));
   [liveRivalry,realRivalries,primaryRival].filter(Boolean).forEach(node=>rivalries.appendChild(node));
@@ -2217,6 +2227,7 @@ function setupProfileHubV743(){
     button.addEventListener('click',()=>openProfileHubViewV743(button.dataset.profileHubTargetV743));
   });
   $('#profileHubBackV743')?.addEventListener('click',()=>openProfileHubViewV743('summary'));
+  $('#profileHubEditV744')?.addEventListener('click',()=>activateTab('settings'));
   achievementFilters.querySelectorAll('[data-achievement-filter-v743]').forEach(button=>{
     button.addEventListener('click',()=>applyProfileAchievementFilterV743(button.dataset.achievementFilterV743));
   });
@@ -3924,9 +3935,11 @@ async function loadHomeDashboard(){
     const ranking=await getRanking('individual','');
     const me=ranking.find(x=>x.profile?.id===session.user.id);
     $('#homeRankPosition').textContent=me?`#${me.position} Ranking global`:'Ranking global: —';
+    if($('#profileGlobalRankV744'))$('#profileGlobalRankV744').textContent=me?`#${me.position}`:'—';
     await renderCompetitivePulse(ranking);
   }catch(e){
     $('#homeRankPosition').textContent='Ranking global: —';
+    if($('#profileGlobalRankV744'))$('#profileGlobalRankV744').textContent='—';
     await renderCompetitivePulse([]);
   }
 
