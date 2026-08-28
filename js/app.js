@@ -29,15 +29,15 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.2';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.2';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.3';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.3';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
 import {getCompetitiveProgressV72} from './v72_progress.js';
 import {getHistorySeasonsV60} from './v60_history.js';
 import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,animatePostMatchV601,celebrateRewardV601} from './v60_motion.js?v=1.0.1-p7.3.1';
-import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.1-p7.4.3';
+import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.1-p7.4r.4.3';
 import {
   registerCurrentInstallationV58,
   getMyProtectionV58,
@@ -2059,7 +2059,8 @@ function activateTab(tab,{source='tap'}={}){
   document.body.dataset.activeTabV101=tab||'home';
   if(!$$('.modal').some(m=>!m.classList.contains('hidden')))lockPageScroll(false);
   $$('.tab-page').forEach(page=>page.classList.toggle('active',page.id===`tab-${tab}`));
-  $$('.nav-item').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));
+  const navigationTab=tab==='tournaments'?'play':tab;
+  $$('.nav-item').forEach(button=>button.classList.toggle('active',button.dataset.tab===navigationTab));
   if(previousTab!==tab)animateTabEnterV601(tab);
   if(window.scrollY>0)window.scrollTo({top:0,behavior:'auto'});
   recordTabSwitchV74(tab,startedAt,source);
@@ -6971,7 +6972,7 @@ installSwipeNavigationV74({
   root:$('#mainApp'),
   getActiveTab:()=>document.body.dataset.activeTabV101||'home',
   activateTab,
-  tabs:['home','ranking','tournaments','play','training','history','profile']
+  tabs:['home','ranking','play','training','history','profile']
 });
 
 $$('[data-open-legal-v57]').forEach(button=>{

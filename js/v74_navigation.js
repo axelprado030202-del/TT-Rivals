@@ -2,9 +2,9 @@
   TT Rivals P7.4.3 — navegación móvil progresiva.
   La pantalla sigue el dedo y completa o cancela el gesto con transform/opacity.
 */
-const DEFAULT_TABS=['home','ranking','tournaments','play','training','history','profile'];
+const DEFAULT_TABS=['home','ranking','play','training','history','profile'];
 const TAB_LABELS={
-  home:'Inicio',ranking:'Ranking',tournaments:'Torneos',play:'Jugar',
+  home:'Inicio',ranking:'Ranking',play:'Jugar',
   training:'Entrenar',history:'Historial',profile:'Perfil'
 };
 const IGNORE_SELECTOR=[

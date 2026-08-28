@@ -32,12 +32,11 @@
   body[data-theme="light"] .bottom-nav{background:rgba(250,252,255,.985)!important}
   .bottom-nav [data-tab="home"]{order:1}
   .bottom-nav [data-tab="ranking"]{order:2}
-  .bottom-nav [data-tab="tournaments"]{order:3}
-  .bottom-nav [data-tab="play"]{order:4}
-  .bottom-nav [data-tab="training"]{order:5}
-  .bottom-nav [data-tab="history"]{order:6}
-  .bottom-nav [data-tab="profile"]{order:7}
-  .bottom-nav [data-tab="admin"]{order:8}
+  .bottom-nav [data-tab="play"]{order:3}
+  .bottom-nav [data-tab="training"]{order:4}
+  .bottom-nav [data-tab="history"]{order:5}
+  .bottom-nav [data-tab="profile"]{order:6}
+  .bottom-nav [data-tab="admin"]{order:7}
   .bottom-nav .play-nav{
     z-index:6!important;
     min-height:70px!important;

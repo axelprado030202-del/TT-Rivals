@@ -407,7 +407,7 @@ body[data-theme="light"] .modal{background:rgba(31,50,77,.35)!important}body[dat
   .bottom-nav{
     position:fixed!important;left:8px!important;right:8px!important;top:auto!important;bottom:max(7px,env(safe-area-inset-bottom))!important;
     width:auto!important;max-width:none!important;height:auto!important;min-height:76px!important;transform:none!important;margin:0!important;
-    padding:7px 7px!important;display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr))!important;gap:2px!important;
+    padding:7px 7px!important;display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:2px!important;
     border:1px solid rgba(136,165,208,.16)!important;border-radius:22px!important;background:rgba(7,13,24,.94)!important;
     box-shadow:0 22px 65px rgba(0,0,0,.44),inset 0 1px 0 rgba(255,255,255,.05)!important;
     backdrop-filter:blur(20px) saturate(130%)!important;-webkit-backdrop-filter:blur(20px) saturate(130%)!important;
@@ -537,11 +537,11 @@ body[data-theme="light"] .metric-info-head-v101 h2,body[data-theme="light"] .met
 /* ---------- Home rating typography: the card already tells you it is rating ---------- */
 #tab-home .v59-rating-card>strong{letter-spacing:-.055em!important}
 
-/* ---------- Mobile navigation: exactly 7 primary destinations, JUGAR dead-center ---------- */
+/* ---------- Mobile navigation: 6 primary destinations; Torneos lives inside Jugar ---------- */
 @media(max-width:899px){
   .bottom-nav .tt-admin-nav-item-v43,.bottom-nav .desktop-settings-nav{display:none!important}
-  .bottom-nav{grid-template-columns:repeat(7,minmax(0,1fr))!important;padding:7px 5px!important}
-  .bottom-nav [data-tab="home"]{order:1}.bottom-nav [data-tab="ranking"]{order:2}.bottom-nav [data-tab="tournaments"]{order:3}.bottom-nav [data-tab="play"]{order:4}.bottom-nav [data-tab="training"]{order:5}.bottom-nav [data-tab="history"]{order:6}.bottom-nav [data-tab="profile"]{order:7}
+  .bottom-nav{grid-template-columns:repeat(6,minmax(0,1fr))!important;padding:7px 5px!important}
+  .bottom-nav [data-tab="home"]{order:1}.bottom-nav [data-tab="ranking"]{order:2}.bottom-nav [data-tab="play"]{order:3}.bottom-nav [data-tab="training"]{order:4}.bottom-nav [data-tab="history"]{order:5}.bottom-nav [data-tab="profile"]{order:6}
   .bottom-nav .play-nav{margin:-17px -1px -3px!important;min-height:76px!important;border-radius:20px!important;transform:scale(1.10)!important;box-shadow:0 17px 42px rgba(16,185,103,.43),0 0 0 4px rgba(34,211,107,.075),inset 0 1px 0 rgba(255,255,255,.30)!important}
   .bottom-nav .play-nav::after{content:"";position:absolute;inset:5px;border-radius:15px;border:1px solid rgba(255,255,255,.11);pointer-events:none}
   .bottom-nav .play-nav>span{font-size:1.62rem!important}.bottom-nav .play-nav small{font-size:.61rem!important}
