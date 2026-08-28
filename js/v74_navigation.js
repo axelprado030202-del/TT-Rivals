@@ -15,7 +15,7 @@ const IGNORE_SELECTOR=[
 
 export function installSwipeNavigationV74({
   root=document.querySelector('.main-app'),
-  getActiveTab=()=>document.body.dataset.activeTabV101||'profile',
+  getActiveTab=()=>document.body.dataset.activeTabV101||'play',
   activateTab,
   tabs=DEFAULT_TABS,
   threshold=64

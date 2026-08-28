@@ -29,15 +29,15 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.5';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.5';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.6';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.6';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
 import {getCompetitiveProgressV72} from './v72_progress.js';
 import {getHistorySeasonsV60} from './v60_history.js';
 import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,animatePostMatchV601,celebrateRewardV601} from './v60_motion.js?v=1.0.1-p7.3.1';
-import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.1-p7.4r.4.4';
+import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.1-p7.4r.4.6';
 import {
   registerCurrentInstallationV58,
   getMyProtectionV58,
@@ -1092,7 +1092,7 @@ function closeBootScreenV572(){
 }
 
 function showView(id){authShell.classList.remove('hidden');mainApp.classList.add('hidden');views.forEach(v=>v.classList.toggle('active',v.id===id));window.scrollTo(0,0);if(id==='sportsProfileView'){loadAvailableClubsV49().catch(err=>console.warn('Clubes V49:',err));ensureV100Module().then(mod=>mod.initOnboardingV100?.()).catch(err=>console.warn('Onboarding 1.0:',err))}}
-function showMain(){authShell.classList.add('hidden');mainApp.classList.remove('hidden');activateTab('profile')}
+function showMain(){authShell.classList.add('hidden');mainApp.classList.remove('hidden');activateTab('play')}
 function setStatus(el,msg,type=''){el.textContent=msg;el.classList.remove('ok','error');if(type)el.classList.add(type)}
 function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 function formatDurationV59(seconds,{clock=false}={}){
@@ -1463,7 +1463,7 @@ async function loadV35Flags(){
     setupAdminFrameLabV44();
   }else{
     document.body.classList.remove('test-admin-v35');
-    if($('#tab-admin')?.classList.contains('active'))activateTab('profile');
+    if($('#tab-admin')?.classList.contains('active'))activateTab('play');
   }
 }
 async function enableNearbyV35(){
@@ -1572,6 +1572,10 @@ function populate(){
   $('#profileUsername').textContent=`@${profile.username}`;
   $('#profileIndividualRating').textContent=ind.rating;
   $('#profileDoublesRating').textContent=dob.rating;
+  if($('#playIndividualEloV746'))$('#playIndividualEloV746').textContent=`${ind.rating} Elo`;
+  if($('#playDoublesEloV746'))$('#playDoublesEloV746').textContent=`${dob.rating} Elo`;
+  if($('#playIndividualRankV746'))$('#playIndividualRankV746').textContent=currentRank;
+  if($('#playDoublesRankV746'))$('#playDoublesRankV746').textContent=doublesRank;
   $('#profileIndividualRank').textContent=currentRank;
   $('#profileDoublesRank').textContent=doublesRank;
   $('#profileIndividualRank').className=`rank-mini ${rankCss(currentRank)}`;
@@ -2091,13 +2095,19 @@ function openProfileHubViewV743(view='summary',{scroll=true}={}){
     renderAchievements();
     applyProfileAchievementFilterV743();
   }
+  if(next==='stats'){
+    renderStatsModeV56();
+    requestAnimationFrame(()=>runTabLoadV74('profile-stats',()=>Promise.all([
+      loadHistory(),loadStatsModeV56(false),loadDurationStatsV59()
+    ]),{ttl:30000}));
+  }
   if(scroll){
     root.scrollIntoView({block:'start',behavior:'auto'});
   }
 }
 
 function setupProfileHubV743(){
-  const root=$('#tab-profile'),home=$('#tab-home');
+  const root=$('#tab-profile'),home=$('#tab-home'),statsPage=$('#tab-stats');
   if(!root||root.dataset.profileHubReadyV743)return;
 
   root.classList.add('profile-hub-v743');
@@ -2181,11 +2191,18 @@ function setupProfileHubV743(){
   const seasonStrip=$('#homeSeasonStrip');
   const objective=home?.querySelector(':scope > .v59-objective-only');
   const recommended=home?.querySelector(':scope > .recommended-rivals-section');
+  const statsHeading=statsPage?.querySelector(':scope > .stats-heading-v56');
+  const statsDescription=statsHeading?.querySelector('#statsModeDescriptionV56');
+  const statsSelector=statsHeading?.querySelector('.stats-mode-select-v56');
+  const statsToolbar=document.createElement('div');
+  statsToolbar.className='profile-stats-toolbar-v746';
+  [statsDescription,statsSelector].filter(Boolean).forEach(node=>statsToolbar.appendChild(node));
+  const statsPanels=statsPage?[...statsPage.children].filter(node=>node!==statsHeading):[];
 
   [hero,ratingGrid].filter(Boolean).forEach(node=>profileCard.appendChild(node));
   [progression,protection].filter(Boolean).forEach(node=>progressGrid.appendChild(node));
   [profileCard,progressGrid,objective,menuWrap,recommended].filter(Boolean).forEach(node=>summary.appendChild(node));
-  [reliability,quickActions].filter(Boolean).forEach(node=>stats.appendChild(node));
+  [reliability,statsToolbar,...statsPanels].filter(Boolean).forEach(node=>stats.appendChild(node));
   [missionSection,eventSection,matchWeek].filter(Boolean).forEach(node=>missions.appendChild(node));
   [liveRivalry,realRivalries,primaryRival].filter(Boolean).forEach(node=>rivalries.appendChild(node));
   [seasonStrip,seasonHistory,palmares,trophyRoom].filter(Boolean).forEach(node=>seasons.appendChild(node));
@@ -2204,6 +2221,8 @@ function setupProfileHubV743(){
   if(achievementSection)achievements.appendChild(achievementSection);
 
   if(logout)logout.hidden=true;
+  if(quickActions){quickActions.classList.add('hidden');quickActions.setAttribute('aria-hidden','true')}
+  if(statsPage){statsPage.classList.add('profile-legacy-stats-v746');statsPage.setAttribute('aria-hidden','true')}
   root.prepend(titlebar);
   root.append(summary,stats,missions,achievements,rivalries,seasons,data);
 
@@ -2236,11 +2255,13 @@ function setupProfileHubV743(){
 
 function activateTab(tab,{source='tap'}={}){
   const startedAt=performance.now();
-  if(tab==='home')tab='profile';
-  if(tab==='admin'&&!canUseAdminUIV101())tab='profile';
+  const requestedProfileView=tab==='stats'?'stats':null;
+  if(tab==='home')tab='play';
+  if(tab==='stats')tab='profile';
+  if(tab==='admin'&&!canUseAdminUIV101())tab='play';
 
-  const previousTab=document.body.dataset.activeTabV101||'profile';
-  document.body.dataset.activeTabV101=tab||'profile';
+  const previousTab=document.body.dataset.activeTabV101||'play';
+  document.body.dataset.activeTabV101=tab||'play';
   if(!$$('.modal').some(m=>!m.classList.contains('hidden')))lockPageScroll(false);
   $$('.tab-page').forEach(page=>page.classList.toggle('active',page.id===`tab-${tab}`));
   const navigationTab=tab==='tournaments'?'play':tab;
@@ -2252,7 +2273,7 @@ function activateTab(tab,{source='tap'}={}){
   // Render local inmediato. Las consultas se deduplican y respetan TTL.
   if(tab==='play')showPlayModeV62(null);
   if(tab==='profile'){
-    openProfileHubViewV743('summary',{scroll:false});
+    openProfileHubViewV743(requestedProfileView||'summary',{scroll:false});
     renderAchievements();renderPrimaryRival();renderProfileSeasonCards();
     renderEquippedTitle();renderIdentityShowcase();
   }
@@ -3602,7 +3623,7 @@ async function handleConfirmedMatchV55(matchRow){
 }
 
 async function refreshVisibleRatingViewsV74(){
-  const active=document.body.dataset.activeTabV101||'profile';
+  const active=document.body.dataset.activeTabV101||'play';
   if(active==='home')await loadHomeDashboard();
   else if(active==='ranking')await loadRanking();
   else if(active==='history')await loadHistoryPage();
@@ -3627,7 +3648,7 @@ async function refreshReviewViewsV55(){
   if(!session?.user)return;
   await loadSocialState();
   invalidateTabLoadsV74('home','history','profile');
-  const active=document.body.dataset.activeTabV101||'profile';
+  const active=document.body.dataset.activeTabV101||'play';
   if(active==='home')await loadHomeDashboard();
   if(active==='history')await loadHistoryPage();
   if(active==='profile'){
@@ -7157,7 +7178,7 @@ setupProfileHubV743();
 $$('.nav-item').forEach(b=>b.onclick=()=>activateTab(b.dataset.tab));$$('[data-go-tab]').forEach(b=>b.onclick=()=>activateTab(b.dataset.goTab));
 installSwipeNavigationV74({
   root:$('#mainApp'),
-  getActiveTab:()=>document.body.dataset.activeTabV101||'profile',
+  getActiveTab:()=>document.body.dataset.activeTabV101||'play',
   activateTab,
   tabs:['ranking','play','training','history','profile']
 });

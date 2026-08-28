@@ -1,0 +1,67 @@
+/* P7.4R.4.6 — Estadísticas dentro de Perfil y Jugar como punto de entrada. */
+
+.profile-legacy-stats-v746{display:none!important}
+#tab-profile .profile-quick-actions-v56.hidden{display:none!important}
+
+.profile-hub-stats-v743{gap:14px}
+.profile-hub-stats-v743>.reliability-card-v34{order:1;margin:0}
+.profile-stats-toolbar-v746{
+  order:2;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:12px 14px;border:1px solid rgba(96,165,250,.13);border-radius:16px;
+  background:linear-gradient(110deg,rgba(15,29,49,.76),rgba(10,20,38,.58))
+}
+.profile-stats-toolbar-v746>p{max-width:690px;margin:0;color:#879ab2;font-size:.66rem;line-height:1.5}
+.profile-stats-toolbar-v746 .stats-mode-select-v56{flex:0 0 auto;margin:0}
+.profile-hub-stats-v743>.stats-grid{order:3;margin:0}
+.profile-hub-stats-v743>.section-card{margin:0}
+.profile-hub-stats-v743>.comparative-stats-section{order:4}
+.profile-hub-stats-v743>.v72-progress-card{order:5}
+.profile-hub-stats-v743>.personal-records-section{order:6}
+.profile-hub-stats-v743>.played-matches-section{order:7}
+.profile-hub-stats-v743>.v59-duration-stats{order:8}
+.profile-hub-stats-v743>.v28-format-section{order:9}
+.profile-hub-stats-v743>.v28-strength-section{order:10}
+.profile-hub-stats-v743>.v28-coach-panel{order:11}
+.profile-hub-stats-v743>.rating-evolution-card{order:12}
+
+.play-mode-gate-v62>button>div{min-width:0}
+.play-mode-rating-v746{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;font-style:normal
+}
+.play-mode-rating-v746>b,.play-mode-rating-v746>i{
+  display:inline-flex;align-items:center;min-height:22px;padding:4px 7px;
+  border:1px solid rgba(96,165,250,.18);border-radius:999px;
+  background:rgba(37,99,235,.10);color:#bcd7f8;font-size:.44rem;font-style:normal;font-weight:900;line-height:1
+}
+.play-mode-rating-v746>i{
+  border-color:rgba(251,146,60,.17);background:rgba(180,83,9,.12);color:#f6c89f
+}
+#tab-play .play-mode-gate-v62>button{min-height:108px}
+
+body[data-theme="light"] .profile-stats-toolbar-v746{
+  border-color:rgba(37,99,235,.10);background:linear-gradient(110deg,#f7faff,#eef4ff)
+}
+body[data-theme="light"] .profile-stats-toolbar-v746>p{color:#587095}
+body[data-theme="light"] .profile-hub-stats-v743 .section-card,
+body[data-theme="light"] .profile-hub-stats-v743 .stat-card,
+body[data-theme="light"] .profile-hub-stats-v743 .rating-evolution-card{
+  border-color:rgba(37,99,235,.10);background:#f8fbff;color:#102047
+}
+body[data-theme="light"] .profile-hub-stats-v743 .section-card h3,
+body[data-theme="light"] .profile-hub-stats-v743 .section-card strong{color:#102047}
+body[data-theme="light"] .play-mode-rating-v746>b{background:#edf5ff;color:#245998;border-color:#cfe0f7}
+body[data-theme="light"] .play-mode-rating-v746>i{background:#fff7e8;color:#a95b05;border-color:#f2ddbc}
+
+@media(max-width:760px){
+  .profile-stats-toolbar-v746{align-items:flex-start;flex-direction:column;padding:11px 12px}
+  .profile-stats-toolbar-v746 .stats-mode-select-v56{width:100%}
+  .profile-stats-toolbar-v746 .stats-mode-select-v56 select{width:100%}
+  #tab-play .play-mode-gate-v62>button{min-height:98px}
+  .play-mode-rating-v746{gap:4px;margin-top:7px}
+  .play-mode-rating-v746>b,.play-mode-rating-v746>i{padding:4px 6px;font-size:.50rem}
+}
+
+@media(max-width:390px){
+  #tab-play .play-mode-gate-v62>button{min-height:102px;align-content:center}
+  .play-mode-rating-v746{display:grid;grid-template-columns:max-content;gap:4px}
+}
