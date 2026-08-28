@@ -29,15 +29,15 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.9';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.9';
-import {playPostMatchCinematicV748} from './v748_postmatch_cinematic.js?v=1.0.1-p7.4r.4.9';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.10';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.10';
+import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.1-p7.4r.4.10';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
 import {getCompetitiveProgressV72} from './v72_progress.js';
 import {getHistorySeasonsV60} from './v60_history.js';
-import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,animatePostMatchV601,celebrateRewardV601} from './v60_motion.js?v=1.0.1-p7.3.1';
+import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,celebrateRewardV601} from './v60_motion.js?v=1.0.1-p7.3.1';
 import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.1-p7.4r.4.6';
 import {
   registerCurrentInstallationV58,
@@ -242,6 +242,7 @@ let passwordRecoveryActiveV53=false,recoveryProfileV53=null;
 const stopTrainingTimerV53=setupTrainingTimerV53();
 
 let liveMatchStatusSnapshot=new Map(),liveMatchStatusPrimed=false,postMatchShownIds=new Set(),pendingPostMatchReviewId=null;
+const dismissedLivePopupsV750=new Set();
 let pendingRematchV744=null,rematchOutcomeTimerV744=null;
 let incomingRematchV745=null;
 let v60State={challenges:[],matches:[],matchSets:new Map(),recommended:[],activityItems:[],activityFilter:'attention',historyModality:'all',historySeason:'all',historyDateFrom:'',historyDateTo:'',historySort:'recent',recentPresence:new Map(),historySeasons:[],adminCategory:'disputes',lastDiagnostics:null,metricsDays:7,lastProductMetrics:null};
@@ -2619,6 +2620,7 @@ function clearPendingRematchV744(){
 
 function closePostMatchForRematchV744(){
   $('#postMatchModal')?.classList.add('hidden');
+  closePostMatchCinematicV750();
   pendingPostMatchReviewId=null;
   clearPendingRematchV744();
   syncModalScrollLock();
@@ -2673,8 +2675,7 @@ function closeIncomingRematchV745(){
 }
 
 function postMatchIsOpenV745(){
-  const modal=$('#postMatchModal');
-  return !!modal&&!modal.classList.contains('hidden')&&!!pendingPostMatchReviewId;
+  return isPostMatchCinematicOpenV750()&&!!pendingPostMatchReviewId;
 }
 
 function showIncomingRematchV745(challenge){
@@ -3549,6 +3550,67 @@ async function loadHistory(){
 }
 
 
+function installLiveNotificationSwipeV750(stack){
+  stack?.querySelectorAll('.live-action-notification').forEach(node=>{
+    if(node.dataset.swipeReadyV750==='true')return;
+    node.dataset.swipeReadyV750='true';
+    let pointerId=null,startX=0,startY=0,lastX=0,dragging=false,suppressClickUntil=0;
+
+    const reset=()=>{
+      node.classList.remove('is-swiping-v750');
+      node.style.removeProperty('transform');
+      node.style.removeProperty('opacity');
+      pointerId=null;dragging=false;lastX=0;
+    };
+    const dismiss=()=>{
+      const key=node.dataset.swipeKeyV750;
+      if(key)dismissedLivePopupsV750.add(key);
+      node.classList.remove('is-swiping-v750');
+      node.classList.add('is-dismissed-v750');
+      suppressClickUntil=Date.now()+500;
+      const notificationId=Number(node.dataset.notificationV58||0);
+      if(notificationId){
+        const item=(v58State.notifications||[]).find(entry=>Number(entry.id)===notificationId);
+        if(item)item.read_at=new Date().toISOString();
+        markNotificationReadV58(notificationId).catch(()=>{});
+      }
+      setTimeout(()=>{
+        node.remove();
+        if(!stack.querySelector('.live-action-notification'))stack.classList.add('hidden');
+        loadLiveNotifications().catch(()=>{});
+      },230);
+    };
+
+    node.addEventListener('pointerdown',event=>{
+      if(event.button!==undefined&&event.button!==0)return;
+      const nested=event.target.closest('button,a,input,select,textarea');
+      if(nested&&nested!==node)return;
+      pointerId=event.pointerId;startX=event.clientX;startY=event.clientY;lastX=0;dragging=false;
+      try{node.setPointerCapture(pointerId)}catch{}
+    });
+    node.addEventListener('pointermove',event=>{
+      if(pointerId!==event.pointerId)return;
+      const dx=Math.max(0,event.clientX-startX),dy=Math.abs(event.clientY-startY);
+      if(!dragging&&dx<8)return;
+      if(!dragging&&dy>dx){reset();return}
+      dragging=true;lastX=dx;node.classList.add('is-swiping-v750');
+      node.style.transform=`translate3d(${dx}px,0,0)`;
+      node.style.opacity=String(Math.max(.18,1-dx/Math.max(180,node.offsetWidth*.8)));
+    });
+    const finish=event=>{
+      if(pointerId!==event.pointerId)return;
+      const threshold=Math.min(140,Math.max(72,node.offsetWidth*.24));
+      if(dragging){suppressClickUntil=Date.now()+350;if(lastX>=threshold)return dismiss()}
+      reset();
+    };
+    node.addEventListener('pointerup',finish);
+    node.addEventListener('pointercancel',reset);
+    node.addEventListener('click',event=>{
+      if(Date.now()<suppressClickUntil){event.preventDefault();event.stopImmediatePropagation()}
+    },true);
+  });
+}
+
 async function loadLiveNotifications(){
   if(!session?.user||!$('#liveNotificationStack'))return;
   try{
@@ -3579,19 +3641,23 @@ async function loadLiveNotifications(){
     for(const c of pending.slice(0,2)){
       const other=c.challenger;
       const fmt=c.match_format==='bo5'?'Bo5':c.match_format==='bo3'?'Bo3':'1 set';
-      items.push(`<article class="live-action-notification"><div class="live-notification-icon">!</div><div class="live-notification-copy"><small>NUEVO DESAFÍO · ${matchTypeLabel(c.match_type)}</small><strong>${esc(other?.first_name||'Jugador')} te desafió</strong><span>${fmt}${c.match_type==='casual'?' · No modifica el RP':' · Partido con ranking'}</span></div><div class="live-notification-actions"><button class="live-accept" data-response="accepted" data-id="${c.id}" type="button">Aceptar</button><button class="live-decline" data-response="rejected" data-id="${c.id}" type="button">Declinar</button></div></article>`);
+      const key=`challenge:${c.id}`;
+      if(!dismissedLivePopupsV750.has(key))items.push(`<article class="live-action-notification" data-swipe-key-v750="${key}"><div class="live-notification-icon">!</div><div class="live-notification-copy"><small>NUEVO DESAFÍO · ${matchTypeLabel(c.match_type)}</small><strong>${esc(other?.first_name||'Jugador')} te desafió</strong><span>${fmt}${c.match_type==='casual'?' · No modifica el RP':' · Partido con ranking'}</span></div><div class="live-notification-actions"><button class="live-accept" data-response="accepted" data-id="${c.id}" type="button">Aceptar</button><button class="live-decline" data-response="rejected" data-id="${c.id}" type="button">Declinar</button></div></article>`);
     }
     for(const m of confirmations.slice(0,2)){
       const other=m.player1_id===session.user.id?m.player2:m.player1;
-      items.push(`<article class="live-action-notification"><div class="live-notification-icon">✓</div><div class="live-notification-copy"><small>RESULTADO PENDIENTE · ${matchTypeLabel(m.match_type)}</small><strong>${esc(other?.first_name||'Tu rival')} cargó el resultado</strong><span>Revisalo y confirmá o disputá el partido.</span></div><div class="live-notification-actions"><button class="live-accept" data-confirm-match="${m.id}" type="button">Confirmar</button><button class="live-decline" data-dispute-match="${m.id}" type="button">Disputar</button></div></article>`);
+      const key=`result:${m.id}`;
+      if(!dismissedLivePopupsV750.has(key))items.push(`<article class="live-action-notification" data-swipe-key-v750="${key}"><div class="live-notification-icon">✓</div><div class="live-notification-copy"><small>RESULTADO PENDIENTE · ${matchTypeLabel(m.match_type)}</small><strong>${esc(other?.first_name||'Tu rival')} cargó el resultado</strong><span>Revisalo y confirmá o disputá el partido.</span></div><div class="live-notification-actions"><button class="live-accept" data-confirm-match="${m.id}" type="button">Confirmar</button><button class="live-decline" data-dispute-match="${m.id}" type="button">Disputar</button></div></article>`);
     }
     for(const n of unread.slice(0,3)){
-      items.push(`<button class="live-action-notification live-persistent-v58" data-notification-v58="${n.id}" type="button"><div class="live-notification-icon">${notificationIconV58(n.type)}</div><div class="live-notification-copy"><small>${esc(String(n.type||'ACTIVIDAD').replaceAll('_',' ').toUpperCase())}</small><strong>${esc(n.title)}</strong><span>${esc(n.body||'')}</span></div><b>›</b></button>`);
+      const key=`notification:${n.id}`;
+      if(!dismissedLivePopupsV750.has(key))items.push(`<button class="live-action-notification live-persistent-v58" data-notification-v58="${n.id}" data-swipe-key-v750="${key}" type="button"><div class="live-notification-icon">${notificationIconV58(n.type)}</div><div class="live-notification-copy"><small>${esc(String(n.type||'ACTIVIDAD').replaceAll('_',' ').toUpperCase())}</small><strong>${esc(n.title)}</strong><span>${esc(n.body||'')}</span></div><b>›</b></button>`);
     }
 
     const stack=$('#liveNotificationStack');
     stack.innerHTML=items.join('');
     stack.classList.toggle('hidden',items.length===0);
+    installLiveNotificationSwipeV750(stack);
     const count=pending.length+confirmations.length+unread.length;
     $('#notificationBadge').textContent=count>99?'99+':String(count);
     $('#notificationBadge').classList.toggle('hidden',count===0);
@@ -3678,6 +3744,9 @@ async function handleConfirmedMatchV55(matchRow){
     const current=(socialState.matches||[]).filter(x=>Number(x.id)!==id);
     socialState.matches=[enrichedMatch,...current];
     const won=matchRow?.winner_id===session.user.id;
+
+    // P7.4R.4.10: la primera pintura no espera ratings, rangos ni refrescos.
+    beginPostMatchCinematicV750(enrichedMatch);
 
     invalidateMatchesCacheV60(session.user.id);
     invalidateChallengesCacheV60(session.user.id);
@@ -4950,6 +5019,10 @@ async function openMatchDetail(matchId){
 async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Rival'}){
   if(!matchId)return;
 
+  // Abre la capa visual en este mismo ciclo; toda la hidratación continúa detrás.
+  const earlyMatch=(socialState.matches||[]).find(item=>Number(item.id)===Number(matchId))||{id:Number(matchId)};
+  beginPostMatchCinematicV750(earlyMatch);
+
   if(!(socialState.matches||[]).some(x=>Number(x.id)===Number(matchId))){
     try{socialState.matches=await getMyMatches(session.user.id)}catch{}
   }
@@ -5009,7 +5082,9 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
   const eloLabel=isCasual?'Sin cambio de RP':summary?.protection_used?'0 RP':`${delta>=0?'+':''}${delta} RP`;
   const resultClass=isCasual?'casual':won?'victory':'defeat';
 
-  $('#postMatchContent').innerHTML=`
+  // Se conserva como referencia de compatibilidad, pero ya no se inserta: evita
+  // parseo, layout y pintura extra mientras el canvas está animándose.
+  const legacyPostMatchMarkup=`
     <div class="v71-result-shell ${resultClass}">
       <header class="v71-result-hero">
         <div class="v71-result-kicker"><span></span>${resultLabel}<span></span></div>
@@ -5061,15 +5136,25 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
         </div>
       </main>
     </div>`;
+  void legacyPostMatchMarkup;
 
-  try{
-    await playPostMatchCinematicV748(m);
-  }catch(error){
-    console.warn('P7.4R.4.8 cinemática post-partido:',error);
-  }
-
-  $('#postMatchModal').classList.remove('hidden');
-  animatePostMatchV601($('#postMatchModal'),{won,positive:delta>0,protectedElo:!!summary?.protection_used,hasRewards:!!highlightHtml});
+  // El modal anterior se conserva sólo como compatibilidad estructural, sin duplicar controles.
+  $('#postMatchContent').replaceChildren();
+  completePostMatchCinematicV750(m||{id:Number(matchId)}, {
+    matchId:Number(matchId),
+    won:m?.winner_id?String(m.winner_id)===String(session.user.id):!!won,
+    isCasual,
+    delta,
+    previous,
+    current,
+    rank,
+    position:pos||null,
+    nextRank,
+    toNext,
+    formatLabel,
+    tiers:rankTiers.map(item=>({name:item.name,min_rating:Number(item.min_rating||0)}))
+  });
+  $('#postMatchModal').classList.add('hidden');
   syncModalScrollLock();
   loadChallenges().catch(err=>console.warn('P7.4.5 revancha entrante:',err));
   const telemetryOpponentId=m?(m.player1_id===session.user.id?m.player2_id:m.player1_id):null;
@@ -7930,6 +8015,10 @@ document.addEventListener('click',async e=>{
         await loadMyIntegrityStatusV78({show:true});
         return;
       }
+      const knownMatch=(socialState.matches||[]).find(item=>Number(item.id)===matchId)
+        ||cachedMatches?.find?.(item=>Number(item.id)===matchId)
+        ||{id:matchId};
+      beginPostMatchCinematicV750(knownMatch);
       postMatchShownIds.add(matchId);
       pendingPostMatchReviewId=matchId;
       await refreshCore();
@@ -8969,11 +9058,13 @@ $('#teamTiebreakFormV32').onsubmit=async e=>{
 };
 
 $('#v28CloseSeasonRecap').onclick=()=>{$('#v28SeasonRecapModal').classList.add('hidden');syncModalScrollLock()};
-$('#closePostMatch').onclick=()=>{closeIncomingRematchV745();$('#postMatchModal').classList.add('hidden');pendingPostMatchReviewId=null;clearPendingRematchV744();syncModalScrollLock()};
+$('#closePostMatch').onclick=()=>{closeIncomingRematchV745();$('#postMatchModal').classList.add('hidden');closePostMatchCinematicV750();pendingPostMatchReviewId=null;clearPendingRematchV744();syncModalScrollLock()};
 document.addEventListener('click',e=>{
   if(e.target.closest('[data-close-post-match]')){
     closeIncomingRematchV745();
-    $('#postMatchModal').classList.add('hidden');syncModalScrollLock();
+    $('#postMatchModal').classList.add('hidden');
+    closePostMatchCinematicV750();
+    syncModalScrollLock();
     clearPendingRematchV744();
     const reviewId=pendingPostMatchReviewId;
     pendingPostMatchReviewId=null;

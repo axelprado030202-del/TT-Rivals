@@ -36,9 +36,9 @@
   <link rel="stylesheet" href="css/v744_profile_card.css?v=1.0.1-p7.4r.4.5">
   <link rel="stylesheet" href="css/v746_stats_play.css?v=1.0.1-p7.4r.4.6">
   <link rel="stylesheet" href="css/v747_match_flow.css?v=1.0.1-p7.4r.4.7">
-  <link rel="stylesheet" href="css/v748_postmatch_cinematic.css?v=1.0.1-p7.4r.4.9">
+  <link rel="stylesheet" href="css/v748_postmatch_cinematic.css?v=1.0.1-p7.4r.4.10">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.9-postmatch-cinematic" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.10-postmatch-finale" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -3031,7 +3031,7 @@
     </div>
   </div>
 
-  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.9" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
+  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.10" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p7.4r.4.7"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>
@@ -3173,6 +3173,23 @@
           <strong id="postMatchPlayer2CountV748">0</strong>
           <div id="postMatchPlayer2BallsV748" class="postmatch-balls-v748" aria-label="Sets ganados"></div>
         </article>
+      </div>
+      <section id="postMatchRpV750" class="postmatch-rp-v750" aria-live="polite">
+        <div class="postmatch-rp-head-v750">
+          <div><small>CAMBIO DE RP</small><strong id="postMatchRpDeltaV750">ACTUALIZANDO RP…</strong></div>
+          <div id="postMatchRpJourneyV750" class="postmatch-rp-journey-v750"></div>
+        </div>
+        <div class="postmatch-rank-head-v750"><strong id="postMatchRpRankV750">Rango</strong><span id="postMatchRpNextV750">Calculando progreso…</span></div>
+        <div class="postmatch-rank-track-v750" role="progressbar" aria-label="Progreso de Rivals Points" aria-valuemin="0" aria-valuemax="100"><i id="postMatchRpBarV750"></i></div>
+      </section>
+      <div class="postmatch-details-wrap-v750">
+        <button id="postMatchDetailsToggleV750" class="postmatch-details-toggle-v750" type="button" aria-expanded="false" aria-controls="postMatchDetailsPanelV750">Detalles</button>
+        <div id="postMatchDetailsPanelV750" class="postmatch-details-panel-v750 hidden"></div>
+      </div>
+      <div id="postMatchActionsV750" class="postmatch-actions-v750">
+        <button id="postMatchRematchV750" class="btn btn-start postmatch-rematch-v750" type="button">↻ REVANCHA</button>
+        <button class="btn postmatch-continue-v750" type="button" data-close-post-match>CONTINUAR</button>
+        <p id="postMatchRematchStatusV750" class="v73-rematch-status" aria-live="polite"></p>
       </div>
     </section>
   </div>
