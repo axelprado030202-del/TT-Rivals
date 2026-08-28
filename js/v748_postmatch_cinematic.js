@@ -18,6 +18,27 @@ const playerName=player=>{
   return full||player?.username||'Jugador';
 };
 
+async function loadPlayers(match){
+  const ids=[match?.player1_id,match?.player2_id].filter(Boolean);
+  if(!ids.length||(playerName(match?.player1)!=='Jugador'&&playerName(match?.player2)!=='Jugador'))return match;
+  try{
+    const {data,error}=await supabase
+      .from('visible_profiles_v76')
+      .select('id,username,first_name,last_name,profile_photo_url')
+      .in('id',ids);
+    if(error)throw error;
+    const profiles=new Map((data||[]).map(profile=>[profile.id,profile]));
+    return {
+      ...match,
+      player1:{...(profiles.get(match.player1_id)||{}),...(match.player1||{})},
+      player2:{...(profiles.get(match.player2_id)||{}),...(match.player2||{})}
+    };
+  }catch(error){
+    console.warn('P7.4R.4.9: no se pudieron completar los nombres de los jugadores.',error);
+    return match;
+  }
+}
+
 function fallbackSets(match){
   const rows=[];
   const p1=Math.max(0,Number(match?.player1_sets||0));
@@ -161,13 +182,17 @@ function drawBurst(context,particles,width,height,elapsed){
 
 function setPlayer(root,side,name,isWinner){
   const card=root.querySelector(`#postMatchPlayer${side}V748`);
+  const resultNode=root.querySelector(`#postMatchPlayer${side}ResultV748`);
   const nameNode=root.querySelector(`#postMatchPlayer${side}NameV748`);
   const countNode=root.querySelector(`#postMatchPlayer${side}CountV748`);
   const ballsNode=root.querySelector(`#postMatchPlayer${side}BallsV748`);
+  if(resultNode)resultNode.textContent=isWinner?'VICTORIA':'DERROTA';
   if(nameNode)nameNode.textContent=name;
   if(countNode)countNode.textContent='0';
   if(ballsNode)ballsNode.replaceChildren();
   card?.classList.toggle('is-winner',isWinner);
+  card?.classList.toggle('is-loser',!isWinner);
+  card?.setAttribute('aria-label',`${name}: ${isWinner?'victoria':'derrota'}`);
 }
 
 function addBall(root,side,isGold){
@@ -190,7 +215,7 @@ function runSequence(match,sets){
   const p1Sets=Math.max(0,Number(match.player1_sets||0));
   const p2Sets=Math.max(0,Number(match.player2_sets||0));
   const winnerSide=p1Sets===p2Sets?0:(p1Sets>p2Sets?1:2);
-  const cleanSweep=Math.min(p1Sets,p2Sets)===0&&Math.max(p1Sets,p2Sets)>=2;
+  const cleanSweep=Math.min(p1Sets,p2Sets)===0&&Math.max(p1Sets,p2Sets)>=1;
   setPlayer(root,1,playerName(match.player1),winnerSide===1);
   setPlayer(root,2,playerName(match.player2),winnerSide===2);
 
@@ -201,8 +226,11 @@ function runSequence(match,sets){
   let settled=false;
   let startedAt=performance.now();
   const previousFocus=document.activeElement;
+  const skipCopy=root.querySelector('#postMatchSkipV748');
 
   root.dataset.phase='gather';
+  delete root.dataset.scoreState;
+  if(skipCopy)skipCopy.textContent='TOCÁ EN CUALQUIER LUGAR PARA SALTEAR';
   root.classList.remove('hidden');
   root.setAttribute('aria-hidden','false');
   document.body.classList.add('postmatch-cinematic-open-v748');
@@ -224,6 +252,7 @@ function runSequence(match,sets){
       root.classList.add('hidden');
       root.setAttribute('aria-hidden','true');
       delete root.dataset.phase;
+      delete root.dataset.scoreState;
       document.body.classList.remove('postmatch-cinematic-open-v748');
       stopCurrentCinematic=null;
       if(previousFocus instanceof HTMLElement&&previousFocus.isConnected)previousFocus.focus({preventScroll:true});
@@ -244,7 +273,9 @@ function runSequence(match,sets){
     const revealBall=index=>{
       if(settled)return;
       if(index>=sets.length){
-        cleanup(false);
+        root.dataset.scoreState='holding';
+        if(skipCopy)skipCopy.textContent='TOCÁ PARA CONTINUAR';
+        timer=window.setTimeout(()=>cleanup(false),15000);
         return;
       }
       const set=sets[index];
@@ -298,8 +329,9 @@ export async function playPostMatchCinematicV748(match){
   if(inFlightCinematics.has(id))return inFlightCinematics.get(id);
 
   const task=(async()=>{
-    const sets=await loadSets(match);
-    const outcome=await runSequence(match,sets);
+    const hydratedMatch=await loadPlayers(match);
+    const sets=await loadSets(hydratedMatch);
+    const outcome=await runSequence(hydratedMatch,sets);
     playedCinematics.add(id);
     return outcome;
   })().finally(()=>inFlightCinematics.delete(id));

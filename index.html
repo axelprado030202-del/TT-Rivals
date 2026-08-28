@@ -36,9 +36,9 @@
   <link rel="stylesheet" href="css/v744_profile_card.css?v=1.0.1-p7.4r.4.5">
   <link rel="stylesheet" href="css/v746_stats_play.css?v=1.0.1-p7.4r.4.6">
   <link rel="stylesheet" href="css/v747_match_flow.css?v=1.0.1-p7.4r.4.7">
-  <link rel="stylesheet" href="css/v748_postmatch_cinematic.css?v=1.0.1-p7.4r.4.8">
+  <link rel="stylesheet" href="css/v748_postmatch_cinematic.css?v=1.0.1-p7.4r.4.9">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.8-postmatch-cinematic" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.9-postmatch-cinematic" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -3031,7 +3031,7 @@
     </div>
   </div>
 
-  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.8" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
+  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.9" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p7.4r.4.7"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>
@@ -3156,19 +3156,19 @@
   <div id="postMatchCinematicV748" class="modal postmatch-cinematic-v748 hidden" role="dialog" aria-modal="true" aria-label="Animación del resultado confirmado" aria-hidden="true" tabindex="0">
     <canvas id="postMatchCanvasV748" aria-hidden="true"></canvas>
     <div id="postMatchCoreV748" class="postmatch-core-v748" aria-hidden="true"><i></i><b></b><span></span></div>
-    <p class="postmatch-skip-v748">TOCÁ EN CUALQUIER LUGAR PARA SALTEAR</p>
+    <p id="postMatchSkipV748" class="postmatch-skip-v748">TOCÁ EN CUALQUIER LUGAR PARA SALTEAR</p>
     <section id="postMatchScoreStageV748" class="postmatch-score-stage-v748" aria-live="polite">
       <p>RESULTADO CONFIRMADO</p>
       <div class="postmatch-scoreboard-v748">
         <article id="postMatchPlayer1V748" class="postmatch-player-v748">
-          <small>JUGADOR</small>
+          <small id="postMatchPlayer1ResultV748">RESULTADO</small>
           <h2 id="postMatchPlayer1NameV748">Jugador 1</h2>
           <strong id="postMatchPlayer1CountV748">0</strong>
           <div id="postMatchPlayer1BallsV748" class="postmatch-balls-v748" aria-label="Sets ganados"></div>
         </article>
         <span class="postmatch-versus-v748">VS</span>
         <article id="postMatchPlayer2V748" class="postmatch-player-v748">
-          <small>JUGADOR</small>
+          <small id="postMatchPlayer2ResultV748">RESULTADO</small>
           <h2 id="postMatchPlayer2NameV748">Jugador 2</h2>
           <strong id="postMatchPlayer2CountV748">0</strong>
           <div id="postMatchPlayer2BallsV748" class="postmatch-balls-v748" aria-label="Sets ganados"></div>

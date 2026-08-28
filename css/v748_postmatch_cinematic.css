@@ -169,6 +169,13 @@ body.postmatch-cinematic-open-v748{overflow:hidden!important}
   background:linear-gradient(145deg,rgba(16,49,72,.94),rgba(21,20,62,.86));
   box-shadow:0 0 48px rgba(25,187,255,.13),0 24px 70px rgba(0,0,0,.42);
 }
+.postmatch-player-v748.is-winner small{color:#67e8f9;text-shadow:0 0 18px rgba(34,211,238,.55)}
+.postmatch-player-v748.is-loser small{color:#f19ab8}
+.postmatch-cinematic-v748[data-score-state="holding"] .postmatch-skip-v748{
+  border-color:rgba(71,226,195,.3);
+  color:#b9fff0;
+  background:rgba(8,40,43,.64);
+}
 .postmatch-player-v748 small{
   display:block;
   margin-bottom:8px;
