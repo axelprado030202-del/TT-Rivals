@@ -33,8 +33,12 @@ function updateSlots(){
   }
   const ready=selected.teammate&&selected.opponent1&&selected.opponent2;
   const send=$('#sendDoublesChallengeV62');if(send)send.disabled=!ready;
+  const status=$('#doublesCreateStatusV62');
+  if(status&&!status.classList.contains('ok')&&!status.classList.contains('error')){
+    status.textContent=ready?'Equipos completos. Ya podés enviar el desafío.':'Completá los dos equipos para enviar el desafío.';
+  }
 }
-function chooseSlot(key){activeSlot=key;updateSlots();$('#doublesSearchShellV62')?.classList.remove('hidden');$('#doublesPlayerSearchV62')?.focus();}
+function chooseSlot(key){activeSlot=key;setStatus('');updateSlots();$('#doublesSearchShellV62')?.classList.remove('hidden');$('#doublesPlayerSearchV62')?.focus();}
 function alreadySelected(id){return Object.values(selected).some(p=>p?.id===id)}
 async function runSearch(){
   const input=$('#doublesPlayerSearchV62'),box=$('#doublesPlayerResultsV62');if(!input||!box)return;

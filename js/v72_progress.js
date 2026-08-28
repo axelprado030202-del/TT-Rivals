@@ -46,11 +46,11 @@ export async function getCompetitiveProgressV72(){
   const position=Number(card.ranking_position||0)||null;
   const bestPosition=Number(records.best_ranking_position||records.best_position||position||0)||null;
 
-  let milestone={icon:'◎',label:'OBJETIVO ACTUAL',title:nextTier?`Llegar a ${nextTier.name}`:'Defender el rango máximo',detail:nextTier?`Te faltan ${Math.max(0,nextMin-rating)} Elo.`:'Seguí ampliando tu máximo histórico.'};
+  let milestone={icon:'◎',label:'OBJETIVO ACTUAL',title:nextTier?`Llegar a ${nextTier.name}`:'Defender el rango máximo',detail:nextTier?`Te faltan ${Math.max(0,nextMin-rating)} RP.`:'Seguí ampliando tu máximo histórico.'};
   if(rating>=maxElo&&history.length){
-    milestone={icon:'✦',label:'MARCA PERSONAL',title:`${maxElo} Elo`,detail:'Estás en tu máximo histórico.'};
+    milestone={icon:'✦',label:'MARCA PERSONAL',title:`${maxElo} RP`,detail:'Estás en tu máximo histórico.'};
   }else if(latestGain){
-    milestone={icon:'↗',label:'ÚLTIMA SUBIDA',title:`+${Number(latestGain.rating_change)} Elo`,detail:new Date(latestGain.created_at).toLocaleDateString('es-UY',{day:'numeric',month:'short'})};
+    milestone={icon:'↗',label:'ÚLTIMA SUBIDA',title:`+${Number(latestGain.rating_change)} RP`,detail:new Date(latestGain.created_at).toLocaleDateString('es-UY',{day:'numeric',month:'short'})};
   }
 
   return {

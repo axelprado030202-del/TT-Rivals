@@ -226,7 +226,7 @@ async function openRivalry(opponentId){
       '<section class="v74r-detail-score"><div><small>VOS</small><strong>'+number(row.wins)+'</strong></div><i>VS</i><div><small>'+esc((row.first_name||'RIVAL').toUpperCase())+'</small><strong>'+number(row.losses)+'</strong></div></section>'+
       '<div class="v74r-detail-stats">'+
         '<article><span>SETS</span><strong>'+number(row.my_sets)+'–'+number(row.opponent_sets)+'</strong></article>'+
-        '<article><span>ELO NETO</span><strong class="'+(number(row.net_elo)>=0?'positive':'negative')+'">'+(number(row.net_elo)>0?'+':'')+number(row.net_elo)+'</strong></article>'+
+        '<article><span>RP NETO</span><strong class="'+(number(row.net_elo)>=0?'positive':'negative')+'">'+(number(row.net_elo)>0?'+':'')+number(row.net_elo)+'</strong></article>'+
         '<article><span>MEJOR RACHA</span><strong>'+number(row.best_win_streak)+'</strong></article>'+
       '</div>'+
       '<section class="v74r-story"><small>LECTURA DE LA RIVALIDAD</small>'+narratives.map(line=>'<p>'+esc(line)+'</p>').join('')+'</section>'+

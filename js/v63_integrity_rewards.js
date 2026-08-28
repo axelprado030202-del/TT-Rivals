@@ -63,7 +63,7 @@ export async function loadOwnPalmaresV63(){
     <div class="v63-palmares-list">${items.length?items.slice(0,8).map(x=>{
       const pos=Number(x.final_position)||0;
       const icon=pos===1?'🏆':pos===2?'🥈':pos===3?'🥉':'👑';
-      return `<article><span>${icon}</span><div><strong>Temporada ${esc(x.season_number||'—')} · #${pos||'—'}</strong><small>${esc(x.rank_name||'')} · ${Number(x.final_rating)||0} Elo${Number(x.xp_awarded)>0?` · +${Number(x.xp_awarded).toLocaleString('es-UY')} XP`:''}${Number(x.tickets_awarded)>0?` · +${x.tickets_awarded} 🎟`:''}</small></div></article>`;
+      return `<article><span>${icon}</span><div><strong>Temporada ${esc(x.season_number||'—')} · #${pos||'—'}</strong><small>${esc(x.rank_name||'')} · ${Number(x.final_rating)||0} RP${Number(x.xp_awarded)>0?` · +${Number(x.xp_awarded).toLocaleString('es-UY')} XP`:''}${Number(x.tickets_awarded)>0?` · +${x.tickets_awarded} 🎟`:''}</small></div></article>`;
     }).join(''):'<div class="compact-empty">Tu palmarés se estrenará cuando cierres una temporada dentro del Top 10.</div>'}</div>`;
   }catch(err){
     console.warn('Palmarés V63:',err);host.innerHTML='<div class="compact-empty">El palmarés estará disponible cuando se instale el backend V63.</div>';
@@ -81,7 +81,7 @@ export async function loadPublicPalmaresV63(userId){
       <div class="v63-palmares-list">${items.length?items.slice(0,6).map(x=>{
         const pos=Number(x.final_position)||0;
         const icon=pos===1?'🏆':pos===2?'🥈':pos===3?'🥉':'👑';
-        return `<article><span>${icon}</span><div><strong>Temporada ${esc(x.season_number||'—')} · #${pos||'—'}</strong><small>${esc(x.rank_name||'')} · ${Number(x.final_rating)||0} Elo</small></div></article>`;
+        return `<article><span>${icon}</span><div><strong>Temporada ${esc(x.season_number||'—')} · #${pos||'—'}</strong><small>${esc(x.rank_name||'')} · ${Number(x.final_rating)||0} RP</small></div></article>`;
       }).join(''):'<div class="compact-empty">Este jugador todavía no tiene premios de temporada.</div>'}</div>`;
   }catch(err){
     console.warn('Palmarés público V63:',err);host.innerHTML='<div class="compact-empty">No se pudo cargar el palmarés.</div>';
@@ -89,7 +89,7 @@ export async function loadPublicPalmaresV63(userId){
 }
 
 function riskLabel(n){n=Number(n)||0;return n>=75?'ALTO':n>=50?'MEDIO':n>0?'BAJO':'SIN ALERTA'}
-function sanctionLabel(k){return ({warning:'Advertencia',ranked_block:'Bloqueo de Elo',suspension:'Suspensión'})[k]||k}
+function sanctionLabel(k){return ({warning:'Advertencia',ranked_block:'Bloqueo de RP',suspension:'Suspensión'})[k]||k}
 function decisionCopyV63(action){return ({legitimate:{label:'Legítimo',detail:'La señal quedó cerrada como legítima.',icon:'✓'},watch:{label:'En observación',detail:'La señal seguirá visible para seguimiento.',icon:'◉'},reopen:{label:'Reabierto',detail:'El resultado volvió a estar disponible para resolver.',icon:'↩'},annul:{label:'Anulado',detail:'El partido y su impacto competitivo fueron anulados.',icon:'✕'}})[action]||{label:'Registrada',detail:'La decisión administrativa fue aplicada.',icon:'✓'}}
 function showAdminDecisionToastV63(action){
   const copy=decisionCopyV63(action);let host=document.querySelector('#v63AdminDecisionToastHost');
@@ -125,8 +125,8 @@ function renderAdminMatchReviewV63(payload){
     <section class="v63-admin-review-section"><div class="section-title-row"><div><p class="muted-label">RESULTADO CARGADO</p><h3>Sets del partido</h3></div></div>
       <div class="v63-admin-set-list">${sets.length?sets.map(s=>`<div><span>Set ${s.set_number}</span><strong>${esc(fullName(p1))} ${s.player1_points} – ${s.player2_points} ${esc(fullName(p2))}</strong></div>`).join(''):'<div class="compact-empty">No hay sets guardados.</div>'}</div>
     </section>
-    <section class="v63-admin-review-section"><div class="section-title-row"><div><p class="muted-label">ELO</p><h3>Trazabilidad del rating</h3></div></div>
-      <div class="v63-admin-rating-list">${rating.length?rating.map(r=>`<div><span>${esc(r.user_id===p1.id?fullName(p1):fullName(p2))}</span><b>${r.previous_rating} ${Number(r.rating_change)>=0?'+':''}${r.rating_change} → ${r.new_rating}</b><small>${esc(r.source_type||'')}</small></div>`).join(''):'<div class="compact-empty">Este partido no tiene movimientos de Elo.</div>'}</div>
+    <section class="v63-admin-review-section"><div class="section-title-row"><div><p class="muted-label">RP</p><h3>Trazabilidad del rating</h3></div></div>
+      <div class="v63-admin-rating-list">${rating.length?rating.map(r=>`<div><span>${esc(r.user_id===p1.id?fullName(p1):fullName(p2))}</span><b>${r.previous_rating} ${Number(r.rating_change)>=0?'+':''}${r.rating_change} → ${r.new_rating}</b><small>${esc(r.source_type||'')}</small></div>`).join(''):'<div class="compact-empty">Este partido no tiene movimientos de RP.</div>'}</div>
     </section>
     <div class="v63-player-integrity-grid">${integritySummaryCard(payload.player1_integrity,fullName(p1))}${integritySummaryCard(payload.player2_integrity,fullName(p2))}</div>
     <section class="v63-admin-review-actions">
@@ -141,10 +141,10 @@ function renderAdminMatchReviewV63(payload){
       <p id="adminMatchReviewStatusV63" class="status"></p>
     </section>
     <section class="v63-admin-review-section v63-sanction-box">
-      <div><p class="muted-label">JUGADORES</p><h3>Medida administrativa</h3><small>Advertencia, bloqueo temporal de partidas con Elo o suspensión temporal.</small></div>
+      <div><p class="muted-label">JUGADORES</p><h3>Medida administrativa</h3><small>Advertencia, bloqueo temporal de partidas con RP o suspensión temporal.</small></div>
       <div class="v63-sanction-form">
         <select id="adminSanctionUserV63"><option value="${p1.id}">${esc(fullName(p1))}</option><option value="${p2.id}">${esc(fullName(p2))}</option></select>
-        <select id="adminSanctionKindV63"><option value="warning">Advertencia</option><option value="ranked_block">Bloquear partidas con Elo</option><option value="suspension">Suspender desafíos</option><option value="clear">Quitar sanciones activas</option></select>
+        <select id="adminSanctionKindV63"><option value="warning">Advertencia</option><option value="ranked_block">Bloquear partidas con RP</option><option value="suspension">Suspender desafíos</option><option value="clear">Quitar sanciones activas</option></select>
         <input id="adminSanctionDaysV63" type="number" min="1" max="365" value="7" aria-label="Días">
         <textarea id="adminSanctionReasonV63" rows="2" maxlength="1000" placeholder="Motivo de la medida…"></textarea>
         <button id="adminApplySanctionV63" type="button">Aplicar medida</button><button data-admin-ban-selected-v75 class="v75-open-ban-from-review" type="button">◆ Administrar baneo</button>

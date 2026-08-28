@@ -2,7 +2,7 @@
    TT RIVALS 1.0.1 — MOTION ENGINE P6
    Un único canvas / un único scheduler para todos los fondos animados.
    - Inicio / Jugar / Torneos: pelotas + estelas
-   - Ranking: ondas de Elo + constelación competitiva
+   - Ranking: ondas de RP + constelación competitiva
    - Admin: lluvia de código bidireccional
    - Calidad adaptativa, pausa por visibilidad y reduced-motion
    ============================================================ */

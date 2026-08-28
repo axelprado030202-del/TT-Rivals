@@ -56,7 +56,7 @@ const GENERAL=[
   ['⚔️','Un rival incómodo es información útil.','Tomá nota y seguí.'],
   ['🏓','La pelota corta también puede atacar.','Presión no siempre significa potencia.'],
   ['🧠','La mejor táctica es la que podés ejecutar.','Simple y clara gana valor bajo presión.'],
-  ['🏆','Los puntos de Elo llegan después.','Primero hay que ganar el partido.'],
+  ['🏆','Los RP llegan después.','Primero hay que ganar el partido.'],
   ['🎯','Poné la pelota donde el rival tenga que decidir.','Las dudas también generan errores.'],
   ['🔥','Buen ritmo. Buena elección. Buena repetición.','Tres cosas que suman.'],
   ['🏓','Cada saque es una oportunidad nueva.','No lo uses en automático.'],
@@ -115,15 +115,15 @@ function contextualMessage(ctx){
     return ['🎯','Te queda una misión diaria.','Un objetivo más y cerrás el día completo.'];
   }
   if(streak>=12){
-    return ['🔥',`Racha de ${streak}. Boost máximo activo.`,`Tu próxima victoria ranked mantiene x3 en la ganancia positiva de Elo.`];
+    return ['🔥',`Racha de ${streak}. Boost máximo activo.`,`Tu próxima victoria ranked mantiene x3 en la ganancia positiva de RP.`];
   }
   if(streak>=5&&nextMultiplier>1){
-    return ['🔥',`Racha de ${streak}.`,`Tu próxima victoria ranked activa x${String(nextMultiplier)} en la ganancia positiva de Elo.`];
+    return ['🔥',`Racha de ${streak}.`,`Tu próxima victoria ranked activa x${String(nextMultiplier)} en la ganancia positiva de RP.`];
   }
   const next=RANKS.find(r=>rating<r.min);
   if(next){
     const gap=next.min-rating;
-    if(gap>0&&gap<=30)return [next.icon,`${next.name} está a ${gap} Elo.`,`Cerca no significa conseguido. Jugá el partido, no el número.`];
+    if(gap>0&&gap<=30)return [next.icon,`${next.name} está a ${gap} RP.`,`Cerca no significa conseguido. Jugá el partido, no el número.`];
   }
   return null;
 }

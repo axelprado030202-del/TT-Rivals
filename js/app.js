@@ -29,8 +29,8 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.6';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.6';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.7';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.7';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
@@ -56,7 +56,7 @@ import {
   adminSecurityAuditV57,
   adminUpdateLegalConfigV57,
   renderLegalDocumentV57
-} from './v57_legal.js';
+} from './v57_legal.js?v=1.0.1-p7.4r.4.7';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
@@ -153,7 +153,7 @@ function showPlayModeV62(mode=null){
 async function ensureDoublesModuleV62(){
   if(doublesModuleV62)return doublesModuleV62;
   if(!doublesModulePromiseV62){
-    doublesModulePromiseV62=import('./v62_doubles.js?v=1.0.1-p7.4r.3')
+    doublesModulePromiseV62=import('./v62_doubles.js?v=1.0.1-p7.4r.4.7')
       .then(mod=>{doublesModuleV62=mod;mod.initDoublesV62?.();return mod})
       .catch(error=>{doublesModulePromiseV62=null;recordClientErrorV60(error,'v62-doubles');console.error('Dobles V62:',error);throw error});
   }
@@ -181,7 +181,7 @@ let v100ModulePromise=null;
 async function ensureV100Module(){
   if(v100Module)return v100Module;
   if(!v100ModulePromise){
-    v100ModulePromise=import('./v100_launch.js?v=1.0.1-p7.4r.3')
+    v100ModulePromise=import('./v100_launch.js?v=1.0.1-p7.4r.4.7')
       .then(mod=>{v100Module=mod;return mod})
       .catch(error=>{v100ModulePromise=null;recordClientErrorV60(error,'v100-community');console.error('TT-Rivals 1.0:',error);throw error});
   }
@@ -202,7 +202,7 @@ async function ensureV101Experience(){
   return v101ExperiencePromise;
 }
 const authShell=$('#authShell'),mainApp=$('#mainApp'),views=$$('.view');
-let session=null,profile=null,ratings=[],rankingMode='individual',selectedRival=null,currentMatch=null,rankTiers=[];
+let session=null,profile=null,ratings=[],rankingMode='individual',selectedRival=null,currentMatch=null,activeMatchV747=null,activeMatchResultOpenV747=false,rankTiers=[];
 let selectedTournament=null,currentTournamentMatch=null,tournamentPlayerTimer=null;
 let tournamentHubModeV30='history',tournamentDiscoverTimerV30=null,pendingTournamentJoinV30=null;
 let teamDraftV32={home:[null,null,null,null],away:[null,null,null,null]},teamSearchTimerV32=null,selectedTeamTournamentV32=null,currentTeamMatchV32=null;
@@ -1127,13 +1127,93 @@ function updateLiveMatchClocksV59(){
   $$('[data-live-match-duration-v59]').forEach(el=>{
     const secs=elapsedFromV59(el.dataset.startedAtV59);
     if(secs===null)return;
-    el.textContent=`⏱ En juego · ${formatDurationV59(secs,{clock:true})}`;
+    const clock=formatDurationV59(secs,{clock:true});
+    el.textContent=el.dataset.liveMatchClockStyleV747==='plain'?clock:`⏱ En juego · ${clock}`;
   });
 }
 function startMatchClocksV59(){
   if(matchClockTimerV59)return;
   updateLiveMatchClocksV59();
   matchClockTimerV59=setInterval(updateLiveMatchClocksV59,1000);
+}
+
+function activeMatchStorageKeyV747(){return `tt-rivals-active-match-minimized-v747:${session?.user?.id||'guest'}`}
+function activeMatchFormatV747(m){
+  if(m?.match_format==='bo5')return'Al mejor de 5 sets';
+  if(m?.match_format==='bo3')return'Al mejor de 3 sets';
+  return'1 set';
+}
+function activeMatchTypeV747(m){return m?.match_type==='casual'?'Casual':'Clasificatoria'}
+function activeMatchNamesV747(m){
+  const p1=`${m?.player1?.first_name||'Jugador 1'} ${m?.player1?.last_name||''}`.trim();
+  const p2=`${m?.player2?.first_name||'Jugador 2'} ${m?.player2?.last_name||''}`.trim();
+  return{p1,p2};
+}
+function setActiveMatchMinimizedV747(matchId,minimized){
+  try{
+    if(minimized)localStorage.setItem(activeMatchStorageKeyV747(),String(matchId));
+    else localStorage.removeItem(activeMatchStorageKeyV747());
+  }catch{}
+}
+function isActiveMatchMinimizedV747(matchId){
+  try{return localStorage.getItem(activeMatchStorageKeyV747())===String(matchId)}catch{return false}
+}
+function populateActiveMatchV747(m){
+  if(!m)return;
+  const {p1,p2}=activeMatchNamesV747(m),other=m.player1_id===session?.user?.id?p2:p1;
+  const started=m.started_at||m.created_at;
+  if($('#activeMatchTitleV747'))$('#activeMatchTitleV747').textContent=`${p1} vs ${p2}`;
+  if($('#activeMatchFormatV747'))$('#activeMatchFormatV747').textContent=activeMatchFormatV747(m);
+  if($('#activeMatchTypeV747'))$('#activeMatchTypeV747').textContent=activeMatchTypeV747(m);
+  if($('#activeMatchNoticeTitleV747'))$('#activeMatchNoticeTitleV747').textContent=`vs ${other} · ${activeMatchFormatV747(m)}`;
+  for(const timer of [$('#activeMatchTimerV747'),$('#activeMatchNoticeTimerV747')]){
+    if(!timer)continue;
+    timer.dataset.startedAtV59=started||new Date().toISOString();
+  }
+  updateLiveMatchClocksV59();
+}
+function hideActiveMatchV747({clear=false}={}){
+  $('#activeMatchModalV747')?.classList.add('hidden');
+  $('#activeMatchNoticeV747')?.classList.add('hidden');
+  $('#abandonMatchModalV747')?.classList.add('hidden');
+  if(clear){try{localStorage.removeItem(activeMatchStorageKeyV747())}catch{}}
+  if(clear)activeMatchV747=null;
+  syncModalScrollLock();
+}
+function openActiveMatchV747(){
+  if(!activeMatchV747||activeMatchV747.result_status!=='pending')return;
+  setActiveMatchMinimizedV747(activeMatchV747.id,false);
+  populateActiveMatchV747(activeMatchV747);
+  $('#activeMatchNoticeV747')?.classList.add('hidden');
+  $('#activeMatchModalV747')?.classList.remove('hidden');
+  syncModalScrollLock();
+}
+function minimizeActiveMatchV747(){
+  if(!activeMatchV747)return;
+  setActiveMatchMinimizedV747(activeMatchV747.id,true);
+  populateActiveMatchV747(activeMatchV747);
+  $('#activeMatchModalV747')?.classList.add('hidden');
+  $('#abandonMatchModalV747')?.classList.add('hidden');
+  $('#activeMatchNoticeV747')?.classList.remove('hidden');
+  syncModalScrollLock();
+}
+function renderActiveMatchV747(rows=[]){
+  const active=(rows||[]).find(m=>m.result_status==='pending');
+  if(!active){hideActiveMatchV747({clear:true});activeMatchResultOpenV747=false;return}
+  const changed=Number(activeMatchV747?.id)!==Number(active.id);
+  activeMatchV747=active;
+  populateActiveMatchV747(active);
+  if(activeMatchResultOpenV747||!$('#matchModal')?.classList.contains('hidden')){
+    $('#activeMatchModalV747')?.classList.add('hidden');
+    $('#activeMatchNoticeV747')?.classList.add('hidden');
+    return;
+  }
+  if(isActiveMatchMinimizedV747(active.id)){
+    $('#activeMatchModalV747')?.classList.add('hidden');
+    $('#activeMatchNoticeV747')?.classList.remove('hidden');
+  }else if(changed||$('#activeMatchModalV747')?.classList.contains('hidden')){
+    openActiveMatchV747();
+  }
 }
 
 function cap(v){return v?v[0].toUpperCase()+v.slice(1):'—'}
@@ -1162,7 +1242,7 @@ function averageReviews(rows=[]){
   return {average,count:rows.length};
 }
 function computeStreaks(matches,userId){
-  // V1.0.1: la racha competitiva que alimenta el boost de Elo usa sólo ranked.
+  // V1.0.1: la racha competitiva que alimenta el boost de RP usa sólo ranked.
   // Ganar por abandono no aumenta la racha; abandonar sí la corta.
   const confirmed=(matches||[])
     .filter(m=>m.result_status==='confirmed'&&(m.match_type||'ranked')==='ranked')
@@ -1237,16 +1317,16 @@ function achievementDefinitions(ctx={}){
     make('streak_15','✹','Incandescente','Ganá 15 partidos consecutivos.',streak>=15,'Rachas'),
     make('streak_20','☄','Inalcanzable','Ganá 20 partidos consecutivos.',streak>=20,'Rachas'),
 
-    make('elo_1050','◇','Primer ascenso','Alcanzá 1050 Elo.',maxElo>=1050,'Elo'),
-    make('elo_1100','◇','Plata','Alcanzá 1100 Elo.',maxElo>=1100,'Elo'),
-    make('elo_1200','◈','Escalador','Alcanzá 1200 Elo.',maxElo>=1200,'Elo'),
-    make('elo_1250','◆','Oro','Alcanzá 1250 Elo.',maxElo>=1250,'Elo'),
-    make('elo_1300','◆','Elite 1300','Alcanzá 1300 Elo.',maxElo>=1300,'Elo'),
-    make('elo_1400','✦','Platino','Alcanzá 1400 Elo.',maxElo>=1400,'Elo'),
-    make('elo_1500','✦','Elite 1500','Alcanzá 1500 Elo.',maxElo>=1500,'Elo'),
-    make('elo_1600','✧','Diamante','Alcanzá 1600 Elo.',maxElo>=1600,'Elo'),
-    make('elo_1700','✺','Más allá','Alcanzá 1700 Elo.',maxElo>=1700,'Elo'),
-    make('elo_1800','♜','Maestro TT','Alcanzá 1800 Elo.',maxElo>=1800,'Elo'),
+    make('elo_1050','◇','Primer ascenso','Alcanzá 1050 RP.',maxElo>=1050,'RP'),
+    make('elo_1100','◇','Plata','Alcanzá 1100 RP.',maxElo>=1100,'RP'),
+    make('elo_1200','◈','Escalador','Alcanzá 1200 RP.',maxElo>=1200,'RP'),
+    make('elo_1250','◆','Oro','Alcanzá 1250 RP.',maxElo>=1250,'RP'),
+    make('elo_1300','◆','Elite 1300','Alcanzá 1300 RP.',maxElo>=1300,'RP'),
+    make('elo_1400','✦','Platino','Alcanzá 1400 RP.',maxElo>=1400,'RP'),
+    make('elo_1500','✦','Elite 1500','Alcanzá 1500 RP.',maxElo>=1500,'RP'),
+    make('elo_1600','✧','Diamante','Alcanzá 1600 RP.',maxElo>=1600,'RP'),
+    make('elo_1700','✺','Más allá','Alcanzá 1700 RP.',maxElo>=1700,'RP'),
+    make('elo_1800','♜','Maestro TT','Alcanzá 1800 RP.',maxElo>=1800,'RP'),
 
     make('casual_1','C','Sin presión','Completá tu primer partido casual.',casual>=1,'Casuales'),
     make('casual_5','C5','Amistoso habitual','Completá 5 partidos casuales.',casual>=5,'Casuales'),
@@ -1294,7 +1374,7 @@ function achievementDefinitions(ctx={}){
       return {current:progress,goal:100,progress,progress_label:`${Math.min(repCount,20)}/20 valoraciones · ${repAvg.toFixed(1)}/4.8★`};
     }
     const progress=Math.round(Math.max(0,Math.min(100,(current/Math.max(1,goal))*100)));
-    if(id.startsWith('elo_'))label=`${Math.min(current,goal)} / ${goal} Elo`;
+    if(id.startsWith('elo_'))label=`${Math.min(current,goal)} / ${goal} RP`;
     else label=`${Math.min(current,goal)} / ${goal}`;
     return {current,goal,progress,progress_label:label};
   };
@@ -1507,7 +1587,7 @@ function nextRankInfo(rating){
   const i=Math.max(0,tiers.findIndex(t=>t.name===current));
   const next=tiers[i+1]||null;
   const rawFloor=Number(tiers[i]?.min_rating||0);
-  // Bronce históricamente tiene piso técnico 0, pero TT Rivals nace alrededor de 1000 Elo.
+  // Bronce históricamente tiene piso técnico 0, pero TT Rivals nace alrededor de 1000 RP.
   // Para la barra visual usamos 800 como piso competitivo para no mostrar un 833 como 76% de Plata.
   const floor=current==='Bronce'?Math.max(rawFloor,800):rawFloor;
   const ceiling=Number(next?.min_rating||value);
@@ -1572,8 +1652,8 @@ function populate(){
   $('#profileUsername').textContent=`@${profile.username}`;
   $('#profileIndividualRating').textContent=ind.rating;
   $('#profileDoublesRating').textContent=dob.rating;
-  if($('#playIndividualEloV746'))$('#playIndividualEloV746').textContent=`${ind.rating} Elo`;
-  if($('#playDoublesEloV746'))$('#playDoublesEloV746').textContent=`${dob.rating} Elo`;
+  if($('#playIndividualEloV746'))$('#playIndividualEloV746').textContent=`${ind.rating} RP`;
+  if($('#playDoublesEloV746'))$('#playDoublesEloV746').textContent=`${dob.rating} RP`;
   if($('#playIndividualRankV746'))$('#playIndividualRankV746').textContent=currentRank;
   if($('#playDoublesRankV746'))$('#playDoublesRankV746').textContent=doublesRank;
   $('#profileIndividualRank').textContent=currentRank;
@@ -1595,7 +1675,7 @@ function populate(){
   if($('#profileStreakTag')){
     const streak=Number(socialState.streak.current||0);
     $('#profileStreakTag').textContent=`🔥 Racha competitiva ${streak}`;
-    $('#profileStreakTag').title='Cuenta partidos individuales oficiales con Elo. Las casuales no suman ni cortan la racha.';
+    $('#profileStreakTag').title='Cuenta partidos individuales oficiales con RP. Las casuales no suman ni cortan la racha.';
   }
   if($('#profileCurrentStreakV744'))$('#profileCurrentStreakV744').textContent=Number(socialState.streak.current||0);
   if($('#profileMaxStreak'))$('#profileMaxStreak').textContent=socialState.streak.max;
@@ -1673,7 +1753,7 @@ function v28EventOfWeek(){
   const week=Math.floor(Date.now()/604800000);
   const events=[
     {title:'Semana Bo5',desc:'Los partidos largos son el centro de la semana. Probá un Mejor de 5.',badge:'BO5'},
-    {title:'Caza de gigantes',desc:'Buscá una victoria contra un rival con Elo superior.',badge:'UPSET'},
+    {title:'Caza de gigantes',desc:'Buscá una victoria contra un rival con RP superior.',badge:'UPSET'},
     {title:'Rivalidad abierta',desc:'Jugá contra rivales distintos y ampliá tu historial competitivo.',badge:'RIVALES'}
   ];
   return events[Math.abs(week)%events.length];
@@ -1694,9 +1774,9 @@ function buildV28CoachText(){
   const parts=[];
   if(streak>=3)parts.push(`Estás en una racha de ${streak} victorias.`);
   if(d.comebacks>0)parts.push(`Ya registraste ${d.comebacks} remontada${d.comebacks===1?'':'s'} desde 0-2 en Bo5.`);
-  if(d.upsets>0)parts.push(`Tenés ${d.upsets} victoria${d.upsets===1?'':'s'} contra rivales que partían con más Elo.`);
+  if(d.upsets>0)parts.push(`Tenés ${d.upsets} victoria${d.upsets===1?'':'s'} contra rivales que partían con más RP.`);
   if(best?.played>=2)parts.push(`Tu mejor rendimiento aparece en ${best.format==='bo5'?'Bo5':best.format==='bo3'?'Bo3':'1 set'}: ${best.win_rate}% de victorias.`);
-  if(next.next)parts.push(`Te separan ${Math.max(0,next.next.min_rating-rating)} Elo de ${next.next.name}.`);
+  if(next.next)parts.push(`Te separan ${Math.max(0,next.next.min_rating-rating)} RP de ${next.next.name}.`);
   if(!parts.length)parts.push('Tu perfil competitivo todavía está creciendo. Sumá partidos para que el análisis gane precisión.');
   return parts.slice(0,3).join(' ');
 }
@@ -1779,7 +1859,7 @@ function renderV28Dashboard(){
   if(mw){
     if(d.match_of_week?.match_id){
       mw.classList.remove('hidden');
-      mw.innerHTML=`<div><p class="muted-label">PARTIDO DE LA SEMANA</p><h3>⚡ ${esc(d.match_of_week.opponent_name||'Rival')}</h3><span>${d.match_of_week.rating_gap>0?`Victoria ante un rival ${d.match_of_week.rating_gap} Elo superior`:`+${d.match_of_week.rating_change||0} Elo`}</span></div><button data-match-detail="${d.match_of_week.match_id}" type="button">Ver partido →</button>`;
+      mw.innerHTML=`<div><p class="muted-label">PARTIDO DE LA SEMANA</p><h3>⚡ ${esc(d.match_of_week.opponent_name||'Rival')}</h3><span>${d.match_of_week.rating_gap>0?`Victoria ante un rival ${d.match_of_week.rating_gap} RP superior`:`+${d.match_of_week.rating_change||0} RP`}</span></div><button data-match-detail="${d.match_of_week.match_id}" type="button">Ver partido →</button>`;
     }else mw.classList.add('hidden');
   }
 
@@ -1860,8 +1940,8 @@ async function openV28SeasonRecap(){
       <small>posición final</small>
     </div>
     <div class="v28-recap-grid">
-      <article><span>Elo final</span><strong>${r.final_rating||'—'}</strong></article>
-      <article><span>Elo máximo</span><strong>${r.max_rating||'—'}</strong></article>
+      <article><span>RP final</span><strong>${r.final_rating||'—'}</strong></article>
+      <article><span>RP máximo</span><strong>${r.max_rating||'—'}</strong></article>
       <article><span>Partidos</span><strong>${r.matches||0}</strong></article>
       <article><span>Victorias</span><strong>${r.wins||0}</strong></article>
       <article><span>Win rate</span><strong>${r.win_rate||0}%</strong></article>
@@ -2056,7 +2136,7 @@ function recordTabSwitchV74(tab,startedAt,source){
 
 const PROFILE_HUB_META_V743={
   summary:{title:'Perfil',subtitle:'Tu identidad y progreso competitivo.'},
-  stats:{title:'Estadísticas',subtitle:'Elo, rendimiento, fiabilidad y accesos de análisis.'},
+  stats:{title:'Estadísticas',subtitle:'RP, rendimiento, fiabilidad y accesos de análisis.'},
   missions:{title:'Misiones',subtitle:'Objetivos diarios y actividad competitiva vigente.'},
   achievements:{title:'Logros',subtitle:'Todos tus hitos, separados del resumen principal.'},
   rivalries:{title:'Rivalidades',subtitle:'Cara a cara oficiales y rival favorito.'},
@@ -2154,7 +2234,7 @@ function setupProfileHubV743(){
   menuWrap.innerHTML=`
     <div class="profile-hub-menu-head-v743"><h3>Tu información</h3><p>Elegí una categoría para ver sus detalles.</p></div>
     <nav class="profile-hub-menu-v743" aria-label="Secciones del perfil">
-      <button type="button" data-profile-hub-target-v743="stats"><span class="profile-hub-menu-icon-v743">▥</span><span class="profile-hub-menu-copy-v743"><strong>Estadísticas</strong><small>Elo, rendimiento y fiabilidad</small></span><span class="profile-hub-menu-arrow-v743">›</span></button>
+      <button type="button" data-profile-hub-target-v743="stats"><span class="profile-hub-menu-icon-v743">▥</span><span class="profile-hub-menu-copy-v743"><strong>Estadísticas</strong><small>RP, rendimiento y fiabilidad</small></span><span class="profile-hub-menu-arrow-v743">›</span></button>
       <button type="button" data-profile-hub-target-v743="missions"><span class="profile-hub-menu-icon-v743">◎</span><span class="profile-hub-menu-copy-v743"><strong>Misiones</strong><small>Objetivos y evento activo</small></span><span class="profile-hub-menu-arrow-v743">›</span></button>
       <button type="button" data-profile-hub-target-v743="achievements"><span class="profile-hub-menu-icon-v743">◇</span><span class="profile-hub-menu-copy-v743"><strong>Logros</strong><small>Progreso y placas destacadas</small></span><span class="profile-hub-menu-arrow-v743">›</span></button>
       <button type="button" data-profile-hub-target-v743="rivalries"><span class="profile-hub-menu-icon-v743">🔥</span><span class="profile-hub-menu-copy-v743"><strong>Rivalidades</strong><small>Cara a cara y rival favorito</small></span><span class="profile-hub-menu-arrow-v743">›</span></button>
@@ -2360,7 +2440,7 @@ async function loadRanking(){
             <div class="v62-rank-meta"><small>@${esc(p.username||'usuario')}${x.profile.id===session.user.id?' · Vos':''}</small><span class="ranking-rank-chip ${rankCss(rank)}">${rank}</span></div>
             ${p.id===session.user.id?'':`<em class="v60-presence-text" data-presence-text-v60="${p.id}">${presenceLabelV60(p.id)}</em>`}
           </div>
-          <div class="v62-rank-elo"><strong>${Number(x.rating)||1000}</strong><small>Elo</small></div>
+          <div class="v62-rank-elo"><strong>${Number(x.rating)||1000}</strong><small>RP</small></div>
         </button>
         ${p.id===session.user.id?'':`<button class="v62-rank-challenge" data-quick-challenge="${p.id}" data-name="${esc(p.first_name||'')} ${esc(p.last_name||'')}" data-user="${esc(p.username||'')}" type="button" aria-label="Desafiar a ${esc(p.first_name||'jugador')}"><span aria-hidden="true">⚔</span><b>Desafiar</b></button>`}
       </article>`;
@@ -2400,7 +2480,7 @@ function renderRankingPodium(rows=[]){
       <div class="podium-avatar-wrap" data-user-id-v35="${p.id}">${avatarHtml(p,'podium-avatar')}${onlineDotV35(p.id)}<b>${pos}</b></div>
       <strong>${esc(p.first_name)} ${p.is_test_admin?'<span class="admin-mini-v37">◆</span>':''}</strong>
       <small>@${esc(p.username)}</small>
-      <div class="podium-rating">${x.rating} <span>Elo</span></div>
+      <div class="podium-rating">${x.rating} <span>RP</span></div>
       <em class="${rankCss(rank)}">${rank}</em>
     </button>`;
   }).join('');
@@ -2417,7 +2497,7 @@ async function loadFollowingFeed(){
         :(r.won?'Ganó':'Perdió');
       const cls=r.completion_type==='abandonment'?'feed-abandon':r.won?'feed-win':'feed-loss';
       const mode=r.match_type==='casual'?'CASUAL':'RANKING';
-      const delta=r.rating_change===null||r.rating_change===undefined?'':` · ${Number(r.rating_change)>=0?'+':''}${r.rating_change} Elo`;
+      const delta=r.rating_change===null||r.rating_change===undefined?'':` · ${Number(r.rating_change)>=0?'+':''}${r.rating_change} RP`;
       return `<article class="following-feed-item ${cls}">
         ${avatarHtml({first_name:r.followed_first_name,last_name:r.followed_last_name,profile_photo_url:r.followed_photo},'feed-avatar')}
         <div class="following-feed-copy">
@@ -2504,7 +2584,7 @@ function renderHomePriorityV60(){
   }else if(v60State.recommended?.length){
     const r=v60State.recommended[0];
     html=`<div class="v60-priority-kicker"><span>TODO AL DÍA</span><b>Tu próxima partida</b></div>
-      <div class="v60-priority-main"><span class="v60-priority-icon">◎</span><div><strong>${esc(r.first_name)} ${esc(r.last_name)} puede ser un buen rival</strong><small>${r.rating} Elo · ${r.rating_gap} de diferencia · ${presenceLabelV60(r.user_id)}</small></div></div>
+      <div class="v60-priority-main"><span class="v60-priority-icon">◎</span><div><strong>${esc(r.first_name)} ${esc(r.last_name)} puede ser un buen rival</strong><small>${r.rating} RP · ${r.rating_gap} de diferencia · ${presenceLabelV60(r.user_id)}</small></div></div>
       <div class="v60-priority-actions"><button class="primary" data-quick-challenge="${r.user_id}" data-name="${esc(r.first_name)} ${esc(r.last_name)}" data-user="${esc(r.username)}" type="button">Desafiar</button><button data-open-player="${r.user_id}" type="button">Ver perfil</button></div>`;
   }else{
     html=`<div class="v60-priority-kicker"><span>TODO AL DÍA</span><b>Sin acciones pendientes</b></div><div class="v60-priority-main"><span class="v60-priority-icon">✓</span><div><strong>Todo listo</strong><small>Tu panel está al día. Usá la navegación principal cuando quieras jugar, competir o revisar tu actividad.</small></div></div>`;
@@ -2681,7 +2761,7 @@ function renderProtectionV58(){
 
   if($('#homeProtectionTitleV58'))$('#homeProtectionTitleV58').textContent=shield?'Protección disponible':'Acumulando protección';
   if($('#homeProtectionDetailV58'))$('#homeProtectionDetailV58').textContent=shield
-    ?'Tu próxima derrota ranked normal no reducirá tu Elo.'
+    ?'Tu próxima derrota ranked normal no reducirá tu RP.'
     :`Te faltan ${100-points} puntos para activar una protección.`;
   if($('#homeProtectionValueV58'))$('#homeProtectionValueV58').textContent=shield?'1 / 1':`${points} / 100`;
   if($('#homeProtectionBarV58'))animateProgressV601($('#homeProtectionBarV58'),pct);
@@ -2839,7 +2919,7 @@ async function renderDisputeModalV58(){
     if(d.annul_requested_by===me){
       actions.innerHTML='<div class="compact-empty">Esperando que el rival confirme la anulación.</div><button class="dispute-secondary-v58" data-show-arbiter-search-v58 type="button">PROPONER ÁRBITRO EN SU LUGAR</button><button class="dispute-admin-v58" data-request-admin-v58 type="button">SOLICITAR ADMINISTRADOR</button>';
     }else{
-      actions.innerHTML='<div class="dispute-proposal-question-v58"><strong>Tu rival propone anular el partido</strong><small>Si aceptás, no contará para Elo, estadísticas ni rachas.</small></div><button class="dispute-primary-v58" data-request-annul-v58 type="button">ACEPTAR ANULACIÓN</button><button class="dispute-secondary-v58" data-show-arbiter-search-v58 type="button">NO · PROPONER ÁRBITRO</button><button class="dispute-admin-v58" data-request-admin-v58 type="button">SOLICITAR ADMINISTRADOR</button>';
+      actions.innerHTML='<div class="dispute-proposal-question-v58"><strong>Tu rival propone anular el partido</strong><small>Si aceptás, no contará para RP, estadísticas ni rachas.</small></div><button class="dispute-primary-v58" data-request-annul-v58 type="button">ACEPTAR ANULACIÓN</button><button class="dispute-secondary-v58" data-show-arbiter-search-v58 type="button">NO · PROPONER ÁRBITRO</button><button class="dispute-admin-v58" data-request-admin-v58 type="button">SOLICITAR ADMINISTRADOR</button>';
     }
     return;
   }
@@ -3032,10 +3112,10 @@ function showIntegrityNoticeV78(data={}){
       :'Un resultado quedó retenido mientras se revisa la señal de duración.'}</p>
     ${sanction?`<div class="v78-integrity-grid">
       <article><span>Finaliza</span><strong>${esc(formatIntegrityEndV78(sanction.ends_at))}</strong></article>
-      <article><span>Restricción</span><strong>${competitive?'Elo + casuales':'Casuales oficiales'}</strong></article>
+      <article><span>Restricción</span><strong>${competitive?'RP + casuales':'Casuales oficiales'}</strong></article>
       <article><span>Nivel</span><strong>${Number(sanction.level||1)} de 3</strong></article>
     </div>`:''}
-    ${pendingHold?`<div class="v78-hold-note"><strong>Partido #${Number(pendingHold.match_id)}</strong><span>No modificó ${pendingHold.hold_scope==='elo_and_statistics'?'Elo ni estadísticas':'las estadísticas'}.</span></div>`:''}
+    ${pendingHold?`<div class="v78-hold-note"><strong>Partido #${Number(pendingHold.match_id)}</strong><span>No modificó ${pendingHold.hold_scope==='elo_and_statistics'?'RP ni estadísticas':'las estadísticas'}.</span></div>`:''}
     <div class="v78-warning"><strong>Las sanciones son acumulables.</strong><span>Las reincidencias aumentan a 72 horas y luego a 7 días.</span></div>
     ${sanction&&!appealed?`<div class="v78-appeal-shell hidden" id="integrityAppealShellV78">
       <label for="integrityAppealTextV78">Explicanos qué ocurrió</label>
@@ -3116,8 +3196,8 @@ function renderAdminAutoModerationV77(data={}){
 
   const holdsHtml=holds.length?`<div class="v78-admin-holds"><h4>Resultados retenidos</h4>${holds.map(item=>`
     <article class="v77-case threshold v78-held-match">
-      <div class="v77-case-head"><div><strong>${esc(item.player1_username||'Jugador')} ↔ ${esc(item.player2_username||'Jugador')}</strong><small>Partido #${Number(item.match_id)} · ${item.match_type==='casual'?'Casual':'Con Elo'}</small></div><div class="v77-risk-score"><strong>${Number(item.duration_seconds||0)} s</strong><small>duración</small></div></div>
-      <div class="v77-case-meta"><span>${item.hold_scope==='elo_and_statistics'?'Elo y estadísticas retenidos':'Estadísticas retenidas'}</span><span class="v77-decision">Decisión pendiente</span></div>
+      <div class="v77-case-head"><div><strong>${esc(item.player1_username||'Jugador')} ↔ ${esc(item.player2_username||'Jugador')}</strong><small>Partido #${Number(item.match_id)} · ${item.match_type==='casual'?'Casual':'Con RP'}</small></div><div class="v77-risk-score"><strong>${Number(item.duration_seconds||0)} s</strong><small>duración</small></div></div>
+      <div class="v77-case-meta"><span>${item.hold_scope==='elo_and_statistics'?'RP y estadísticas retenidos':'Estadísticas retenidas'}</span><span class="v77-decision">Decisión pendiente</span></div>
       <div class="v77-case-actions"><button data-resolve-integrity-hold-v78="approve" data-match-id="${Number(item.match_id)}" type="button">Validar partido</button><button class="danger" data-resolve-integrity-hold-v78="annul" data-match-id="${Number(item.match_id)}" type="button">Anular partido</button></div>
     </article>`).join('')}</div>`:'';
 
@@ -3140,7 +3220,7 @@ function renderAdminAutoModerationV77(data={}){
         <span>Menos de ${Number(config.short_match_seconds||60)} s</span>
         <span class="v77-decision">${esc(autoDecisionLabelV77(item.status))}</span>
       </div>
-      <div class="v77-signal-list">${evidenceMatches.map(match=>`<span class="v77-signal"><b>#${Number(match.match_id)}</b> · ${Number(match.duration_seconds||0)} s · ${match.match_type==='casual'?'Casual':'Con Elo'}</span>`).join('')}</div>
+      <div class="v77-signal-list">${evidenceMatches.map(match=>`<span class="v77-signal"><b>#${Number(match.match_id)}</b> · ${Number(match.duration_seconds||0)} s · ${match.match_type==='casual'?'Casual':'Con RP'}</span>`).join('')}</div>
       ${sanction?.appealed_at?`<div class="v78-admin-appeal"><strong>Apelación recibida</strong><span>${esc(sanction.appeal_message||'Sin mensaje')}</span></div>`:''}
       <div class="v77-case-actions">
         <button data-open-player="${item.user_id}" type="button">Ver usuario</button>
@@ -3154,7 +3234,7 @@ function renderAdminAutoModerationV77(data={}){
   setStatus(
     $('#adminAutoModerationStatusV77'),
     real
-      ?'Modo activo: el tercer partido corto quedará retenido antes de aplicar Elo o estadísticas.'
+      ?'Modo activo: el tercer partido corto quedará retenido antes de aplicar RP o estadísticas.'
       :'Simulación segura: analiza ranked y casuales, pero todavía no retiene resultados ni restringe modalidades.',
     real?'error':'ok'
   );
@@ -3223,7 +3303,7 @@ async function resolveIntegrityHoldAdminV78(button){
   const matchId=Number(button?.dataset?.matchId||0);
   const action=button?.dataset?.resolveIntegrityHoldV78;
   if(!matchId||!['approve','annul'].includes(action)||!v35Flags?.is_test_admin)return;
-  const decision=action==='approve'?'validar el partido y aplicar sus consecuencias':'anular el partido sin aplicar Elo ni estadísticas';
+  const decision=action==='approve'?'validar el partido y aplicar sus consecuencias':'anular el partido sin aplicar RP ni estadísticas';
   if(!window.confirm(`¿Confirmás que querés ${decision}?`))return;
   try{
     button.disabled=true;
@@ -3417,7 +3497,7 @@ function confirmationResultV62(m){
 function matchCard(m){
   const me=session.user.id,other=m.player1_id===me?m.player2:m.player1;
   const fmt=m.match_format==='bo5'?'Mejor de 5':m.match_format==='bo3'?'Mejor de 3':'1 set';
-  const mode=m.match_type==='casual'?'Casual · sin Elo':'Con ranking';
+  const mode=m.match_type==='casual'?'Casual · sin RP':'Con ranking';
   let state='Pendiente de resultado', cls='status-accepted', actions='';
   if(m.result_status==='pending'){
     actions=`<div class="match-actions"><button class="result-btn" data-enter-result="${m.id}">Registrar resultado</button></div>`;
@@ -3437,12 +3517,14 @@ async function loadMatches(){
   try{
     const rows=await getMyMatches(session.user.id);
     v60State.matches=rows;renderHomePriorityV60();
+    renderActiveMatchV747(rows);
     const active=rows.filter(m=>!['confirmed','annulled'].includes(m.result_status));
     await loadActiveMatchSetsV62(active);
     $('#activeMatches').innerHTML=active.length?active.map(matchCard).join(''):'<div class="compact-empty">No hay partidos pendientes</div>';
     if($('#activeMatchCount'))$('#activeMatchCount').textContent=active.length;
   }catch(e){
     console.error(e);
+    hideActiveMatchV747();
     $('#activeMatches').innerHTML='<div class="compact-empty">No se pudieron cargar los partidos.</div>';
   }
 }
@@ -3455,7 +3537,7 @@ async function loadHistory(){
 
     $('#ratingHistoryList').innerHTML=rows.length?rows.slice(0,8).map(r=>`
       <div class="history-row">
-        <div><strong>${r.new_rating} Elo</strong><small>${new Date(r.created_at).toLocaleDateString()}</small></div>
+        <div><strong>${r.new_rating} RP</strong><small>${new Date(r.created_at).toLocaleDateString()}</small></div>
         <strong class="history-change ${r.rating_change>=0?'positive':'negative'}">${r.rating_change>=0?'+':''}${r.rating_change}</strong>
       </div>`).join(''):'';
   }catch(e){
@@ -3496,7 +3578,7 @@ async function loadLiveNotifications(){
     for(const c of pending.slice(0,2)){
       const other=c.challenger;
       const fmt=c.match_format==='bo5'?'Bo5':c.match_format==='bo3'?'Bo3':'1 set';
-      items.push(`<article class="live-action-notification"><div class="live-notification-icon">!</div><div class="live-notification-copy"><small>NUEVO DESAFÍO · ${matchTypeLabel(c.match_type)}</small><strong>${esc(other?.first_name||'Jugador')} te desafió</strong><span>${fmt}${c.match_type==='casual'?' · No modifica el Elo':' · Partido con ranking'}</span></div><div class="live-notification-actions"><button class="live-accept" data-response="accepted" data-id="${c.id}" type="button">Aceptar</button><button class="live-decline" data-response="rejected" data-id="${c.id}" type="button">Declinar</button></div></article>`);
+      items.push(`<article class="live-action-notification"><div class="live-notification-icon">!</div><div class="live-notification-copy"><small>NUEVO DESAFÍO · ${matchTypeLabel(c.match_type)}</small><strong>${esc(other?.first_name||'Jugador')} te desafió</strong><span>${fmt}${c.match_type==='casual'?' · No modifica el RP':' · Partido con ranking'}</span></div><div class="live-notification-actions"><button class="live-accept" data-response="accepted" data-id="${c.id}" type="button">Aceptar</button><button class="live-decline" data-response="rejected" data-id="${c.id}" type="button">Declinar</button></div></article>`);
     }
     for(const m of confirmations.slice(0,2)){
       const other=m.player1_id===session.user.id?m.player2:m.player1;
@@ -3589,7 +3671,7 @@ async function handleConfirmedMatchV55(matchRow){
     // secundarios (ranking, historial y estadísticas) se actualizan detrás.
     const modal=$('#postMatchModal');
     const content=$('#postMatchContent');
-    if(content)content.innerHTML='<div class="v71-result-shell"><main class="v71-result-body"><section class="v71-coach"><span>✦</span><div><small>RESULTADO CONFIRMADO</small><p>Actualizando Elo y preparando el resumen…</p></div></section></main></div>';
+    if(content)content.innerHTML='<div class="v71-result-shell"><main class="v71-result-body"><section class="v71-coach"><span>✦</span><div><small>RESULTADO CONFIRMADO</small><p>Actualizando RP y preparando el resumen…</p></div></section></main></div>';
     modal?.classList.remove('hidden');
     syncModalScrollLock();
 
@@ -3704,7 +3786,7 @@ async function fallbackCompetitionPollV55(){
   // esto corrige desconexiones temporales de red / suspensión móvil.
   await refreshDuelViewsV55();
 
-  // Si cambió el Elo por un torneo, refrescamos toda la experiencia competitiva.
+  // Si cambió el RP por un torneo, refrescamos toda la experiencia competitiva.
   try{
     const latest=await getMyRatings(session.user.id);
     const signature=JSON.stringify(
@@ -3857,9 +3939,9 @@ async function renderCompetitivePulse(rankingRows){
     const chasing=target.position<me.position;
     title.textContent=chasing?'Subí un puesto':'Defendé tu lugar';
     badge.textContent=chasing?'A LA CAZA':'DEFENSA';
-    label.textContent=chasing?`#${target.position} está a ${gap} Elo`:`#${target.position} está detrás tuyo`;
+    label.textContent=chasing?`#${target.position} está a ${gap} RP`:`#${target.position} está detrás tuyo`;
     name.textContent=`${target.profile.first_name} ${target.profile.last_name}`;
-    detail.textContent=`@${target.profile.username} · ${target.rating} Elo`;
+    detail.textContent=`@${target.profile.username} · ${target.rating} RP`;
     const pct=Math.max(8,Math.min(100,100-gap/4));
     fill.style.width=`${pct}%`;
     btn.classList.remove('hidden');
@@ -3907,7 +3989,7 @@ async function loadHomeDashboard(){
   if($('#homeMaxStreak'))animateNumberV601($('#homeMaxStreak'),streak.max,{duration:430});
   const streakCaption=$('#homeCurrentStreak')?.nextElementSibling;
   if(streakCaption){
-    streakCaption.textContent='victorias oficiales con Elo';
+    streakCaption.textContent='victorias oficiales con RP';
     streakCaption.classList.remove('has-elo-boost');
   }
   if($('#homeReputation'))$('#homeReputation').textContent=rep.count?rep.average.toFixed(1):'—';
@@ -3918,14 +4000,14 @@ async function loadHomeDashboard(){
 
   const info=nextRankInfo(ind.rating);
   if($('#homeNextRankText')){
-    $('#homeNextRankText').textContent=info.next?`${info.remaining} Elo para ${info.next.name}`:'Rango máximo';
+    $('#homeNextRankText').textContent=info.next?`${info.remaining} RP para ${info.next.name}`:'Rango máximo';
   }
   if($('#homeRankProgressBar'))animateProgressV601($('#homeRankProgressBar'),info.progress);
 
   if(info.next){
     const remaining=Math.max(0,Number(info.next.min_rating)-Number(ind.rating));
     $('#homeObjectiveTitle').textContent=`¡Rumbo a ${info.next.name}!`;
-    $('#homeObjectiveDetail').textContent=`Te faltan ${remaining} puntos de Elo para tu próximo ascenso.`;
+    $('#homeObjectiveDetail').textContent=`Te faltan ${remaining} RP para tu próximo ascenso.`;
     if($('#homeObjectiveProgress'))animateProgressV601($('#homeObjectiveProgress'),info.progress);
     if($('#homeObjectiveReward'))$('#homeObjectiveReward').textContent=`RECOMPENSA · Marco ${info.next.name}`;
     if($('#homeObjectiveGlyph'))$('#homeObjectiveGlyph').textContent='✦';
@@ -4027,8 +4109,8 @@ function statModeLabelV56(mode=statsModeV56){
 function statModeDescriptionV56(mode=statsModeV56){
   return ({
     all:'Resumen unificado de Casual, Competitivo y Torneos. El Win Rate principal es el promedio entre las modalidades que ya jugaste.',
-    casual:'Sólo partidos casuales: resultados sin impacto en el Elo.',
-    competitive:'Sólo duelos competitivos con ranking y evolución de Elo.',
+    casual:'Sólo partidos casuales: resultados sin impacto en el RP.',
+    competitive:'Sólo duelos competitivos con ranking y evolución de RP.',
     tournament:'Todos tus partidos de torneo: individuales, dobles y enfrentamientos por equipos.'
   })[mode];
 }
@@ -4064,7 +4146,7 @@ function renderStatsModeTopV56(){
     },
     casual:{
       rate:'Win Rate casual',
-      rateHint:'partidos sin Elo',
+      rateHint:'partidos sin RP',
       matches:'partidos casuales',
       wins:'victorias casuales',
       losses:'derrotas casuales'
@@ -4134,7 +4216,7 @@ function renderModeComparativeV56(){
     const ratingDelta=Number(c.rating.value||0)-Number(c.rating.average||0);
 
     box.innerHTML=`
-      <article><span>Elo</span><strong>${c.rating.value}</strong><b>Top ${c.rating.top_percent}%</b><small>${ratingDelta>=0?'+':''}${Math.round(ratingDelta)} vs promedio</small></article>
+      <article><span>RP</span><strong>${c.rating.value}</strong><b>Top ${c.rating.top_percent}%</b><small>${ratingDelta>=0?'+':''}${Math.round(ratingDelta)} vs promedio</small></article>
       <article><span>Win rate</span><strong>${c.win_rate.value}%</strong><b>Percentil ${c.win_rate.percentile}</b><small>${wrDelta>=0?'+':''}${wrDelta.toFixed(1)} pts vs promedio</small></article>
       <article><span>Actividad</span><strong>${c.activity.matches}</strong><b>Percentil ${c.activity.percentile}</b><small>partidos ranked jugados</small></article>`;
     return;
@@ -4146,7 +4228,7 @@ function renderModeComparativeV56(){
 
   if(statsModeV56==='all'){
     const rows=[
-      ['Casual',st.casual||{},'sin Elo'],
+      ['Casual',st.casual||{},'sin RP'],
       ['Competitivo',st.competitive||{},'con ranking'],
       ['Torneos',st.tournament||{},'competencia organizada']
     ];
@@ -4320,7 +4402,7 @@ async function loadChampionsHall(){
             <span class="champion-crown">${r.position===1?'♛':r.position===2?'♕':'♜'}</span>
             ${avatarHtml(r,'champion-avatar')}
             <strong>${esc(r.first_name)} ${esc(r.last_name)}</strong>
-            <small>#${r.position} · ${r.final_rating} Elo</small>
+            <small>#${r.position} · ${r.final_rating} RP</small>
           </button>`).join('')}
         </div>
       </article>`;
@@ -4337,7 +4419,7 @@ function seasonCardHtml(s,label){
     <span>${label}</span>
     <div class="season-profile-place"><strong>#${s.final_position||'—'}</strong><b>${esc(s.rank_name||'—')}</b></div>
     <div class="season-profile-stats">
-      <small>Elo final <b>${s.final_rating}</b></small>
+      <small>RP final <b>${s.final_rating}</b></small>
       <small>Máximo <b>${s.max_rating}</b></small>
       <small>Partidos <b>${s.matches_played}</b></small>
       <small>Victorias <b>${s.wins}</b></small>
@@ -4369,18 +4451,18 @@ async function loadCompetitiveProgressV72(){
       </div>
       <div class="v72-progress-hero">
         <section class="v72-rank-panel">
-          <div class="v72-rank-copy"><div><small>RANGO ACTUAL</small><strong>${esc(p.rank)}</strong></div><div><small>ELO</small><b>${p.rating}</b></div></div>
+          <div class="v72-rank-copy"><div><small>RANGO ACTUAL</small><strong>${esc(p.rank)}</strong></div><div><small>RP</small><b>${p.rating}</b></div></div>
           <div class="v72-rank-track" role="progressbar" aria-label="Progreso hacia ${esc(p.nextRank||'el rango máximo')}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p.progress)}"><i style="width:${p.progress}%"></i></div>
-          <p>${p.nextRank?`${p.toNext} Elo para <strong>${esc(p.nextRank)}</strong>`:'Alcanzaste el rango máximo'}</p>
+          <p>${p.nextRank?`${p.toNext} RP para <strong>${esc(p.nextRank)}</strong>`:'Alcanzaste el rango máximo'}</p>
         </section>
         <section class="v72-record-panel">
-          <div><small>MÁXIMO HISTÓRICO</small><strong>${p.maxElo}</strong><em>Elo</em></div>
+          <div><small>MÁXIMO HISTÓRICO</small><strong>${p.maxElo}</strong><em>RP</em></div>
           <div><small>POSICIÓN ACTUAL</small><strong>${p.position?`#${p.position}`:'—'}</strong><em>${p.bestPosition?`mejor conocida #${p.bestPosition}`:'ranking global'}</em></div>
         </section>
       </div>
       <div class="v72-progress-grid">
-        <article><span>Variación 7 días</span><strong class="${deltaClass(p.delta7)}">${signed(p.delta7)}</strong><small>Elo acumulado</small></article>
-        <article><span>Variación 30 días</span><strong class="${deltaClass(p.delta30)}">${signed(p.delta30)}</strong><small>Elo acumulado</small></article>
+        <article><span>Variación 7 días</span><strong class="${deltaClass(p.delta7)}">${signed(p.delta7)}</strong><small>RP acumulado</small></article>
+        <article><span>Variación 30 días</span><strong class="${deltaClass(p.delta30)}">${signed(p.delta30)}</strong><small>RP acumulado</small></article>
         <article><span>Racha competitiva</span><strong>${p.currentStreak}</strong><small>individual · sin casuales</small></article>
         <article><span>Mejor racha oficial</span><strong>${p.bestStreak}</strong><small>récord competitivo</small></article>
       </div>
@@ -4402,16 +4484,16 @@ async function loadPersonalRecords(){
     const rec=await getPlayerRecords(session.user.id);
     const pct=percentileState?.top_percent;
     if($('#statsComparativeLabel')){
-      $('#statsComparativeLabel').textContent=pct?`Top ${pct}% por Elo`:'Comparativa pendiente';
+      $('#statsComparativeLabel').textContent=pct?`Top ${pct}% por RP`:'Comparativa pendiente';
     }
     const rival=rec.most_faced_rival;
     const upset=rec.biggest_upset;
     box.innerHTML=`
-      <article><span>Elo máximo</span><strong>${rec.max_elo||1000}</strong><small>mejor rating histórico</small></article>
+      <article><span>RP máximo</span><strong>${rec.max_elo||1000}</strong><small>mejor rating histórico</small></article>
       <article><span>Mejor temporada</span><strong>${rec.best_season_position?`#${rec.best_season_position}`:'—'}</strong><small>posición final</small></article>
       <article><span>Torneos ganados</span><strong>${rec.tournaments_won||0}</strong><small>${rec.finals_played||0} finales jugadas</small></article>
       <article><span>Rival más enfrentado</span><strong>${rival?esc(rival.first_name):'—'}</strong><small>${rival?`${rival.matches} partidos · ${rival.wins} victorias`:'Sin suficientes partidos'}</small></article>
-      <article class="record-wide"><span>Mayor sorpresa</span><strong>${upset?`+${upset.rating_gap} Elo de diferencia`:'—'}</strong><small>${upset?`Venciste a ${esc(upset.first_name)} ${esc(upset.last_name)} siendo ${upset.my_rating} vs ${upset.opponent_rating}`:'Todavía no venciste a un rival con Elo superior.'}</small></article>`;
+      <article class="record-wide"><span>Mayor sorpresa</span><strong>${upset?`+${upset.rating_gap} RP de diferencia`:'—'}</strong><small>${upset?`Venciste a ${esc(upset.first_name)} ${esc(upset.last_name)} siendo ${upset.my_rating} vs ${upset.opponent_rating}`:'Todavía no venciste a un rival con RP superior.'}</small></article>`;
   }catch(err){console.error(err);box.innerHTML='<div class="compact-empty">No se pudieron cargar los récords.</div>'}
 }
 
@@ -4484,7 +4566,7 @@ async function loadActivityCenter(){
 
       (socialState.ratingHistory||[]).slice(0,10).forEach(r=>{
         const delta=Number(r.rating_change||0);
-        items.push({key:`elo:${r.id}`,kind:'elo',icon:delta>=0?'↑':'↓',title:`${delta>=0?'+':''}${delta} Elo`,detail:`${r.previous_rating} → ${r.new_rating}`,attention:false,recent:true,at:new Date(r.created_at||0).getTime(),when:when(r.created_at),attr:r.match_id?`data-match-detail="${r.match_id}"`:'data-activity-tab="history"'});
+        items.push({key:`elo:${r.id}`,kind:'elo',icon:delta>=0?'↑':'↓',title:`${delta>=0?'+':''}${delta} RP`,detail:`${r.previous_rating} → ${r.new_rating}`,attention:false,recent:true,at:new Date(r.created_at||0).getTime(),when:when(r.created_at),attr:r.match_id?`data-match-detail="${r.match_id}"`:'data-activity-tab="history"'});
       });
 
       if(seasonState){
@@ -4519,9 +4601,9 @@ async function loadRecommendedRivals(){
       return `<article class="recommended-rival-card">
         <button class="recommended-rival-profile" data-open-player="${r.user_id}" type="button">
           <span class="recommended-avatar-online-v37" data-user-id-v35="${r.user_id}">${avatarHtml({first_name:r.first_name,last_name:r.last_name,profile_photo_url:r.profile_photo_url},'recommended-avatar')}${onlineDotV35(r.user_id)}</span>
-          <div><strong>${esc(r.first_name)} ${esc(r.last_name)}</strong><small>@${esc(r.username)} · ${r.rating} Elo</small><em class="v60-presence-text" data-presence-text-v60="${r.user_id}">${presenceLabelV60(r.user_id)}</em></div>
+          <div><strong>${esc(r.first_name)} ${esc(r.last_name)}</strong><small>@${esc(r.username)} · ${r.rating} RP</small><em class="v60-presence-text" data-presence-text-v60="${r.user_id}">${presenceLabelV60(r.user_id)}</em></div>
         </button>
-        <div class="recommended-rival-meta"><span>${r.rating_gap} Elo de diferencia</span><span>H2H ${h2h}</span></div>
+        <div class="recommended-rival-meta"><span>${r.rating_gap} RP de diferencia</span><span>H2H ${h2h}</span></div>
         <button class="recommended-challenge" data-quick-challenge="${r.user_id}" data-name="${esc(r.first_name)} ${esc(r.last_name)}" data-user="${esc(r.username)}" type="button">Desafiar</button>
       </article>`;
     }).join(''):'<div class="compact-empty">No encontramos rivales recomendados todavía.</div>';
@@ -4543,8 +4625,8 @@ async function openSeasonHistoryModal(){
       return `<article class="season-history-card">
         <div><small>TEMPORADA ${s.season_number}</small><strong>#${s.final_position||'—'}</strong></div>
         <div><span>Rango</span><b>${esc(s.rank_name)}</b></div>
-        <div><span>Elo final</span><b>${s.final_rating}</b></div>
-        <div><span>Elo máximo</span><b>${s.max_rating}</b></div>
+        <div><span>RP final</span><b>${s.final_rating}</b></div>
+        <div><span>RP máximo</span><b>${s.max_rating}</b></div>
         <div><span>Partidos</span><b>${s.matches_played}</b></div>
         <div><span>Victorias</span><b>${s.wins} · ${wr}%</b></div>
       </article>`;
@@ -4568,7 +4650,7 @@ async function renderPrimaryRival(){
       <div>
         <small>⚔ RIVAL PRINCIPAL</small>
         <strong>${esc(p.first_name)} ${esc(p.last_name)}</strong>
-        <span>${rankForRating(p.individual_rating)} · ${p.individual_rating} Elo · Cara a cara ${p.h2h_me}-${p.h2h_them}</span>
+        <span>${rankForRating(p.individual_rating)} · ${p.individual_rating} RP · Cara a cara ${p.h2h_me}-${p.h2h_them}</span>
       </div>
       <b>Ver perfil →</b>
     </button>`;
@@ -4590,7 +4672,7 @@ function achievementVisualMeta(a){
   }else if(id.startsWith('streak_')){
     symbol='🔥'; value=parts[1]||''; kind='streak'; detail='RACHA';
   }else if(id.startsWith('elo_')){
-    symbol='◆'; value=parts[1]||''; kind='elo'; detail='ELO';
+    symbol='◆'; value=parts[1]||''; kind='elo'; detail='RP';
   }else if(id.startsWith('casual_')){
     symbol='●'; value=parts[1]||''; kind='casual'; detail='CASUAL';
   }else if(id.startsWith('ranked_')){
@@ -4809,7 +4891,7 @@ async function loadHistoryPage(){
       const fmt=m.match_format==='bo5'?'Bo5':m.match_format==='bo3'?'Bo3':'1 set';
       const modality=matchModalityV60(m);
       return `<article class="history-match-card ${type}">
-        <div class="history-result-band"><span>${label}</span><div class="history-result-meta-v59">${m.duration_seconds!==null&&m.duration_seconds!==undefined?`<em>⏱ ${formatDurationV59(m.duration_seconds)}</em>`:''}${delta!==null?`<strong>${delta>=0?'+':''}${delta} Elo</strong>`:''}</div></div>
+        <div class="history-result-band"><span>${label}</span><div class="history-result-meta-v59">${m.duration_seconds!==null&&m.duration_seconds!==undefined?`<em>⏱ ${formatDurationV59(m.duration_seconds)}</em>`:''}${delta!==null?`<strong>${delta>=0?'+':''}${delta} RP</strong>`:''}</div></div>
         <div class="history-match-main">
           ${avatarHtml(other,'history-opponent-avatar')}
           <div class="history-opponent"><small>VS · <b class="v60-history-modality">${modality==='doubles'?'DOBLES':'INDIVIDUAL'}</b></small><strong>${esc(other?.first_name||'Jugador')} ${esc(other?.last_name||'')}</strong><span>@${esc(other?.username||'usuario')} · ${fmt} · <b class="inline-match-mode ${matchTypeClass(m.match_type)}">${matchTypeLabel(m.match_type)}</b> · ${formatMatchDate(m)}</span></div>
@@ -4857,9 +4939,9 @@ async function openMatchDetail(matchId){
     </div>
     <div class="match-detail-sets">${setRows||'<div class="compact-empty">Sets no disponibles</div>'}</div>
     ${rh?`<div class="match-detail-elo">
-      <div><span>Elo antes</span><strong>${rh.previous_rating}</strong></div>
+      <div><span>RP antes</span><strong>${rh.previous_rating}</strong></div>
       <div><span>Cambio</span><strong class="${Number(rh.rating_change)>=0?'positive':'negative'}">${Number(rh.rating_change)>=0?'+':''}${rh.rating_change}</strong></div>
-      <div><span>Elo después</span><strong>${rh.new_rating}</strong></div>
+      <div><span>RP después</span><strong>${rh.new_rating}</strong></div>
     </div>`:''}
     <button class="btn btn-start" data-rematch="${m.id}" type="button">REVANCHA</button>`;
   $('#matchDetailModal').classList.remove('hidden');syncModalScrollLock();
@@ -4913,9 +4995,9 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
   const breakerMult=Number(summary?.streak_breaker_multiplier||1);
   let highlightHtml='';
   if(newBest&&!isCasual){
-    highlightHtml=`<section class="v71-highlight record"><span>✦</span><div><small>NUEVO RÉCORD PERSONAL</small><strong>${bestRating} Elo</strong><p>Superaste tu mejor marca histórica.</p></div></section>`;
+    highlightHtml=`<section class="v71-highlight record"><span>✦</span><div><small>NUEVO RÉCORD PERSONAL</small><strong>${bestRating} RP</strong><p>Superaste tu mejor marca histórica.</p></div></section>`;
   }else if(summary?.protection_used){
-    highlightHtml=`<section class="v71-highlight shield"><span>🛡️</span><div><small>PROTECCIÓN ACTIVADA</small><strong>Tu Elo quedó protegido</strong><p>El escudo evitó una pérdida de ${Number(summary.protected_elo||0)} Elo.</p></div></section>`;
+    highlightHtml=`<section class="v71-highlight shield"><span>🛡️</span><div><small>PROTECCIÓN ACTIVADA</small><strong>Tu RP quedó protegido</strong><p>El escudo evitó una pérdida de ${Number(summary.protected_elo||0)} RP.</p></div></section>`;
   }else if(won&&!isCasual&&streakMult>1){
     highlightHtml=`<section class="v71-highlight streak"><span>${breakerMult>=2?'⚡':'🔥'}</span><div><small>${breakerMult>=2?'RACHA CORTADA':'BONUS DE RACHA'}</small><strong>Multiplicador x${streakMult.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')}</strong><p>${breakerMult>=2?'Terminaste la racha de tu rival.':'Tu rendimiento consecutivo aumentó la ganancia.'}</p></div></section>`;
   }else if(rewards.length){
@@ -4924,7 +5006,7 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
   }
 
   const resultLabel=isCasual?'PARTIDO CASUAL':won?'VICTORIA':'DERROTA';
-  const eloLabel=isCasual?'Sin cambio de Elo':summary?.protection_used?'0 Elo':`${delta>=0?'+':''}${delta} Elo`;
+  const eloLabel=isCasual?'Sin cambio de RP':summary?.protection_used?'0 RP':`${delta>=0?'+':''}${delta} RP`;
   const resultClass=isCasual?'casual':won?'victory':'defeat';
 
   $('#postMatchContent').innerHTML=`
@@ -4943,10 +5025,10 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
       <main class="v71-result-body">
         <section class="v71-elo-card ${isCasual?'is-casual':''}">
           <div class="v71-elo-change">
-            <small>${isCasual?'RESULTADO REGISTRADO':'CAMBIO DE ELO'}</small>
+            <small>${isCasual?'RESULTADO REGISTRADO':'CAMBIO DE RP'}</small>
             <strong>${eloLabel}</strong>
           </div>
-          ${!isCasual?`<div class="v71-elo-journey" aria-label="Elo anterior ${previous}, Elo actual ${current}">
+          ${!isCasual?`<div class="v71-elo-journey" aria-label="RP anterior ${previous}, RP actual ${current}">
             <span><small>ANTES</small><b>${previous}</b></span>
             <i>→</i>
             <span class="current"><small>AHORA</small><b>${current}</b></span>
@@ -4959,7 +5041,7 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
             <div class="v71-position"><small>POSICIÓN</small><strong>${pos?`#${pos}`:'—'}</strong></div>
           </div>
           <div class="v71-rank-track" role="progressbar" aria-label="Progreso hacia ${esc(nextRank||'el rango máximo')}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(rankProgress)}"><i style="width:${rankProgress}%"></i></div>
-          <p>${nextRank?`${toNext} Elo para <strong>${esc(nextRank)}</strong>`:'Alcanzaste el rango máximo'}</p>
+          <p>${nextRank?`${toNext} RP para <strong>${esc(nextRank)}</strong>`:'Alcanzaste el rango máximo'}</p>
         </section>`:''}
 
         ${highlightHtml}
@@ -4967,7 +5049,7 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
         <div class="v71-match-meta">
           ${m?.duration_seconds!==null&&m?.duration_seconds!==undefined?`<span>⏱ ${formatDurationV59(m.duration_seconds)}</span>`:''}
           ${!isCasual&&Number(summary?.protection_earned||0)>0?`<span>🛡 +${Number(summary.protection_earned)} protección</span>`:''}
-          ${!isCasual?`<span>Máximo: ${bestRating} Elo</span>`:''}
+          ${!isCasual?`<span>Máximo: ${bestRating} RP</span>`:''}
         </div>
 
         <section class="v71-coach"><span>✦</span><div><small>TT COACH</small><p>${esc(buildV28CoachText())}</p></div></section>
@@ -5187,8 +5269,8 @@ async function openPublicPlayerProfile(userId){
         ${reliabilityHtmlV34(reliability)}
 
         <div class="public-profile-highlight-grid">
-          <article><span>Elo individual</span><strong>${p.individual_rating}</strong><small>#${p.ranking_position||'—'} ranking</small></article>
-          <article><span>Elo máximo</span><strong>${p.max_elo}</strong><small>récord histórico</small></article>
+          <article><span>RP individual</span><strong>${p.individual_rating}</strong><small>#${p.ranking_position||'—'} ranking</small></article>
+          <article><span>RP máximo</span><strong>${p.max_elo}</strong><small>récord histórico</small></article>
           <article><span>Reputación</span><strong>${rep}</strong><small>${p.reputation_count} valoraciones</small></article>
           <article><span>Logros</span><strong>${unlockedCount}</strong><small>de 50</small></article>
         </div>
@@ -5206,7 +5288,7 @@ async function openPublicPlayerProfile(userId){
           ${publicPrefs?.show_playing_style===false?'':`<div><span>Estilo</span><strong>${esc(cap(p.playing_style))}</strong></div>`}
           ${publicPrefs?.show_dominant_hand===false?'':`<div><span>Mano hábil</span><strong>${esc(cap(p.dominant_hand))}</strong></div>`}
           ${publicPrefs?.show_club===false?'':`<div><span>Club</span><strong>${esc(p.club_name||'N/A')}</strong></div>`}
-          <div><span>Dobles</span><strong>${p.doubles_rating} Elo</strong></div>
+          <div><span>Dobles</span><strong>${p.doubles_rating} RP</strong></div>
         </section>
 
         <section class="public-profile-record">
@@ -5236,7 +5318,7 @@ async function openPublicPlayerProfile(userId){
         <section class="public-records-v20">
           <p class="muted-label">RÉCORDS</p>
           <div class="public-records-grid-v20">
-            <div><span>Elo máximo</span><strong>${records?.max_elo||p.max_elo}</strong></div>
+            <div><span>RP máximo</span><strong>${records?.max_elo||p.max_elo}</strong></div>
             <div><span>Mejor temporada</span><strong>${records?.best_season_position?`#${records.best_season_position}`:'—'}</strong></div>
             <div><span>Torneos ganados</span><strong>${records?.tournaments_won||0}</strong></div>
             <div><span>Finales</span><strong>${records?.finals_played||0}</strong></div>
@@ -5253,7 +5335,7 @@ async function openPublicPlayerProfile(userId){
             </div>
             <div class="h2h-details">
               <span>Tu mejor racha ante este rival <b>${h2hAdvanced?.best_win_streak||0}</b></span>
-              <span>Elo neto <b class="${Number(h2hAdvanced?.net_elo||0)>=0?'positive':'negative'}">${Number(h2hAdvanced?.net_elo||0)>=0?'+':''}${h2hAdvanced?.net_elo||0}</b></span>
+              <span>RP neto <b class="${Number(h2hAdvanced?.net_elo||0)>=0?'positive':'negative'}">${Number(h2hAdvanced?.net_elo||0)>=0?'+':''}${h2hAdvanced?.net_elo||0}</b></span>
             </div>
             <div class="h2h-recent">
               ${(h2hAdvanced?.recent||[]).length?(h2hAdvanced.recent||[]).map(x=>`<span class="${x.won?'win':'loss'}" title="${x.my_sets}-${x.opponent_sets}">${x.won?'V':'D'}</span>`).join(''):'<small>Todavía no jugaron partidos competitivos verificados.</small>'}
@@ -5279,7 +5361,7 @@ function updateLiveResultBoard(){
   const rows=[...$('#setInputs').querySelectorAll('.v28-score-row')];
   let p1wins=0,p2wins=0;
   let seriesFinished=false;
-  let abandonment=false;
+  let invalidScore=false;
   const need=currentMatch.match_format==='bo5'?3:currentMatch.match_format==='bo3'?2:1;
 
   rows.forEach((row,idx)=>{
@@ -5290,7 +5372,7 @@ function updateLiveResultBoard(){
     row.classList.remove('auto-unplayed','abandonment-row');
     delete row.dataset.winner;
 
-    if(seriesFinished||abandonment){
+    if(seriesFinished){
       row.classList.add('auto-unplayed');
       if(skip)skip.checked=true;
       a.disabled=true;
@@ -5316,12 +5398,11 @@ function updateLiveResultBoard(){
     const high=Math.max(x,y);
     const low=Math.min(x,y);
 
-    // Ninguno llegó a 11: se interpreta visualmente como abandono.
-    // No suma un set al marcador: el backend define al ganador del partido por abandono.
+    // El abandono tiene su propia acción confirmada. Un tanteador menor a 11
+    // dentro del formulario de resultado es simplemente un set incompleto.
     if(high<11){
-      abandonment=true;
+      invalidScore=true;
       row.classList.add('abandonment-row');
-      row.dataset.winner=x>y?'p1':'p2';
       return;
     }
 
@@ -5338,8 +5419,8 @@ function updateLiveResultBoard(){
 
   const status=$('#v28LiveMatchState');
   if(status){
-    if(abandonment){
-      status.textContent='ABANDONO';
+    if(invalidScore){
+      status.textContent='SET INCOMPLETO';
       status.className='v28-live-state abandonment';
     }else if(p1wins>=need||p2wins>=need){
       status.textContent='PARTIDO DEFINIDO';
@@ -5358,6 +5439,9 @@ function openMatchModal(matchId,matches=[]){
   if(m.result_status!=='pending'){alert('Este partido ya no está pendiente de resultado.');loadMatches();return}
 
   currentMatch=m;
+  activeMatchResultOpenV747=true;
+  $('#activeMatchModalV747')?.classList.add('hidden');
+  $('#activeMatchNoticeV747')?.classList.add('hidden');
   const p1=m.player1,p2=m.player2;
   const best=m.match_format==='bo5'?5:m.match_format==='bo3'?3:1;
   const need=Math.floor(best/2)+1;
@@ -5391,7 +5475,13 @@ function openMatchModal(matchId,matches=[]){
   syncModalScrollLock();
 }
 
-function closeMatchModal(){currentMatch=null;$('#matchModal').classList.add('hidden');syncModalScrollLock()}
+function closeMatchModal({restoreActive=true}={}){
+  currentMatch=null;
+  activeMatchResultOpenV747=false;
+  $('#matchModal').classList.add('hidden');
+  if(restoreActive&&activeMatchV747?.result_status==='pending')openActiveMatchV747();
+  else syncModalScrollLock();
+}
 
 let cachedMatches=[];
 async function refreshMatchesCache(){cachedMatches=await getMyMatches(session.user.id);return cachedMatches}
@@ -5745,7 +5835,7 @@ function renderTeamTournamentDetailV32(){
         <div><p class="muted-label">RESUMEN FINAL</p><h3>${t.status==='draw'?'Serie empatada':`🏆 ${esc(winner)}`}</h3></div>
         <strong>${t.home_score}–${t.away_score}</strong>
       </div>
-      ${v35Flags?.is_test_admin&&t.test_mode?'<div class="team-elo-test-v33">🧪 Modo prueba: los resultados no modificaron Elo.</div>':''}
+      ${v35Flags?.is_test_admin&&t.test_mode?'<div class="team-elo-test-v33">🧪 Modo prueba: los resultados no modificaron RP.</div>':''}
       <div class="team-elo-summary-v32">${(data.elo_summary||[]).map(s=>`<article>
         <strong>${esc(s.name)}</strong>
         <small>${s.matches_played} PJ · ${s.wins}V–${s.losses}D</small>
@@ -5753,7 +5843,7 @@ function renderTeamTournamentDetailV32(){
           <span>Individual <b class="${s.individual_change>=0?'positive':'negative'}">${s.individual_change>=0?'+':''}${s.individual_change}</b></span>
           <span>Dobles <b class="${s.doubles_change>=0?'positive':'negative'}">${s.doubles_change>=0?'+':''}${s.doubles_change}</b></span>
         </div>
-        <em>TOTAL ${s.total_change>=0?'+':''}${s.total_change} Elo</em>
+        <em>TOTAL ${s.total_change>=0?'+':''}${s.total_change} RP</em>
       </article>`).join('')}</div>`;
   }else{
     summary.classList.add('hidden');
@@ -5871,8 +5961,8 @@ function showTeamEloV33(){
         <span>Individual <b class="${s.individual_change>0?'positive':s.individual_change<0?'negative':''}">${s.individual_change>0?'+':''}${s.individual_change||0}</b></span>
         <span>Dobles <b class="${s.doubles_change>0?'positive':s.doubles_change<0?'negative':''}">${s.doubles_change>0?'+':''}${s.doubles_change||0}</b></span>
       </div>
-      <em class="${s.total_change>0?'positive':s.total_change<0?'negative':''}">TOTAL ${s.total_change>0?'+':''}${s.total_change||0} Elo</em>
-    </article>`).join(''):'<div class="loading-row">No hay movimientos de Elo para mostrar.</div>';
+      <em class="${s.total_change>0?'positive':s.total_change<0?'negative':''}">TOTAL ${s.total_change>0?'+':''}${s.total_change||0} RP</em>
+    </article>`).join(''):'<div class="loading-row">No hay movimientos de RP para mostrar.</div>';
 
   $('#teamEloOverlayV33').classList.remove('hidden');
   syncModalScrollLock();
@@ -6205,7 +6295,7 @@ function renderRatingChart(historyRows){
   if(!rows.length){
     $('#ratingChartWrap').classList.add('hidden');
     $('#ratingChartEmpty').classList.remove('hidden');
-    $('#ratingChartCurrent').textContent=`${getRating('individual').rating} Elo`;
+    $('#ratingChartCurrent').textContent=`${getRating('individual').rating} RP`;
     $('#ratingChartMin').textContent='—';
     $('#ratingChartMax').textContent='—';
     return;
@@ -6277,7 +6367,7 @@ function renderRatingChart(historyRows){
       cx="${x(i)}" cy="${y(p.rating)}" r="${i===points.length-1?6:4}"
       data-chart-index="${i}"></circle>`).join('');
 
-  $('#ratingChartCurrent').textContent=`${points.at(-1).rating} Elo`;
+  $('#ratingChartCurrent').textContent=`${points.at(-1).rating} RP`;
   $('#ratingChartMin').textContent=`${Math.min(...ratingsValues)} min`;
   $('#ratingChartMax').textContent=`${Math.max(...ratingsValues)} max`;
 
@@ -6285,7 +6375,7 @@ function renderRatingChart(historyRows){
   $('#ratingChartDots').querySelectorAll('[data-chart-index]').forEach(dot=>{
     const show=()=>{
       const p=points[Number(dot.dataset.chartIndex)];
-      tooltip.innerHTML=`<strong>${p.rating} Elo</strong><span>${p.date.toLocaleDateString()}${p.change?` · ${p.change>=0?'+':''}${p.change}`:''}</span>`;
+      tooltip.innerHTML=`<strong>${p.rating} RP</strong><span>${p.date.toLocaleDateString()}${p.change?` · ${p.change>=0?'+':''}${p.change}`:''}</span>`;
       tooltip.classList.remove('hidden');
     };
     dot.addEventListener('mouseenter',show);
@@ -7859,7 +7949,49 @@ document.addEventListener('click',async e=>{
   }
 });
 
-$('#closeMatchModal').onclick=closeMatchModal;
+$('#activeMatchNoticeV747').onclick=openActiveMatchV747;
+$('#minimizeActiveMatchV747').onclick=minimizeActiveMatchV747;
+$('#finishActiveMatchV747').onclick=async()=>{
+  if(!activeMatchV747)return;
+  try{
+    await refreshMatchesCache();
+    openMatchModal(activeMatchV747.id,cachedMatches);
+  }catch(err){
+    alert('No se pudo abrir el resultado: '+friendly(err?.message||'error desconocido'));
+  }
+};
+$('#requestAbandonMatchV747').onclick=()=>{
+  if(!activeMatchV747)return;
+  const ranked=activeMatchV747.match_type!=='casual';
+  $('#abandonMatchCopyV747').textContent=ranked
+    ?'Perderás el doble de RP que en una derrota normal. Tu rival recibirá la ganancia habitual y deberá confirmar el abandono.'
+    :'El partido quedará registrado como abandono, sin modificar RP. Tu rival deberá confirmarlo.';
+  setStatus($('#abandonMatchStatusV747'),'');
+  $('#abandonMatchModalV747').classList.remove('hidden');
+  syncModalScrollLock();
+};
+$('#cancelAbandonMatchV747').onclick=()=>{$('#abandonMatchModalV747').classList.add('hidden');syncModalScrollLock()};
+$('#confirmAbandonMatchV747').onclick=async()=>{
+  if(!activeMatchV747)return;
+  const matchId=Number(activeMatchV747.id),button=$('#confirmAbandonMatchV747');
+  const iAmPlayer1=activeMatchV747.player1_id===session.user.id;
+  const sets=[iAmPlayer1?{player1_points:0,player2_points:1}:{player1_points:1,player2_points:0}];
+  await withActionLockV60(`abandon-match-v747:${matchId}`,button,async()=>{
+    try{
+      await submitMatchResult(matchId,sets);
+      setActiveMatchMinimizedV747(matchId,false);
+      $('#abandonMatchModalV747').classList.add('hidden');
+      $('#activeMatchModalV747').classList.add('hidden');
+      $('#activeMatchNoticeV747').classList.add('hidden');
+      await Promise.all([loadMatches(),loadLiveNotifications(),loadActivityCenter()]);
+      recoverPageScrollIfIdle();
+    }catch(err){
+      setStatus($('#abandonMatchStatusV747'),friendly(err?.message||'No se pudo registrar el abandono.'),'error');
+      throw err;
+    }
+  },{loadingText:'Registrando abandono…',successText:'Abandono informado ✓'}).catch(()=>{});
+};
+$('#closeMatchModal').onclick=()=>closeMatchModal();
 $('#matchResultForm').onsubmit=async e=>{
   e.preventDefault();
   if(!currentMatch)return;
@@ -7870,7 +8002,6 @@ $('#matchResultForm').onsubmit=async e=>{
 
   let p1wins=0,p2wins=0;
   let reachedGap=false;
-  let abandonment=false;
 
   for(const row of rows){
     const skip=row.querySelector('[data-unplayed-set]')?.checked;
@@ -7914,14 +8045,12 @@ $('#matchResultForm').onsubmit=async e=>{
     const high=Math.max(a,b);
     const low=Math.min(a,b);
 
-    // ABANDONO:
-    // si ninguno llegó a 11, este es el último set realmente informado.
-    // Puede ser Set 1, 2, 3, 4 o 5. Las filas posteriores simplemente quedan sin jugar.
     if(high<11){
-      abandonment=true;
-      sets.push({player1_points:a,player2_points:b});
-      reachedGap=true;
-      continue;
+      return setStatus(
+        $('#matchResultStatus'),
+        'Ese set todavía no terminó. Para abandonar usá el botón “Abandonar partido”.',
+        'error'
+      );
     }
 
     if(high-low<2){
@@ -7946,7 +8075,7 @@ $('#matchResultForm').onsubmit=async e=>{
     return setStatus($('#matchResultStatus'),'Ingresá al menos un set.','error');
   }
 
-  if(!abandonment&&p1wins<need&&p2wins<need){
+  if(p1wins<need&&p2wins<need){
     return setStatus(
       $('#matchResultStatus'),
       'Todavía no hay un ganador de la serie.',
@@ -7959,7 +8088,7 @@ $('#matchResultForm').onsubmit=async e=>{
   await withActionLockV60(`submit-result:${matchId}`,submitButton,async()=>{
     try{
       await submitMatchResult(matchId,sets);
-      closeMatchModal();
+      closeMatchModal({restoreActive:false});
 
       // La UI local cambia inmediatamente; el rival recibe lo mismo por Realtime.
       await Promise.all([
@@ -9103,9 +9232,9 @@ async function bootApplicationV741(){
 
 // TT Rivals 1.0.1 Premium P4 — ayuda contextual de métricas de Inicio.
 const METRIC_INFO_V101={
-  streak:{icon:'🔥',eyebrow:'RACHA COMPETITIVA',title:'Tu impulso oficial',body:`<p>La racha individual cuenta victorias consecutivas en <strong>ranked y torneos oficiales</strong>. Dobles lleva una racha separada.</p><div class="metric-info-benefit-v101"><strong>Las casuales quedan fuera</strong><span>Una victoria casual no aumenta la racha y una derrota casual tampoco la corta.</span></div><p class="metric-info-note-v101">Solo entran resultados verificados. Este cambio no modifica la fórmula Elo vigente.</p>`},
+  streak:{icon:'🔥',eyebrow:'RACHA COMPETITIVA',title:'Tu impulso oficial',body:`<p>La racha individual cuenta victorias consecutivas en <strong>ranked y torneos oficiales</strong>. Dobles lleva una racha separada.</p><div class="metric-info-benefit-v101"><strong>Las casuales quedan fuera</strong><span>Una victoria casual no aumenta la racha y una derrota casual tampoco la corta.</span></div><p class="metric-info-note-v101">Solo entran resultados verificados. Este cambio no modifica la fórmula RP vigente.</p>`},
   'best-streak':{icon:'🏆',eyebrow:'MEJOR RACHA OFICIAL',title:'Tu récord competitivo',body:`<p>Muestra la mayor cantidad de <strong>victorias oficiales consecutivas</strong> que alcanzaste en individual.</p><div class="metric-info-benefit-v101"><strong>Es un récord histórico</strong><span>No baja cuando perdés y nunca se altera por un partido casual. Dobles conserva su propio récord.</span></div>`},
-  reputation:{icon:'★',eyebrow:'REPUTACIÓN',title:'Cómo te perciben tus rivales',body:`<p>La reputación resume las <strong>valoraciones post partido</strong> relacionadas con deportividad, respeto y experiencia de juego.</p><div class="metric-info-benefit-v101"><strong>No mide tu nivel</strong><span>Tu Elo mide rendimiento competitivo. La reputación mide la experiencia que otros jugadores tuvieron al enfrentarte.</span></div>`},
+  reputation:{icon:'★',eyebrow:'REPUTACIÓN',title:'Cómo te perciben tus rivales',body:`<p>La reputación resume las <strong>valoraciones post partido</strong> relacionadas con deportividad, respeto y experiencia de juego.</p><div class="metric-info-benefit-v101"><strong>No mide tu nivel</strong><span>Tu RP mide rendimiento competitivo. La reputación mide la experiencia que otros jugadores tuvieron al enfrentarte.</span></div>`},
   achievements:{icon:'◆',eyebrow:'LOGROS',title:'Hitos de tu carrera',body:`<p>Los logros reconocen objetivos, marcas competitivas, temporadas, torneos y otros hitos de TT Rivals.</p><div class="metric-info-benefit-v101"><strong>Construyen tu identidad</strong><span>Los logros desbloqueados permanecen en tu perfil y algunos pueden convertirse en placas destacadas.</span></div>`}
 };
 function openMetricInfoV101(key){

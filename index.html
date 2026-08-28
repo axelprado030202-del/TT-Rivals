@@ -35,8 +35,9 @@
   <link rel="stylesheet" href="css/v743_profile_hub.css?v=1.0.1-p7.4r.4.4">
   <link rel="stylesheet" href="css/v744_profile_card.css?v=1.0.1-p7.4r.4.5">
   <link rel="stylesheet" href="css/v746_stats_play.css?v=1.0.1-p7.4r.4.6">
+  <link rel="stylesheet" href="css/v747_match_flow.css?v=1.0.1-p7.4r.4.7">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.6-stats-play" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.7-match-flow" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -429,6 +430,13 @@
       </div>
     </header>
 
+    <button id="activeMatchNoticeV747" class="active-match-notice-v747 hidden" type="button" aria-label="Volver al partido en curso">
+      <span class="active-match-pulse-v747" aria-hidden="true"></span>
+      <span><small>PARTIDO EN CURSO</small><strong id="activeMatchNoticeTitleV747">Partido activo</strong></span>
+      <b id="activeMatchNoticeTimerV747" data-live-match-duration-v59 data-live-match-clock-style-v747="plain">0:00</b>
+      <i aria-hidden="true">⌃</i>
+    </button>
+
     <div id="liveNotificationStack" class="live-notification-stack hidden" aria-live="polite"></div>
 
     <section class="content-area">
@@ -539,7 +547,7 @@
         <section id="homeProtectionV58" class="section-card protection-card-v58">
           <div class="protection-head-v58">
             <div>
-              <p class="muted-label">🛡 PROTECCIÓN DE ELO</p>
+              <p class="muted-label">🛡 PROTECCIÓN DE RP</p>
               <h3 id="homeProtectionTitleV58">Acumulando protección</h3>
               <p id="homeProtectionDetailV58">Jugá partidos ranked válidos para acercarte a tu próximo escudo.</p>
             </div>
@@ -597,7 +605,7 @@
               <span class="ui101-mission-heading-icon" aria-hidden="true">🎯</span>
               <div><p class="muted-label">OBJETIVOS DIARIOS</p><h3 id="v101MissionTitle">Misiones</h3><small>3 objetivos pensados para una sesión normal de juego.</small></div>
             </div>
-            <div class="ui101-mission-heading-meta"><span>XP de cuenta · no altera Elo</span><b>CICLO 24 H</b></div>
+            <div class="ui101-mission-heading-meta"><span>XP de cuenta · no altera RP</span><b>CICLO 24 H</b></div>
           </div>
           <div id="v28MissionList" class="v28-mission-list" aria-live="polite">
             <div class="ui101-mission-skeleton" aria-label="Cargando misiones"><i></i><i></i><i></i></div>
@@ -681,7 +689,7 @@
       </section>
 
       <section id="tab-ranking" class="tab-page">
-        <div class="page-heading"><p class="muted-label">COMPETICIÓN</p><h2>Ranking</h2><p>Clasificación según Elo.</p></div>
+        <div class="page-heading"><p class="muted-label">COMPETICIÓN</p><h2>Ranking</h2><p>Clasificación según RP (Rivals Points).</p></div>
 
         <section class="ranking-season-header">
           <div>
@@ -750,10 +758,10 @@
 
         <section class="play-mode-gate-v62" aria-label="Modalidad del desafío">
           <button data-play-mode-v62="individual" type="button">
-            <span>🏓</span><div><strong>1 vs 1</strong><small>Desafío individual</small><em class="play-mode-rating-v746"><b id="playIndividualEloV746">1000 Elo</b><i id="playIndividualRankV746">Bronce</i></em></div><b>→</b>
+            <span>🏓</span><div><strong>1 vs 1</strong><small>Desafío individual</small><em class="play-mode-rating-v746"><b id="playIndividualEloV746">1000 RP</b><i id="playIndividualRankV746">Bronce</i></em></div><b>→</b>
           </button>
           <button data-play-mode-v62="doubles" type="button">
-            <span>👥</span><div><strong>2 vs 2</strong><small>Armá las dos parejas</small><em class="play-mode-rating-v746"><b id="playDoublesEloV746">1000 Elo</b><i id="playDoublesRankV746">Bronce</i></em></div><b>→</b>
+            <span>👥</span><div><strong>2 vs 2</strong><small>Armá las dos parejas</small><em class="play-mode-rating-v746"><b id="playDoublesEloV746">1000 RP</b><i id="playDoublesRankV746">Bronce</i></em></div><b>→</b>
           </button>
         </section>
 
@@ -772,20 +780,27 @@
                 <span class="challenge-type-label">Tipo de partido</span>
                 <div class="challenge-type-grid">
                   <button class="challenge-type-option active" data-challenge-type="ranked" type="button">
-                    <span>R</span><div><strong>Con ranking</strong><small>El resultado modifica el Elo</small></div>
+                    <span>R</span><div><strong>Con ranking</strong><small>El resultado modifica el RP</small></div>
                   </button>
                   <button class="challenge-type-option casual" data-challenge-type="casual" type="button">
-                    <span>C</span><div><strong>Casual</strong><small>Se registra, pero no modifica el Elo</small></div>
+                    <span>C</span><div><strong>Casual</strong><small>Se registra, pero no modifica el RP</small></div>
                   </button>
-                </div>
-                <input id="challengeMatchType" type="hidden" value="ranked">
               </div>
-              <label>Formato<select id="challengeFormat"><option value="single">1 set</option><option value="bo3">Mejor de 3</option><option value="bo5">Mejor de 5</option></select></label>
-              <label>Fecha (opcional)<input id="challengeDate" type="date"></label>
-              <label>Hora (opcional)<input id="challengeTime" type="time"></label>
-              <label>Lugar (opcional)<input id="challengeLocation" maxlength="100"></label>
-              <button class="btn btn-start" type="submit">ENVIAR DESAFÍO</button>
-              <p id="challengeCreateStatus" class="status"></p>
+              <input id="challengeMatchType" type="hidden" value="ranked">
+            </div>
+            <label>Formato<select id="challengeFormat"><option value="single">1 set</option><option value="bo3">Mejor de 3</option><option value="bo5">Mejor de 5</option></select></label>
+              <div class="challenge-send-dock-v747">
+                <button class="btn btn-start" type="submit">ENVIAR DESAFÍO</button>
+                <p id="challengeCreateStatus" class="status" aria-live="polite"></p>
+              </div>
+              <details class="challenge-advanced-v747">
+                <summary><span>Opciones avanzadas</span><small>Fecha, hora y lugar · opcional</small><b>⌄</b></summary>
+                <div class="challenge-advanced-fields-v747">
+                  <label>Fecha (opcional)<input id="challengeDate" type="date"></label>
+                  <label>Hora (opcional)<input id="challengeTime" type="time"></label>
+                  <label>Lugar (opcional)<input id="challengeLocation" maxlength="100"></label>
+                </div>
+              </details>
             </form>
           </section>
         </div>
@@ -806,16 +821,23 @@
               <div class="challenge-match-type">
                 <span class="challenge-type-label">Tipo de partido</span>
                 <div class="challenge-type-grid">
-                  <button class="challenge-type-option active" data-doubles-type-v62="ranked" type="button"><span>R</span><div><strong>Con ranking</strong><small>Modifica el Elo de Dobles</small></div></button>
-                  <button class="challenge-type-option casual" data-doubles-type-v62="casual" type="button"><span>C</span><div><strong>Casual</strong><small>No modifica Elo</small></div></button>
+                  <button class="challenge-type-option active" data-doubles-type-v62="ranked" type="button"><span>R</span><div><strong>Con ranking</strong><small>Modifica el RP de Dobles</small></div></button>
+                  <button class="challenge-type-option casual" data-doubles-type-v62="casual" type="button"><span>C</span><div><strong>Casual</strong><small>No modifica RP</small></div></button>
                 </div>
               </div>
               <label>Formato<select id="doublesFormatV62"><option value="single">1 set</option><option value="bo3" selected>Mejor de 3</option><option value="bo5">Mejor de 5</option></select></label>
-              <label>Fecha (opcional)<input id="doublesDateV62" type="date"></label>
-              <label>Hora (opcional)<input id="doublesTimeV62" type="time"></label>
-              <label>Lugar (opcional)<input id="doublesLocationV62" maxlength="100"></label>
-              <button id="sendDoublesChallengeV62" class="btn btn-start" type="submit" disabled>ENVIAR DESAFÍO 2 VS 2</button>
-              <p id="doublesCreateStatusV62" class="status"></p>
+              <div class="challenge-send-dock-v747">
+                <button id="sendDoublesChallengeV62" class="btn btn-start" type="submit" disabled>ENVIAR DESAFÍO 2 VS 2</button>
+                <p id="doublesCreateStatusV62" class="status" aria-live="polite">Completá los dos equipos para enviar el desafío.</p>
+              </div>
+              <details class="challenge-advanced-v747">
+                <summary><span>Opciones avanzadas</span><small>Fecha, hora y lugar · opcional</small><b>⌄</b></summary>
+                <div class="challenge-advanced-fields-v747">
+                  <label>Fecha (opcional)<input id="doublesDateV62" type="date"></label>
+                  <label>Hora (opcional)<input id="doublesTimeV62" type="time"></label>
+                  <label>Lugar (opcional)<input id="doublesLocationV62" maxlength="100"></label>
+                </div>
+              </details>
             </form>
           </section>
           <section class="section-card play-status-card"><div class="play-status-heading"><span>👥</span><strong>Desafíos 2 vs 2</strong><small id="doublesChallengeCountV62">0</small></div><div id="doublesChallengesV62" class="challenge-list"><div class="compact-empty">Cargando desafíos de dobles…</div></div></section>
@@ -889,7 +911,7 @@
           </div>
           <div id="teamTestBannerV48" class="team-test-banner-v32 hidden">
             <strong>🧪 MODO PRUEBA TEMPORAL</strong>
-            <span>Podés usar la misma cuenta en todos los lugares para probar la modalidad. En este modo, si hay jugadores repetidos, el torneo no modifica Elo.</span>
+            <span>Podés usar la misma cuenta en todos los lugares para probar la modalidad. En este modo, si hay jugadores repetidos, el torneo no modifica RP.</span>
           </div>
 
           <form id="teamTournamentFormV32">
@@ -1109,7 +1131,7 @@
 
               <div class="luck-box">
                 🎲 <strong>El emparejamiento será totalmente aleatorio.</strong>
-                <span>El Elo no interviene: toca toca, la suerte es loca.</span>
+                <span>El RP no interviene: toca toca, la suerte es loca.</span>
               </div>
 
               <button class="btn btn-start" type="submit">CREAR TORNEO Y ABRIR INSCRIPCIONES</button>
@@ -1181,7 +1203,7 @@
           <div>
             <p class="muted-label">COMPETICIÓN</p>
             <h2>Historial</h2>
-            <p>Todos tus partidos, resultados y cambios de Elo.</p>
+            <p>Todos tus partidos, resultados y cambios de RP.</p>
           </div>
           <button class="history-stats-button" data-go-tab="stats" type="button">Ver estadísticas →</button>
         </div>
@@ -1291,7 +1313,7 @@
             <span>Todos los partidos confirmados</span>
           </div>
           <div class="played-matches-grid played-matches-grid-v56">
-            <article class="played-match-tile casual" data-stats-tile-v56="casual"><span>Casual</span><strong id="statCasualMatches">0</strong><small>sin Elo</small></article>
+            <article class="played-match-tile casual" data-stats-tile-v56="casual"><span>Casual</span><strong id="statCasualMatches">0</strong><small>sin RP</small></article>
             <article class="played-match-tile ranked" data-stats-tile-v56="competitive"><span>Competitivo</span><strong id="statRankedMatches">0</strong><small>duelos con ranking</small></article>
             <article class="played-match-tile tournament" data-stats-tile-v56="tournament"><span>Torneos</span><strong id="statTournamentMatchesV56">0</strong><small>individual · dobles · equipos</small></article>
             <article class="played-match-tile total" data-stats-tile-v56="all"><span>Todo</span><strong id="statTotalMatches">0</strong><small>registro unificado</small></article>
@@ -1353,7 +1375,7 @@
               <p class="muted-label">RATING</p>
               <h3>Evolución</h3>
             </div>
-            <div id="ratingChartCurrent" class="chart-current-rating">— Elo</div>
+            <div id="ratingChartCurrent" class="chart-current-rating">— RP</div>
           </div>
 
           <div id="ratingChartEmpty" class="chart-empty hidden">Jugá partidos para comenzar a construir tu gráfica.</div>
@@ -1376,7 +1398,7 @@
 
           <div class="chart-range-row">
             <span id="ratingChartMin">—</span>
-            <span>Historial de Elo</span>
+            <span>Historial de RP</span>
             <span id="ratingChartMax">—</span>
           </div>
 
@@ -1446,15 +1468,15 @@
         </nav>
 
         <div class="profile-rating-grid">
-          <article><span>Individual</span><strong id="profileIndividualRating">1000</strong><small>Elo 1vs1</small><small id="profileIndividualRank" class="rank-mini hidden">Bronce</small></article>
-          <article><span>Dobles</span><strong id="profileDoublesRating">1000</strong><small>Elo 2vs2</small><small id="profileDoublesRank" class="rank-mini hidden">Bronce</small></article>
+          <article><span>Individual</span><strong id="profileIndividualRating">1000</strong><small>RP 1vs1</small><small id="profileIndividualRank" class="rank-mini hidden">Bronce</small></article>
+          <article><span>Dobles</span><strong id="profileDoublesRating">1000</strong><small>RP 2vs2</small><small id="profileDoublesRank" class="rank-mini hidden">Bronce</small></article>
           <article><span>Ranking global</span><strong id="profileGlobalRankV744">—</strong><small>posición actual</small></article>
           <article><span>Racha actual</span><strong id="profileCurrentStreakV744">0</strong><small>mejor: <b id="profileMaxStreak">0</b></small></article>
         </div>
         <section id="profileProtectionV58" class="section-card profile-protection-v58">
           <div class="protection-head-v58">
             <div>
-              <p class="muted-label">PROTECCIÓN DE ELO</p>
+              <p class="muted-label">PROTECCIÓN DE RP</p>
               <h3 id="profileProtectionTitleV58">0 / 100 puntos</h3>
             </div>
             <span id="profileProtectionShieldV58" class="protection-shield-chip-v58">0 / 1</span>
@@ -2028,7 +2050,7 @@
             <div>
               <p class="muted-label">PROTECCIÓN AUTOMÁTICA · P7.4R.4.1</p>
               <h3>◇ Integridad 3 de 10</h3>
-              <p>Controla ranked y casuales. Retiene el tercer partido de menos de un minuto antes de modificar Elo o estadísticas.</p>
+              <p>Controla ranked y casuales. Retiene el tercer partido de menos de un minuto antes de modificar RP o estadísticas.</p>
             </div>
             <div class="v77-auto-toolbar">
               <div class="v77-mode-switch" aria-label="Modo de moderación automática">
@@ -2200,7 +2222,7 @@
             <div>
               <p class="muted-label">DIRECTORIO DE CLUBES</p>
               <h3>Clubes oficiales y duplicados</h3>
-              <p>Creá clubes, definí su alias visible y fusioná variantes. Los usuarios mantienen su cuenta, Elo, partidos y estadísticas.</p>
+              <p>Creá clubes, definí su alias visible y fusioná variantes. Los usuarios mantienen su cuenta, RP, partidos y estadísticas.</p>
             </div>
             <button id="adminRefreshClubsV49" type="button">Actualizar</button>
           </div>
@@ -2333,7 +2355,7 @@
         <section class="section-card tt-admin-tools-v43">
           <p class="muted-label">PRUEBAS VISUALES</p>
           <h3>Acceso desbloqueado</h3>
-          <p>Esta cuenta conserva el acceso visual a marcos, logros y títulos para verificar el diseño sin modificar Elo, victorias ni estadísticas competitivas.</p>
+          <p>Esta cuenta conserva el acceso visual a marcos, logros y títulos para verificar el diseño sin modificar RP, victorias ni estadísticas competitivas.</p>
         </section>
       </section>
 
@@ -2780,6 +2802,39 @@
   </div>
 
   <!-- MATCH RESULT MODAL -->
+  <div id="activeMatchModalV747" class="modal hidden active-match-modal-v747" role="dialog" aria-modal="true" aria-labelledby="activeMatchTitleV747">
+    <div class="modal-card active-match-card-v747">
+      <button id="minimizeActiveMatchV747" class="modal-close" type="button" aria-label="Minimizar partido">—</button>
+      <div class="active-match-live-v747"><span></span><b>EN VIVO</b></div>
+      <p class="eyebrow">PARTIDO EN CURSO</p>
+      <h2 id="activeMatchTitleV747">Jugador A vs Jugador B</h2>
+      <div class="active-match-meta-v747">
+        <span id="activeMatchFormatV747">Mejor de 3 sets</span>
+        <span id="activeMatchTypeV747">Clasificatoria</span>
+        <strong id="activeMatchTimerV747" data-live-match-duration-v59 data-live-match-clock-style-v747="plain">0:00</strong>
+      </div>
+      <p class="active-match-help-v747">Cuando termine el encuentro, cargá el resultado para que tu rival pueda confirmarlo.</p>
+      <div class="active-match-actions-v747">
+        <button id="finishActiveMatchV747" class="btn btn-start" type="button">FINALIZAR PARTIDO</button>
+        <button id="requestAbandonMatchV747" class="btn active-match-abandon-v747" type="button">ABANDONAR PARTIDO</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="abandonMatchModalV747" class="modal hidden abandon-match-modal-v747" role="dialog" aria-modal="true" aria-labelledby="abandonMatchTitleV747">
+    <div class="modal-card abandon-match-card-v747">
+      <span class="abandon-match-icon-v747" aria-hidden="true">!</span>
+      <p class="eyebrow">CONFIRMAR ABANDONO</p>
+      <h2 id="abandonMatchTitleV747">¿Querés abandonar el partido?</h2>
+      <p id="abandonMatchCopyV747">En una partida clasificatoria perderás el doble de RP que en una derrota normal. Tu rival recibirá la ganancia habitual.</p>
+      <div class="active-match-actions-v747">
+        <button id="cancelAbandonMatchV747" class="btn" type="button">VOLVER AL PARTIDO</button>
+        <button id="confirmAbandonMatchV747" class="btn active-match-abandon-v747" type="button">SÍ, ABANDONAR</button>
+      </div>
+      <p id="abandonMatchStatusV747" class="status" aria-live="polite"></p>
+    </div>
+  </div>
+
   <div id="matchModal" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-card">
       <button id="closeMatchModal" class="modal-close" type="button">✕</button>
@@ -2892,7 +2947,7 @@
       <div class="team-victory-next-v33">
         <span>↗</span>
         <div>
-          <strong>Próximo: Resumen de puntos Elo</strong>
+          <strong>Próximo: Resumen de RP</strong>
           <small>Vas a ver lo ganado o perdido por cada jugador en Individual y Dobles.</small>
         </div>
       </div>
@@ -2908,7 +2963,7 @@
     <div class="team-elo-screen-v33">
       <button id="closeTeamEloV33" class="team-victory-x-v33" type="button">✕</button>
       <p class="muted-label">RESUMEN FINAL</p>
-      <h2>Puntos Elo del torneo</h2>
+      <h2>RP del torneo</h2>
       <p id="teamEloSubtitleV33" class="subtitle compact"></p>
       <div id="teamEloTestNoticeV33" class="team-elo-test-v33 hidden">🧪 Modo prueba: este torneo no modificó el ranking.</div>
       <div id="teamEloPlayersV33" class="team-elo-players-v33"></div>
@@ -2975,9 +3030,9 @@
     </div>
   </div>
 
-  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.6" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
+  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.7" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
-  <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p7.4r.4.6"></script>
+  <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p7.4r.4.7"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>
 
   <!-- PLAYER REVIEW MODAL -->
@@ -3126,7 +3181,7 @@
       <div class="activity-center-head">
         <p class="eyebrow">CENTRO DE ACTIVIDAD</p>
         <h2>Tu actividad</h2>
-        <p>Desafíos, resultados, disputas, títulos, Elo, torneos y novedades competitivas en una sola bandeja.</p>
+        <p>Desafíos, resultados, disputas, títulos, RP, torneos y novedades competitivas en una sola bandeja.</p>
       </div>
       <div class="v60-activity-summary">
         <article><span>Pendientes</span><strong id="activityPendingCountV60">0</strong></article>
