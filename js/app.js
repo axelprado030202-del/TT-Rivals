@@ -29,8 +29,9 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.7';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.7';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.8';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.8';
+import {playPostMatchCinematicV748} from './v748_postmatch_cinematic.js?v=1.0.1-p7.4r.4.8';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
@@ -3667,14 +3668,6 @@ async function handleConfirmedMatchV55(matchRow){
   pendingPostMatchReviewId=id;
 
   try{
-    // Feedback inmediato: el usuario ve el resultado mientras los paneles
-    // secundarios (ranking, historial y estadísticas) se actualizan detrás.
-    const modal=$('#postMatchModal');
-    const content=$('#postMatchContent');
-    if(content)content.innerHTML='<div class="v71-result-shell"><main class="v71-result-body"><section class="v71-coach"><span>✦</span><div><small>RESULTADO CONFIRMADO</small><p>Actualizando RP y preparando el resumen…</p></div></section></main></div>';
-    modal?.classList.remove('hidden');
-    syncModalScrollLock();
-
     const current=(socialState.matches||[]).filter(x=>Number(x.id)!==id);
     socialState.matches=[matchRow,...current];
     const won=matchRow?.winner_id===session.user.id;
@@ -5061,6 +5054,12 @@ async function showPostMatch({matchId,won,oldRating,newRating,opponentName='Riva
         </div>
       </main>
     </div>`;
+
+  try{
+    await playPostMatchCinematicV748(m);
+  }catch(error){
+    console.warn('P7.4R.4.8 cinemática post-partido:',error);
+  }
 
   $('#postMatchModal').classList.remove('hidden');
   animatePostMatchV601($('#postMatchModal'),{won,positive:delta>0,protectedElo:!!summary?.protection_used,hasRewards:!!highlightHtml});
