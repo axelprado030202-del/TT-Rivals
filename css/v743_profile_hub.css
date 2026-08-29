@@ -31,7 +31,7 @@
     linear-gradient(135deg,rgba(30,64,175,.14),rgba(15,23,42,.88))
 }
 
-.profile-progress-grid-v743{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.profile-progress-grid-v743{display:grid;grid-template-columns:1fr;gap:14px}
 .profile-progress-grid-v743>.section-card{height:100%;margin:0}
 .profile-progress-grid-v743 .v28-progression-panel{padding:16px 18px}
 .profile-progress-grid-v743 .v28-home-tools{display:none!important}

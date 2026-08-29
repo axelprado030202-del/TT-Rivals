@@ -36,9 +36,10 @@
   <link rel="stylesheet" href="css/v744_profile_card.css?v=1.0.1-p7.4r.4.5">
   <link rel="stylesheet" href="css/v746_stats_play.css?v=1.0.1-p7.4r.4.6">
   <link rel="stylesheet" href="css/v747_match_flow.css?v=1.0.1-p7.4r.4.7">
-  <link rel="stylesheet" href="css/v748_postmatch_cinematic.css?v=1.0.1-p7.4r.4.10">
+  <link rel="stylesheet" href="css/v748_postmatch_cinematic.css?v=1.0.1-p7.4r.4.11">
+  <link rel="stylesheet" href="css/v751_play_profile.css?v=1.0.1-p7.4r.4.11">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.10-postmatch-finale" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.11-play-hub" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -750,19 +751,19 @@
 
       <section id="tab-play" class="tab-page active">
         <div class="page-heading play-heading"><h2>Jugar</h2><p>Elegí un rival y empezá a competir.</p></div>
-        <button class="tournament-banner" data-go-tab="tournaments" type="button">
-          <span>🏆</span>
-          <span><strong>TORNEOS</strong><small>Crear, inscribir jugadores y llevar posiciones</small></span>
-          <b>→</b>
-        </button>
-
-
-        <section class="play-mode-gate-v62" aria-label="Modalidad del desafío">
-          <button data-play-mode-v62="individual" type="button">
-            <span>🏓</span><div><strong>1 vs 1</strong><small>Desafío individual</small><em class="play-mode-rating-v746"><b id="playIndividualEloV746">1000 RP</b><i id="playIndividualRankV746">Bronce</i></em></div><b>→</b>
-          </button>
-          <button data-play-mode-v62="doubles" type="button">
-            <span>👥</span><div><strong>2 vs 2</strong><small>Armá las dos parejas</small><em class="play-mode-rating-v746"><b id="playDoublesEloV746">1000 RP</b><i id="playDoublesRankV746">Bronce</i></em></div><b>→</b>
+        <section class="play-primary-actions-v751" aria-label="Elegir cómo jugar">
+          <section class="play-mode-gate-v62" aria-label="Modalidad del desafío">
+            <button data-play-mode-v62="individual" type="button">
+              <span>🏓</span><div><small class="play-action-kicker-v751">PARTIDA INDIVIDUAL</small><strong>1 vs 1</strong><small>Elegí un rival y jugá</small><em class="play-mode-rating-v746"><b id="playIndividualEloV746">1000 RP</b><i id="playIndividualRankV746">Bronce</i></em></div><b>→</b>
+            </button>
+            <button data-play-mode-v62="doubles" type="button">
+              <span>👥</span><div><small class="play-action-kicker-v751">PARTIDA EN PAREJAS</small><strong>2 vs 2</strong><small>Armá los dos equipos</small><em class="play-mode-rating-v746"><b id="playDoublesEloV746">1000 RP</b><i id="playDoublesRankV746">Bronce</i></em></div><b>→</b>
+            </button>
+          </section>
+          <button class="tournament-banner" data-go-tab="tournaments" type="button">
+            <span>🏆</span>
+            <span><small>COMPETICIÓN</small><strong>TORNEOS</strong><em>Crear, inscribir y competir</em></span>
+            <b>→</b>
           </button>
         </section>
 
@@ -845,9 +846,19 @@
           <section class="section-card play-status-card"><div class="play-status-heading"><span>●</span><strong>Partidos 2 vs 2</strong><small id="doublesMatchCountV62">0</small></div><div id="doublesMatchesV62" class="match-list"><div class="compact-empty">Cargando partidos de dobles…</div></div></section>
         </div>
 
-        <section class="section-card play-status-card"><div class="play-status-heading"><span>↓</span><strong>Recibidos</strong><small id="receivedChallengeCount">0</small></div><div id="receivedChallenges" class="challenge-list"></div></section>
-        <section class="section-card play-status-card"><div class="play-status-heading"><span>↑</span><strong>Enviados</strong><small id="sentChallengeCount">0</small></div><div id="sentChallenges" class="challenge-list"></div></section>
-        <section class="section-card play-status-card"><div class="play-status-heading"><span>●</span><strong>Partidos pendientes</strong><small id="activeMatchCount">0</small></div><div id="activeMatches" class="match-list"></div></section>
+        <section id="playProgressHubV751" class="play-progress-hub-v751" aria-label="Impulso competitivo"></section>
+
+        <section class="play-activity-v751" aria-labelledby="playActivityTitleV751">
+          <div class="play-activity-head-v751">
+            <div><p class="muted-label">TU ACTIVIDAD</p><h3 id="playActivityTitleV751">Partidas y desafíos</h3></div>
+            <small>Todo lo que requiere tu atención</small>
+          </div>
+          <div class="play-status-grid-v751">
+            <section class="section-card play-status-card"><div class="play-status-heading"><span>↓</span><strong>Recibidos</strong><small id="receivedChallengeCount">0</small></div><div id="receivedChallenges" class="challenge-list"></div></section>
+            <section class="section-card play-status-card"><div class="play-status-heading"><span>↑</span><strong>Enviados</strong><small id="sentChallengeCount">0</small></div><div id="sentChallenges" class="challenge-list"></div></section>
+            <section class="section-card play-status-card"><div class="play-status-heading"><span>●</span><strong>Partidos pendientes</strong><small id="activeMatchCount">0</small></div><div id="activeMatches" class="match-list"></div></section>
+          </div>
+        </section>
       </section>
 
 
@@ -3031,7 +3042,7 @@
     </div>
   </div>
 
-  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.10" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
+  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.11" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p7.4r.4.7"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>

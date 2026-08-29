@@ -29,9 +29,9 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.10';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.10';
-import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.1-p7.4r.4.10';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.11';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.11';
+import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.1-p7.4r.4.11';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
@@ -2248,6 +2248,7 @@ function setupProfileHubV743(){
   progressGrid.className='profile-progress-grid-v743';
   const profileCard=document.createElement('section');
   profileCard.className='profile-summary-card-v744';
+  const playProgressHub=$('#playProgressHubV751');
 
   const hero=root.querySelector(':scope > .v44-profile-hero');
   const quickActions=root.querySelector(':scope > .profile-quick-actions-v56');
@@ -2282,8 +2283,9 @@ function setupProfileHubV743(){
   const statsPanels=statsPage?[...statsPage.children].filter(node=>node!==statsHeading):[];
 
   [hero,ratingGrid].filter(Boolean).forEach(node=>profileCard.appendChild(node));
-  [progression,protection].filter(Boolean).forEach(node=>progressGrid.appendChild(node));
-  [profileCard,progressGrid,objective,menuWrap,recommended].filter(Boolean).forEach(node=>summary.appendChild(node));
+  [progression].filter(Boolean).forEach(node=>progressGrid.appendChild(node));
+  [objective,protection].filter(Boolean).forEach(node=>playProgressHub?.appendChild(node));
+  [profileCard,progressGrid,menuWrap,recommended].filter(Boolean).forEach(node=>summary.appendChild(node));
   [reliability,statsToolbar,...statsPanels].filter(Boolean).forEach(node=>stats.appendChild(node));
   [missionSection,eventSection,matchWeek].filter(Boolean).forEach(node=>missions.appendChild(node));
   [liveRivalry,realRivalries,primaryRival].filter(Boolean).forEach(node=>rivalries.appendChild(node));
@@ -8933,7 +8935,7 @@ $('#homeTitlesShortcutV59')?.addEventListener('click',()=>{
   setTimeout(()=>openTitleSelector(),120);
 });
 $('#homeProtectionShortcutV59')?.addEventListener('click',()=>{
-  activateTab('profile');
+  activateTab('play');
   setTimeout(()=>$('#profileProtectionV58')?.scrollIntoView({behavior:'smooth',block:'center'}),120);
 });
 $('#closeTitleSelector').onclick=()=>{$('#titleSelectorModal').classList.add('hidden');syncModalScrollLock()};
