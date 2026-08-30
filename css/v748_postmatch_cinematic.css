@@ -215,9 +215,10 @@ body.postmatch-cinematic-open-v748{overflow:hidden!important}
 .postmatch-balls-v748{
   display:flex;
   min-height:48px;
+  padding-top:14px;
   flex-wrap:wrap;
   justify-content:center;
-  gap:10px;
+  gap:28px 10px;
 }
 .postmatch-ball-v748{
   position:relative;
@@ -244,7 +245,7 @@ body.postmatch-cinematic-open-v748{overflow:hidden!important}
 .postmatch-ball-v748.is-gold{
   isolation:isolate;
   background:radial-gradient(circle at 34% 28%,#fff6b8 0 8%,#ffe66c 22%,#ffbd20 52%,#e07800 82%,#8b3200 100%);
-  box-shadow:inset -5px -7px 11px rgba(103,46,0,.28),inset 2px 2px 7px rgba(255,255,220,.68),0 0 10px rgba(255,212,91,.78),0 0 25px rgba(255,104,0,.38),0 10px 25px rgba(0,0,0,.4);
+  box-shadow:inset -5px -7px 11px rgba(103,46,0,.28),inset 2px 2px 7px rgba(255,255,220,.68),0 0 0 2px rgba(99,46,0,.82),0 0 0 4px rgba(255,184,33,.30),0 0 12px rgba(255,212,91,.78),0 0 25px rgba(255,104,0,.38),0 10px 25px rgba(0,0,0,.4);
 }
 .postmatch-ball-v748.is-gold::before,
 .postmatch-ball-v748.is-gold::after{
@@ -256,9 +257,11 @@ body.postmatch-cinematic-open-v748{overflow:hidden!important}
   filter:blur(5px);animation:v751-gold-aura 1.25s ease-in-out infinite alternate
 }
 .postmatch-ball-v748.is-gold::after{
-  z-index:-2;inset:-5px;border:1px solid rgba(255,207,79,.48);
-  box-shadow:0 0 7px rgba(255,199,55,.72),0 0 15px rgba(255,104,0,.34),inset 0 0 5px rgba(255,235,154,.28);
-  animation:v751-gold-ring .9s ease-in-out infinite alternate
+  /* The sphere must paint above the flame; a negative child z-index alone
+     still paints above its parent's background inside an isolated stack. */
+  z-index:1;inset:0;
+  background:radial-gradient(circle at 34% 28%,#fff6b8 0 8%,#ffe66c 22%,#ffbd20 52%,#e07800 82%,#8b3200 100%);
+  box-shadow:inset -5px -7px 11px rgba(103,46,0,.28),inset 2px 2px 7px rgba(255,255,220,.68),0 0 0 1.5px rgba(108,51,0,.82),0 0 6px rgba(255,198,63,.65)
 }
 @keyframes v748-ball-arrive{
   0%{opacity:0;transform:translateY(-74px) scale(.2) rotate(-160deg);filter:blur(5px)}
@@ -266,7 +269,6 @@ body.postmatch-cinematic-open-v748{overflow:hidden!important}
   68%{transform:translateY(-5px) scale(.96) rotate(-5deg)}
   100%{opacity:1;transform:translateY(0) scale(1) rotate(0);filter:none}
 }
-@keyframes v748-gold-flame{from{transform:translateX(-50%) rotate(-5deg) scale(.88,1);opacity:.72}to{transform:translateX(-50%) rotate(5deg) scale(1.08,1.14);opacity:1}}
 @media(max-width:680px){
   .postmatch-skip-v748{width:max-content;max-width:calc(100vw - 30px);font-size:8px;letter-spacing:.1em}
   .postmatch-score-stage-v748{width:calc(100vw - 22px)}
@@ -287,7 +289,7 @@ body.postmatch-cinematic-open-v748{overflow:hidden!important}
   }
   .postmatch-player-v748>strong{margin:10px 0 15px;font-size:40px}
   .postmatch-scoreboard-v748>.postmatch-versus-v748{padding-top:38px;font-size:10px}
-  .postmatch-balls-v748{gap:6px}
+  .postmatch-balls-v748{gap:24px 6px}
   .postmatch-ball-v748{width:36px;height:36px;flex-basis:36px}
   .postmatch-ball-v748 b{font-size:8px}
 }
@@ -305,30 +307,38 @@ body.postmatch-cinematic-open-v748{overflow:hidden!important}
 .postmatch-cinematic-v748[data-score-state="actions"] .postmatch-score-stage-v748>p,
 .postmatch-cinematic-v748[data-score-state="final"] .postmatch-score-stage-v748>p{margin-bottom:13px}
 .postmatch-fire-v750{
-  position:absolute;z-index:-1;inset:-7px;width:auto;height:auto;
-  border-radius:50%;pointer-events:none
+  position:absolute;z-index:-1;left:50%;bottom:-10px;width:66px;height:80px;
+  transform:translateX(-50%);pointer-events:none;
+  filter:drop-shadow(0 0 5px rgba(255,93,0,.72)) drop-shadow(0 0 13px rgba(255,174,0,.48))
 }
-.postmatch-fire-v750::before,
-.postmatch-fire-v750::after,
-.postmatch-fire-v750 em{
-  content:"";position:absolute;width:9px;height:15px;
-  border-radius:70% 30% 65% 35% / 75% 45% 55% 25%;
-  background:linear-gradient(0deg,rgba(255,76,0,.88),#ffb000 58%,rgba(255,241,160,.92));
-  filter:drop-shadow(0 0 4px rgba(255,102,0,.72));mix-blend-mode:screen;
-  transform-origin:50% 100%
+.postmatch-fire-v750 svg{display:block;width:100%;height:100%;overflow:visible}
+.postmatch-flame-outer-v752,.postmatch-flame-inner-v752{transform-box:fill-box;transform-origin:center}
+.postmatch-flame-outer-v752{
+  filter:drop-shadow(0 0 3px rgba(255,67,0,.55));
+  animation:v752-fire-mantle .82s ease-in-out infinite alternate
 }
-.postmatch-fire-v750::before{top:-6px;left:50%;margin-left:-5px;animation:v751-fire-top .55s ease-in-out infinite alternate}
-.postmatch-fire-v750::after{right:-5px;top:12px;transform:rotate(62deg);animation:v751-fire-right .63s ease-in-out infinite alternate-reverse}
-.postmatch-fire-v750 em:nth-child(1){left:-5px;top:13px;transform:rotate(-65deg);animation:v751-fire-left .58s ease-in-out infinite alternate}
-.postmatch-fire-v750 em:nth-child(2){right:3px;bottom:-5px;transform:rotate(145deg) scale(.82);animation:v751-fire-bottom-right .68s ease-in-out infinite alternate-reverse}
-.postmatch-fire-v750 em:nth-child(3){left:5px;bottom:-5px;transform:rotate(-145deg) scale(.72);animation:v751-fire-bottom-left .61s ease-in-out infinite alternate}
+.postmatch-flame-inner-v752{
+  opacity:.78;filter:blur(.35px);mix-blend-mode:screen;
+  animation:v752-fire-core .49s ease-in-out infinite alternate-reverse
+}
 @keyframes v751-gold-aura{from{opacity:.62;transform:scale(.92)}to{opacity:1;transform:scale(1.1)}}
-@keyframes v751-gold-ring{from{opacity:.62;transform:scale(.96)}to{opacity:1;transform:scale(1.06)}}
-@keyframes v751-fire-top{from{opacity:.52;transform:translateY(3px) rotate(-7deg) scale(.75)}to{opacity:.96;transform:translateY(-2px) rotate(8deg) scale(1.04)}}
-@keyframes v751-fire-right{from{opacity:.46;transform:translateX(-2px) rotate(56deg) scale(.72)}to{opacity:.9;transform:translateX(2px) rotate(68deg) scale(1)}}
-@keyframes v751-fire-left{from{opacity:.44;transform:translateX(2px) rotate(-58deg) scale(.7)}to{opacity:.92;transform:translateX(-2px) rotate(-70deg) scale(1.02)}}
-@keyframes v751-fire-bottom-right{from{opacity:.4;transform:translateY(-2px) rotate(139deg) scale(.62)}to{opacity:.82;transform:translateY(2px) rotate(151deg) scale(.9)}}
-@keyframes v751-fire-bottom-left{from{opacity:.38;transform:translateY(-2px) rotate(-139deg) scale(.58)}to{opacity:.8;transform:translateY(2px) rotate(-151deg) scale(.86)}}
+.postmatch-ball-v748:nth-child(2n) .postmatch-flame-outer-v752{animation-delay:-.48s}
+.postmatch-ball-v748:nth-child(3n) .postmatch-flame-outer-v752{animation-delay:-.91s;animation-duration:1.03s}
+.postmatch-ball-v748:nth-child(2n) .postmatch-flame-inner-v752{animation-delay:-.31s}
+@keyframes v752-fire-mantle{
+  0%{
+    opacity:.86;transform:rotate(-2deg) scale(.97,1);
+    d:path("M49 2C57 17 39 23 47 36C57 33 65 20 63 10C80 27 65 35 75 42C81 40 85 31 83 27C96 40 85 48 91 59C101 63 92 73 87 77C89 82 98 81 97 83C85 93 79 85 75 87C67 93 75 98 67 97C57 96 55 90 48 91C36 96 32 99 25 94C33 89 27 85 19 84C10 85 2 78 4 74C16 73 14 67 10 62C1 52 12 44 13 36C22 42 20 48 26 51C34 37 19 31 31 20C34 29 41 31 39 23C37 14 45 10 49 2Z")
+  }
+  100%{
+    opacity:1;transform:rotate(1deg) scale(1.02,1.06);
+    d:path("M53 1C47 17 58 24 48 36C61 36 58 22 69 17C66 32 73 35 75 44C85 41 80 31 87 30C95 42 88 51 93 58C97 65 90 73 86 76C90 80 93 82 98 80C91 92 80 88 74 88C70 90 72 97 65 98C59 96 56 89 48 91C39 92 35 97 27 96C30 88 24 87 18 86C8 84 5 78 3 73C15 76 12 66 10 62C5 53 16 43 9 38C22 39 21 49 27 51C31 40 22 35 29 24C32 34 42 32 40 23C45 16 51 9 53 1Z")
+  }
+}
+@keyframes v752-fire-core{
+  0%{opacity:.66;transform:rotate(2deg) scale(.94)}
+  100%{opacity:.9;transform:rotate(-2deg) scale(1.06)}
+}
 .postmatch-ball-v748.is-instant{animation:none!important}
 
 .postmatch-rp-v750{
@@ -385,8 +395,8 @@ body.postmatch-cinematic-open-v748{overflow:hidden!important}
   .postmatch-score-stage-v748>p{margin-bottom:10px}
   .postmatch-player-v748{min-height:166px;padding:16px 7px}
   .postmatch-player-v748 small{font-size:8px}.postmatch-player-v748>strong{margin:7px 0 10px;font-size:34px}
-  .postmatch-ball-v748{width:32px;height:32px;flex-basis:32px}.postmatch-balls-v748{min-height:36px;gap:4px}
-  .postmatch-fire-v750{inset:-6px}
+  .postmatch-ball-v748{width:32px;height:32px;flex-basis:32px}.postmatch-balls-v748{min-height:36px;padding-top:14px;gap:24px 4px}
+  .postmatch-fire-v750{bottom:-8px;width:49px;height:60px}
   .postmatch-rp-v750{margin-top:10px;padding:13px 14px;border-radius:16px}
   .postmatch-rp-head-v750 strong{font-size:20px}.postmatch-rp-journey-v750{gap:8px}.postmatch-rp-journey-v750 span b{font-size:14px}
   .postmatch-rank-head-v750{margin-top:9px}.postmatch-rank-head-v750 span{font-size:9px}
@@ -396,10 +406,11 @@ body.postmatch-cinematic-open-v748{overflow:hidden!important}
 @media(max-width:420px){
   .postmatch-player-v748{min-height:150px;padding:14px 6px}.postmatch-player-v748 h2{font-size:16px}.postmatch-player-v748>strong{font-size:31px}
   .postmatch-ball-v748{width:28px;height:28px;flex-basis:28px}.postmatch-ball-v748 b{font-size:7px}
+  .postmatch-fire-v750{bottom:-7px;width:43px;height:53px}
 }
 @media(prefers-reduced-motion:reduce){
   .postmatch-core-v748,.postmatch-ball-v748,.postmatch-fire-v750,
   .postmatch-ball-v748.is-gold::before,.postmatch-ball-v748.is-gold::after,
-  .postmatch-fire-v750::before,.postmatch-fire-v750::after,.postmatch-fire-v750 em{animation:none!important}
+  .postmatch-flame-outer-v752,.postmatch-flame-inner-v752{animation:none!important}
   .postmatch-rp-v750,.postmatch-actions-v750{transition:none!important}
 }

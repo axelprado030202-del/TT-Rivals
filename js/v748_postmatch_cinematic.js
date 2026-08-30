@@ -204,7 +204,17 @@ function addBall(root,side,isGold,{instant=false}={}){
   const ball=document.createElement('span');
   ball.className=`postmatch-ball-v748${isGold?' is-gold':''}${instant?' is-instant':''}`;
   ball.setAttribute('aria-label',isGold?'Set de una victoria sin ceder sets':'Set ganado');
-  ball.innerHTML=isGold?'<i class="postmatch-fire-v750" aria-hidden="true"><em></em><em></em><em></em></i><b>TTR</b>':'<b>TTR</b>';
+  const fireId=`v752-fire-${side}-${balls.children.length}`;
+  ball.innerHTML=isGold?`<i class="postmatch-fire-v750" aria-hidden="true">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
+      <defs>
+        <radialGradient id="${fireId}-outer" cx="50%" cy="52%" r="58%"><stop offset="0" stop-color="#ffe98a"/><stop offset=".46" stop-color="#ffbd18"/><stop offset=".73" stop-color="#ff7200"/><stop offset="1" stop-color="#ff3100"/></radialGradient>
+        <radialGradient id="${fireId}-inner" cx="48%" cy="46%" r="60%"><stop offset="0" stop-color="#fffbd0"/><stop offset=".43" stop-color="#ffe05c"/><stop offset=".76" stop-color="#ff9d00"/><stop offset="1" stop-color="#ff5a00"/></radialGradient>
+      </defs>
+      <path class="postmatch-flame-outer-v752" fill="url(#${fireId}-outer)" d="M49 2C57 17 39 23 47 36C57 33 65 20 63 10C80 27 65 35 75 42C81 40 85 31 83 27C96 40 85 48 91 59C101 63 92 73 87 77C89 82 98 81 97 83C85 93 79 85 75 87C67 93 75 98 67 97C57 96 55 90 48 91C36 96 32 99 25 94C33 89 27 85 19 84C10 85 2 78 4 74C16 73 14 67 10 62C1 52 12 44 13 36C22 42 20 48 26 51C34 37 19 31 31 20C34 29 41 31 39 23C37 14 45 10 49 2Z"/>
+      <path class="postmatch-flame-inner-v752" fill="url(#${fireId}-inner)" d="M50 18C56 28 57 35 55 40C63 33 68 27 70 21C74 34 73 42 70 48C77 44 84 47 86 52C80 58 76 61 74 65C80 67 83 72 82 77C73 78 67 75 62 73C63 81 59 86 55 89C51 82 47 78 43 76C39 83 34 86 30 83C31 76 27 72 23 69C27 61 32 57 35 55C30 50 31 44 34 39C39 43 42 48 44 50C43 38 45 27 50 18Z"/>
+    </svg>
+  </i><b>TTR</b>`:'<b>TTR</b>';
   balls.append(ball);
   count.textContent=String(balls.children.length);
 }
