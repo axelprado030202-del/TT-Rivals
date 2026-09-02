@@ -38,9 +38,9 @@
   <link rel="stylesheet" href="css/v747_match_flow.css?v=1.0.1-p7.4r.4.7">
   <link rel="stylesheet" href="css/v748_postmatch_cinematic.css?v=1.0.1-p7.4r.4.12">
   <link rel="stylesheet" href="css/v751_play_profile.css?v=1.0.1-p7.4r.4.11">
-  <link rel="stylesheet" href="css/v101_tutorials.css?v=1.0.1-p7.4r.4.13">
+  <link rel="stylesheet" href="css/v101_tutorials.css?v=1.0.1-p7.4r.4.14">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.13-guided-onboarding" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.14-legal-age-spotlight" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -182,6 +182,10 @@
         <form id="registerForm" class="form-grid" novalidate>
           <label>Nombre<input id="firstName" required></label>
           <label>Apellido<input id="lastName" required></label>
+          <label>Fecha de nacimiento
+            <input id="registerBirthDateV102" type="date" min="1900-01-01" required autocomplete="bday">
+            <small>La usamos para verificar tu edad. Tu fecha exacta no se muestra públicamente.</small>
+          </label>
           <label>Nombre de usuario
             <input id="username" minlength="3" maxlength="24" required>
             <small>3–24 caracteres. Letras, números y guion bajo.</small>
@@ -190,14 +194,19 @@
           <label>Contraseña<input id="registerPassword" type="password" minlength="6" required></label>
           <label>Confirmar contraseña<input id="confirmPassword" type="password" minlength="6" required></label>
 
+          <label id="parentalPermissionRowV102" class="register-parental-v102 hidden">
+            <input id="parentalPermissionV102" type="checkbox">
+            <span><strong>Soy menor de 18 años.</strong> Tengo el permiso de mi padre, madre o responsable legal para crearme una cuenta.</span>
+          </label>
+
           <div class="register-legal-v57">
             <label>
               <input id="acceptTermsV57" type="checkbox">
-              <span>Acepto los <button type="button" data-open-legal-v57="terms">Términos y Condiciones</button> v1.0.</span>
+              <span>Acepto los <button type="button" data-open-legal-v57="terms">Términos y Condiciones</button> v1.1.</span>
             </label>
             <label>
               <input id="ackPrivacyV57" type="checkbox">
-              <span>He leído la <button type="button" data-open-legal-v57="privacy">Política de Privacidad</button> v1.0.</span>
+              <span>He leído la <button type="button" data-open-legal-v57="privacy">Política de Privacidad</button> v1.1.</span>
             </label>
             <small>La versión y fecha de aceptación se guardan con tu cuenta.</small>
           </div>
@@ -2596,8 +2605,8 @@
               <div class="legal-settings-head-v57">
                 <div>
                   <span>VERSIÓN VIGENTE</span>
-                  <strong>Términos 1.0 · Privacidad 1.0</strong>
-                  <small>Vigentes desde 18/08/2026</small>
+                  <strong>Términos 1.1 · Privacidad 1.1</strong>
+                  <small>Vigentes desde 01/09/2026</small>
                 </div>
                 <span id="legalAcceptanceBadgeV57" class="legal-status-badge-v57">Comprobando…</span>
               </div>
@@ -3044,7 +3053,7 @@
     </div>
   </div>
 
-  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.13" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
+  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.14" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p7.4r.4.7"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>

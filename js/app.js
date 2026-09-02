@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.1-p7.4r.3.1';
+import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.1-p7.4r.4.14';
 import {initAccessControlV75,startSessionAccessGuardV76,stopSessionAccessGuardV76} from './v75_access_control.js?v=1.0.1-p7.4r.3.1';
 import {
   initModerationEmailV76,showAccessBlockedV76,clearAccessBlockedActionV76,
@@ -29,10 +29,10 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.13';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.13';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.14';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.14';
 import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.1-p7.4r.4.12';
-import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.1-p7.4r.4.13';
+import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.1-p7.4r.4.14';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
@@ -58,7 +58,7 @@ import {
   adminSecurityAuditV57,
   adminUpdateLegalConfigV57,
   renderLegalDocumentV57
-} from './v57_legal.js?v=1.0.1-p7.4r.4.7';
+} from './v57_legal.js?v=1.0.1-p7.4r.4.14';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
@@ -1094,7 +1094,7 @@ function closeBootScreenV572(){
   setTimeout(()=>splash.remove(),220);
 }
 
-function showView(id){authShell.classList.remove('hidden');mainApp.classList.add('hidden');views.forEach(v=>v.classList.toggle('active',v.id===id));window.scrollTo(0,0);if(id==='sportsProfileView'){loadAvailableClubsV49().catch(err=>console.warn('Clubes V49:',err));ensureV100Module().then(mod=>mod.initOnboardingV100?.()).catch(err=>console.warn('Onboarding 1.0:',err))}}
+function showView(id){authShell.classList.remove('hidden');mainApp.classList.add('hidden');views.forEach(v=>v.classList.toggle('active',v.id===id));window.scrollTo(0,0);if(id==='sportsProfileView'){const registeredBirth=session?.user?.user_metadata?.birth_date;if(registeredBirth&&$('#birthDate'))$('#birthDate').value=registeredBirth;loadAvailableClubsV49().catch(err=>console.warn('Clubes V49:',err));ensureV100Module().then(mod=>mod.initOnboardingV100?.()).catch(err=>console.warn('Onboarding 1.0:',err))}}
 function showMain(){authShell.classList.add('hidden');mainApp.classList.remove('hidden');activateTab('play')}
 function setStatus(el,msg,type=''){el.textContent=msg;el.classList.remove('ok','error');if(type)el.classList.add(type)}
 function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
@@ -1601,6 +1601,29 @@ function nextRankInfo(rating){
 }
 
 function friendly(m=''){const t=m.toLowerCase();if(t.includes('mismo dispositivo')||t.includes('relacionadas por dispositivo')||t.includes('misma instalación'))return'Estas cuentas están vinculadas a la misma instalación de TT Rivals y no pueden enfrentarse entre sí.';if(t.includes('already registered'))return'Ese correo ya está registrado.';if(t.includes('duplicate')||t.includes('unique'))return'Ese nombre de usuario ya está en uso.';if(t.includes('invalid login credentials'))return'Correo o contraseña incorrectos.';return m||'Ocurrió un error.'}
+
+function registrationAgeV102(value){
+  const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value||''));
+  if(!match)return null;
+  const birth=new Date(Number(match[1]),Number(match[2])-1,Number(match[3]));
+  if(Number.isNaN(birth.getTime())||birth.getFullYear()!==Number(match[1])||birth.getMonth()!==Number(match[2])-1||birth.getDate()!==Number(match[3]))return null;
+  const today=new Date();
+  if(birth>today)return null;
+  let years=today.getFullYear()-birth.getFullYear();
+  const month=today.getMonth()-birth.getMonth();
+  if(month<0||(month===0&&today.getDate()<birth.getDate()))years--;
+  return years;
+}
+
+function syncParentalPermissionV102(){
+  const birth=$('#registerBirthDateV102'),row=$('#parentalPermissionRowV102'),permission=$('#parentalPermissionV102');
+  if(!birth||!row||!permission)return null;
+  const years=registrationAgeV102(birth.value),minor=Number.isFinite(years)&&years<18;
+  row.classList.toggle('hidden',!minor);
+  permission.required=minor;
+  if(!minor)permission.checked=false;
+  return years;
+}
 
 function populate(){
   const ind=getRating('individual'),dob=getRating('dobles');
@@ -7233,6 +7256,17 @@ $('#resetPasswordFormV53')?.addEventListener('submit',async e=>{
   }
 });
 
+if($('#registerBirthDateV102')){
+  const localTodayV102=new Date();
+  $('#registerBirthDateV102').max=[
+    localTodayV102.getFullYear(),
+    String(localTodayV102.getMonth()+1).padStart(2,'0'),
+    String(localTodayV102.getDate()).padStart(2,'0')
+  ].join('-');
+  $('#registerBirthDateV102').addEventListener('input',syncParentalPermissionV102);
+  $('#registerBirthDateV102').addEventListener('change',syncParentalPermissionV102);
+}
+
 $('#registerForm').onsubmit=async e=>{
   e.preventDefault();
 
@@ -7241,8 +7275,20 @@ $('#registerForm').onsubmit=async e=>{
     lastName=$('#lastName').value.trim(),
     username=$('#username').value.trim().toLowerCase(),
     email=$('#registerEmail').value.trim(),
+    birthDate=$('#registerBirthDateV102')?.value||'',
     password=$('#registerPassword').value;
   const submitButton=e.currentTarget.querySelector('button[type="submit"]');
+  const registrationAge=registrationAgeV102(birthDate);
+  const isMinor=Number.isFinite(registrationAge)&&registrationAge<18;
+  const parentalPermission=!!$('#parentalPermissionV102')?.checked;
+
+  if(!Number.isFinite(registrationAge)){
+    return setStatus(st,'Ingresá una fecha de nacimiento válida.','error');
+  }
+
+  if(isMinor&&!parentalPermission){
+    return setStatus(st,'Para crear una cuenta siendo menor de 18 años necesitás declarar el permiso de tu padre, madre o responsable legal.','error');
+  }
 
   if(password!==$('#confirmPassword').value){
     return setStatus(st,'Las contraseñas no coinciden.','error');
@@ -7270,6 +7316,7 @@ $('#registerForm').onsubmit=async e=>{
     const cancelToken=createRegistrationCancelTokenV76();
     const {data,error}=await signUpUser({
       email,password,firstName,lastName,username,
+      birthDate,isMinor,parentalPermission,
       legalTermsVersion:LEGAL_V57.termsVersion,
       legalPrivacyVersion:LEGAL_V57.privacyVersion,
       registrationCancelToken:cancelToken
@@ -7282,7 +7329,7 @@ $('#registerForm').onsubmit=async e=>{
     if(!data?.user?.id)throw new Error('No pudimos crear el registro pendiente.');
 
     const pending=savePendingRegistrationV76({
-      email,userId:data.user.id,cancelToken,firstName,lastName,username,
+      email,userId:data.user.id,cancelToken,firstName,lastName,username,birthDate,isMinor,parentalPermission,
       createdAt:Date.now(),
       resendAt:Date.now()+Number(config.resend_seconds||60)*1000
     });

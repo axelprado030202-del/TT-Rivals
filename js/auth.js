@@ -3,6 +3,7 @@ import {checkAccessGateV75,checkSessionAccessV75} from './v75_access_control.js?
 import {getInstallationIdV58} from './v58_competition.js';
 export async function signUpUser({
   email,password,firstName,lastName,username,
+  birthDate=null,isMinor=false,parentalPermission=false,
   legalTermsVersion=null,legalPrivacyVersion=null,
   registrationCancelToken=null
 }){
@@ -15,6 +16,11 @@ export async function signUpUser({
         first_name:firstName,
         last_name:lastName,
         username,
+        birth_date:birthDate,
+        is_minor_at_registration:!!isMinor,
+        parental_permission_declared:!!parentalPermission,
+        parental_permission_declared_at:parentalPermission?new Date().toISOString():null,
+        parental_permission_terms_version:parentalPermission?legalTermsVersion:null,
         installation_id:getInstallationIdV58(),
         legal_terms_accepted:true,
         legal_privacy_acknowledged:true,
