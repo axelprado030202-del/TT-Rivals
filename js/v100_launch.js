@@ -153,6 +153,7 @@ function setFederationStatusV100(value){
 export async function initOnboardingV100(){
   const country=$('#sportsCountryV100');if(!country)return;
   if(!country.options.length)country.innerHTML=countryOptions('UY');
+  if(!$('#federationStatusV100')?.value)setFederationStatusV100('non_federated');
   if(!state.initialized){
     state.initialized=true;
     country.addEventListener('change',()=>{clearClubV100();syncClubDirectoryHintV100();updateRegionLabelsV100(country.value);renderClubResultsV100();});
@@ -167,7 +168,7 @@ export async function initOnboardingV100(){
     syncClubDirectoryHintV100();
     const identity=await rpc('get_my_sports_identity_v100').catch(()=>null);state.identity=identity;
     if(identity?.country_code&&country.querySelector(`option[value="${identity.country_code}"]`))country.value=identity.country_code;
-    setFederationStatusV100(identity?.exists===false?'':(identity?.federation_status||''));
+    setFederationStatusV100(identity?.exists===false?'non_federated':(identity?.federation_status||'non_federated'));
     if(identity?.federation_name&&$('#federationNameV100'))$('#federationNameV100').value=identity.federation_name;
     if(identity?.federation_license&&$('#federationLicenseV100'))$('#federationLicenseV100').value=identity.federation_license;
     updateRegionLabelsV100(country.value);syncClubDirectoryHintV100();

@@ -38,8 +38,9 @@
   <link rel="stylesheet" href="css/v747_match_flow.css?v=1.0.1-p7.4r.4.7">
   <link rel="stylesheet" href="css/v748_postmatch_cinematic.css?v=1.0.1-p7.4r.4.12">
   <link rel="stylesheet" href="css/v751_play_profile.css?v=1.0.1-p7.4r.4.11">
+  <link rel="stylesheet" href="css/v101_tutorials.css?v=1.0.1-p7.4r.4.13">
 </head>
-<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.12-fire-aura" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
+<body data-tt-build="v1.0.1" data-ui-build="p7.4r.4.13-guided-onboarding" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
   <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
@@ -302,7 +303,8 @@
         <p class="eyebrow">PERFIL DEPORTIVO</p>
         <h2>Completá tu perfil</h2>
         <form id="sportsProfileForm" class="form-grid" novalidate>
-          <label>Fecha de nacimiento<input id="birthDate" type="date" required></label>
+          <p class="onboarding-short-note-v101">Empezá con lo esencial. Después podés completar el resto desde Perfil → Editar perfil.</p>
+          <label class="onboarding-deferred-v101">Fecha de nacimiento<input id="birthDate" type="date"></label>
           <label>Estilo de juego
             <select id="playingStyle" required>
               <option value="">Seleccioná</option><option value="ofensivo">Ofensivo</option>
@@ -316,7 +318,7 @@
             </select>
           </label>
           <section class="sports-location-v100" aria-label="País y club">
-            <label>País
+            <label class="onboarding-deferred-v101">País
               <select id="sportsCountryV100" required></select>
               <small>Uruguay ya cuenta con su catálogo de clubes. Los demás países crecerán con altas aprobadas por TT Rivals.</small>
             </label>
@@ -349,7 +351,7 @@
               <div id="clubRequestSimilarV100" class="club-request-similar-v100"></div>
             </section>
 
-            <fieldset class="federation-fieldset-v100">
+            <fieldset class="federation-fieldset-v100 onboarding-deferred-v101">
               <legend>Situación federativa</legend>
               <div class="federation-choice-v100">
                 <button type="button" data-federation-v100="federated">🏓 Federado</button>
@@ -368,7 +370,7 @@
               <div id="customClubSuggestionsV49" class="club-suggestions-v49 hidden"></div>
             </label>
           </section>
-          <div class="onboarding-photo-field">
+          <div class="onboarding-photo-field onboarding-deferred-v101">
             <span class="onboarding-photo-label">Foto de perfil <small>(opcional)</small></span>
 
             <button id="onboardingPhotoPicker" class="onboarding-photo-picker" type="button" aria-label="Añadir foto de perfil">
@@ -385,7 +387,7 @@
               <button id="clearOnboardingPhoto" class="clear-onboarding-photo" type="button">Quitar foto</button>
             </div>
           </div>
-          <button class="btn btn-start" type="submit">COMPLETAR PERFIL</button>
+          <button class="btn btn-start" type="submit">COMPLETAR Y EMPEZAR A JUGAR</button>
           <p id="sportsStatus" class="status"></p>
         </form>
       </div>
@@ -3042,7 +3044,7 @@
     </div>
   </div>
 
-  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.12" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
+  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.1-p7.4r.4.13" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.1-p6.1"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.1-p7.4r.4.7"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.1-p6.1"></script>

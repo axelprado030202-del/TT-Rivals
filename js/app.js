@@ -29,9 +29,10 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.12';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.12';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.13';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.13';
 import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.1-p7.4r.4.12';
+import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.1-p7.4r.4.13';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
@@ -2330,7 +2331,13 @@ function setupProfileHubV743(){
     button.addEventListener('click',()=>openProfileHubViewV743(button.dataset.profileHubTargetV743));
   });
   $('#profileHubBackV743')?.addEventListener('click',()=>openProfileHubViewV743('summary'));
-  $('#profileHubEditV744')?.addEventListener('click',()=>activateTab('settings'));
+  $('#profileHubEditV744')?.addEventListener('click',()=>{
+    activateTab('settings');
+    requestAnimationFrame(()=>{
+      const content=$('[data-settings-content="profile"]');
+      if(content?.classList.contains('hidden'))$('[data-settings-toggle="profile"]')?.click();
+    });
+  });
   achievementFilters.querySelectorAll('[data-achievement-filter-v743]').forEach(button=>{
     button.addEventListener('click',()=>applyProfileAchievementFilterV743(button.dataset.achievementFilterV743));
   });
@@ -2406,6 +2413,7 @@ function activateTab(tab,{source='tap'}={}){
       ensureV100Module().then(mod=>mod.loadAdminCommunityV100?.())
     ]),{ttl:15000});
   });
+  setTimeout(()=>maybeShowSectionTutorialV101(tab,session?.user?.id),180);
 }
 
 async function loadRanking(){
@@ -5225,8 +5233,15 @@ async function openReviewModal(matchId){
   const m=(socialState.matches||[]).find(x=>Number(x.id)===Number(matchId));
   if(!m)return;
   const other=m.player1_id===session.user.id?m.player2:m.player1;
+  try{
+    socialState.reviewsAuthored=await getReviewsAuthoredByUser(session.user.id);
+  }catch(error){
+    console.warn('No se pudo actualizar el estado de valoraciones.',error);
+  }
   const sameMatch=(socialState.reviewsAuthored||[]).find(r=>Number(r.match_id)===Number(matchId));
-  const previousForPlayer=(socialState.reviewsAuthored||[]).find(r=>r.reviewed_id===other?.id);
+  const previousForPlayer=(socialState.reviewsAuthored||[]).find(r=>
+    String(r.reviewed_id)===String(other?.id)&&Number(r.stars)>=1&&Number(r.stars)<=5
+  );
   reviewTargetMatch=m;
   reviewStarsLockedV62=!!previousForPlayer;
   selectedReviewStars=previousForPlayer?Number(previousForPlayer.stars||0):(sameMatch?Number(sameMatch.stars||0):0);
@@ -5277,9 +5292,27 @@ async function saveCurrentReview(){
     renderEquippedTitle();
     setStatus($('#reviewStatus'),reviewStarsLockedV62?'Destacados guardados.':'Valoración guardada.','ok');
     await loadHistoryPage();
-    setTimeout(()=>$('#reviewModal').classList.add('hidden'),450);
+    setTimeout(()=>{$('#reviewModal').classList.add('hidden');syncModalScrollLock();recoverPageScrollIfIdle()},450);
   }catch(err){
-    setStatus($('#reviewStatus'),err.message,'error');
+    const alreadyRated=/valoraci[oó]n general.*ya fue realizada|already.*review/i.test(String(err?.message||''));
+    if(alreadyRated){
+      reviewStarsLockedV62=true;
+      $('#reviewStarsSectionV62')?.classList.add('hidden');
+      $('#reviewStarsLockedV62')?.classList.remove('hidden');
+      if($('#reviewIntroV62'))$('#reviewIntroV62').textContent='La valoración general ya fue realizada. Podés seguir destacando cualidades de este partido.';
+      if(btn)btn.textContent='GUARDAR DESTACADOS';
+      paintReviewStars();
+      if(selectedReviewTagsV58.size){
+        try{
+          await submitPlayerReviewV58(Number(reviewTargetMatch.id),null,[...selectedReviewTagsV58]);
+          socialState.reviewsAuthored=await getReviewsAuthoredByUser(session.user.id);
+          setStatus($('#reviewStatus'),'Destacados guardados.','ok');
+          setTimeout(()=>{$('#reviewModal').classList.add('hidden');syncModalScrollLock();recoverPageScrollIfIdle()},450);
+        }catch(tagError){setStatus($('#reviewStatus'),tagError.message,'error')}
+      }else{
+        setStatus($('#reviewStatus'),'Ya asignaste las estrellas. Elegí una o más cualidades para este partido.','ok');
+      }
+    }else setStatus($('#reviewStatus'),err.message,'error');
   }finally{
     btn.disabled=false;
   }
@@ -7303,7 +7336,7 @@ $('#sportsProfileForm').onsubmit=async e=>{
   e.preventDefault();
   const status=$('#sportsStatus');
 
-  if(!$('#birthDate').value||!$('#playingStyle').value||!$('#dominantHand').value){
+  if(!$('#playingStyle').value||!$('#dominantHand').value){
     return setStatus(status,'Completá todos los campos obligatorios.','error');
   }
 
@@ -7334,7 +7367,7 @@ $('#sportsProfileForm').onsubmit=async e=>{
     }
 
     await completeSportsProfile({
-      birthDate:$('#birthDate').value,
+      birthDate:$('#birthDate').value||null,
       playingStyle:$('#playingStyle').value,
       dominantHand:$('#dominantHand').value,
       clubName:finalClub,
@@ -7506,9 +7539,9 @@ if($('#saveNearbySettingsV35'))$('#saveNearbySettingsV35').onclick=async()=>{
   }catch(e){setStatus(st,e.message,'error')}
 };
 
-$('#settingsButton').onclick=()=>activateTab('settings');
+$('#settingsButton').onclick=()=>{activateTab('settings');setTimeout(()=>maybeShowTutorialV101('settings',session?.user?.id),220)};
 $('#adminTopButtonV101')?.addEventListener('click',()=>{if(canUseAdminUIV101())activateTab('admin')});
-$('#aiButton').onclick=()=>activateTab('ai');
+$('#aiButton').onclick=()=>{activateTab('ai');setTimeout(()=>maybeShowTutorialV101('ai',session?.user?.id),220)};
 
 $$('[data-settings-toggle]').forEach(b=>b.onclick=()=>{
   const key=b.dataset.settingsToggle;
@@ -7855,6 +7888,12 @@ $('#deleteAccountButton').onclick=async()=>{
   const status=$('#accountSettingsStatus');
   try{
     setStatus(status,'Eliminando cuenta…');
+    const detach=await supabase.from('installation_exception_events_v58').update({admin_id:null}).eq('admin_id',session?.user?.id);
+    if(detach.error){
+      console.warn('No se pudo anonimizar el historial técnico antes de eliminar la cuenta.',detach.error);
+      const remove=await supabase.from('installation_exception_events_v58').delete().eq('admin_id',session?.user?.id);
+      if(remove.error)console.warn('No se pudo retirar el historial técnico asociado.',remove.error);
+    }
     const {error}=await supabase.rpc('delete_my_tt_rivals_account');
     if(error)throw error;
     try{await supabase.auth.signOut()}catch(e){}
@@ -7862,7 +7901,8 @@ $('#deleteAccountButton').onclick=async()=>{
     showView('welcomeView');
     alert('Tu cuenta fue eliminada.');
   }catch(err){
-    setStatus(status,err.message,'error');
+    const foreignKey=/installation_exception_events_v58_admin_id_fkey|foreign key constraint/i.test(String(err?.message||''));
+    setStatus(status,foreignKey?'No se pudo desvincular el historial técnico de esta cuenta. La corrección de base de datos todavía no está activa.':err.message,'error');
   }
 };
 
@@ -9225,6 +9265,7 @@ $('#adminCheckUpdateV60')?.addEventListener('click',e=>withActionLockV60('admin-
 $('#notificationButton').onclick=async()=>{
   $('#activityCenterModal').classList.remove('hidden');
   syncModalScrollLock();
+  setTimeout(()=>maybeShowTutorialV101('activity',session?.user?.id),120);
   await loadActivityCenter();
 };
 $('#logoutButton').onclick=async()=>{stopTrainingTimerV53?.();stopLiveNotificationStream();presenceHeartbeatV60?.stop?.();await presenceManagerV35?.stop?.();await stopSessionAccessGuardV76();await signOutUser();session=null;profile=null;ratings=[];showView('welcomeView')};
