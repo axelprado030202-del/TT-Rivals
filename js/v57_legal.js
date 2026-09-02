@@ -1,5 +1,5 @@
 import {supabase} from './supabase.js';
-import {TERMS_HTML_V102,PRIVACY_HTML_V102} from './v102_legal_copy.js?v=1.0.1-p7.4r.4.14';
+import {TERMS_HTML_V102,PRIVACY_HTML_V102} from './v102_legal_copy.js?v=1.0.1-p7.4r.4.15';
 
 export const LEGAL_V57={
   termsVersion:"1.1",

@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.1-p7.4r.4.14';
+import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.1-p7.4r.4.15';
 import {initAccessControlV75,startSessionAccessGuardV76,stopSessionAccessGuardV76} from './v75_access_control.js?v=1.0.1-p7.4r.3.1';
 import {
   initModerationEmailV76,showAccessBlockedV76,clearAccessBlockedActionV76,
@@ -29,10 +29,10 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.14';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.14';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.15';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.15';
 import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.1-p7.4r.4.12';
-import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.1-p7.4r.4.14';
+import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.1-p7.4r.4.15';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
@@ -58,7 +58,7 @@ import {
   adminSecurityAuditV57,
   adminUpdateLegalConfigV57,
   renderLegalDocumentV57
-} from './v57_legal.js?v=1.0.1-p7.4r.4.14';
+} from './v57_legal.js?v=1.0.1-p7.4r.4.15';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
