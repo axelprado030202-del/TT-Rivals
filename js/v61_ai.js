@@ -416,27 +416,35 @@ async function seekVideoV61(video,time){
   await p;
 }
 
-function canvasDataUrlV61(video,maxWidth=900){
+function canvasDataUrlV61(video,maxWidth=640){
   const ratio=Math.min(1,maxWidth/(video.videoWidth||maxWidth));
   const canvas=document.createElement('canvas');
   canvas.width=Math.max(1,Math.round(video.videoWidth*ratio));
   canvas.height=Math.max(1,Math.round(video.videoHeight*ratio));
   const ctx=canvas.getContext('2d',{alpha:false});
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
-  return canvas.toDataURL('image/jpeg',.72);
+  return canvas.toDataURL('image/jpeg',.64);
 }
 
 async function extractFramesV61(video){
   const duration=Number(video.duration)||0;
   if(!duration)throw new Error('No se pudo determinar la duración.');
-  const pct=duration<12?[.12,.3,.5,.7,.88]:[.08,.24,.40,.56,.72,.88];
+  if(duration>10.05)throw new Error('Video Lab analiza clips de hasta 10 segundos.');
+  // V1.0.0: cobertura temporal ordenada de toda la jugada. No se eligen
+  // puntos aleatorios: cada imagen representa un tramo consecutivo del clip.
+  const frameCount=Math.max(12,Math.min(24,Math.ceil(duration*2.4)));
+  const times=Array.from({length:frameCount},(_,index)=>{
+    if(frameCount===1)return Math.min(.01,duration);
+    return .01+(Math.max(.02,duration-.07)*(index/(frameCount-1)));
+  });
   const frames=[];
   const previous=video.currentTime;
   video.pause();
-  for(let i=0;i<pct.length;i++){
-    const t=Math.min(duration-.05,Math.max(.01,duration*pct[i]));
+  for(let i=0;i<times.length;i++){
+    const t=Math.min(duration-.04,Math.max(.01,times[i]));
     await seekVideoV61(video,t);
     frames.push({index:i+1,time_seconds:Number(t.toFixed(2)),image_url:canvasDataUrlV61(video)});
+    if(i%4===3)await new Promise(resolve=>requestAnimationFrame(resolve));
   }
   try{await seekVideoV61(video,Math.min(previous,duration-.05))}catch{}
   return frames;
@@ -445,7 +453,7 @@ async function extractFramesV61(video){
 function renderFramesV61(frames){
   const root=$('#aiVideoFramesV61');if(!root)return;
   root.classList.remove('hidden');
-  root.innerHTML=`<div class="ai-frames-head-v61"><span>FOTOGRAMAS ENVIADOS AL ANÁLISIS</span><small>${frames.length} imágenes · el video completo permanece en tu dispositivo</small></div><div>${frames.map(f=>`<figure><img src="${f.image_url}" alt="Fotograma ${f.index}"><figcaption>${fmtDuration(f.time_seconds)}</figcaption></figure>`).join('')}</div>`;
+  root.innerHTML=`<div class="ai-frames-head-v61"><span>SECUENCIA TEMPORAL ANALIZADA</span><small>${frames.length} momentos ordenados cubren la jugada completa · el archivo permanece en tu dispositivo</small></div><div>${frames.map(f=>`<figure><img src="${f.image_url}" alt="Momento ${f.index}"><figcaption>${fmtDuration(f.time_seconds)}</figcaption></figure>`).join('')}</div>`;
 }
 
 function videoObservationTypeV62(o={}){
@@ -617,10 +625,10 @@ async function analyzeVideoV61(){
     const frames=await extractFramesV61(video);
     renderFramesV61(frames);
     setBusy(button,true,'Analizando…');
-    setText(status,'TT AI está comparando los fotogramas…');
+    setText(status,'TT AI está recorriendo la jugada en orden temporal…');
     const focus=$('#aiVideoFocusV61')?.value||'tecnica_general';
     const context=await buildCompetitiveContextV61().catch(()=>({}));
-    const result=await invokeAiV61('video_analysis',{focus,frames,video:{duration_seconds:video.duration,width:video.videoWidth,height:video.videoHeight},context});
+    const result=await invokeAiV61('video_analysis',{focus,frames,video:{duration_seconds:video.duration,width:video.videoWidth,height:video.videoHeight,sampling_strategy:'ordered_full_timeline',frame_count:frames.length},context});
     if(result.quota)renderVideoQuotaV62(result.quota);else await loadVideoQuotaV62({silent:true});
     let id=null;
     try{id=await saveVideoAnalysisV61(focus,file,frames,result.result||{})}catch(saveErr){console.warn('No se pudo guardar análisis de Video Lab:',saveErr)}
@@ -648,10 +656,15 @@ async function onVideoSelectedV61(file){
   setText(status,'Leyendo metadatos del video…');
   try{
     if(preview.readyState<1)await waitEvent(preview,'loadedmetadata',8000);
-    if(preview.duration>600){setText(status,'Para V61 usá un fragmento de hasta 10 minutos.');button.disabled=true;return}
+    if(preview.duration>10.05){
+      selectedVideoFile=null;
+      setText(status,'Video Lab analiza una jugada de hasta 10 segundos. Recortá el video y volvé a seleccionarlo.');
+      button.disabled=true;
+      return;
+    }
     $('#aiVideoMetaV61').innerHTML=`<span>${esc(file.name)}</span><span>${fmtDuration(preview.duration)}</span><span>${preview.videoWidth}×${preview.videoHeight}</span><span>${humanBytes(file.size)}</span>`;
     syncVideoAnalyzeButtonV62();
-    setText(status,engineState==='online'?(!videoQuotaV62.can_analyze?'Video listo, pero no quedan usos semanales ni tickets.':Number(videoQuotaV62.remaining)===0&&Number(videoQuotaV62.tickets)>0?'Video listo. El próximo análisis usará 1 ticket acumulado.':'Listo para extraer fotogramas y analizar.'):'Video listo. Falta configurar el motor IA para analizarlo.');
+    setText(status,engineState==='online'?(!videoQuotaV62.can_analyze?'Video listo, pero no quedan usos semanales ni tickets.':Number(videoQuotaV62.remaining)===0&&Number(videoQuotaV62.tickets)>0?'Video listo. El próximo análisis usará 1 ticket acumulado.':'Listo para recorrer toda la jugada en orden temporal.'):'Video listo. Falta configurar el motor IA para analizarlo.');
   }catch(err){
     button.disabled=true;setText(status,'Este formato no pudo abrirse. Probá MP4/H.264 o WebM.');
   }

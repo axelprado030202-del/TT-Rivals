@@ -1,6 +1,6 @@
 import {supabase} from './supabase.js';
 import {filterVisibleRowsV76} from './v76_visibility.js';
-import {getClubsV51,getMyClubV51} from './profile.js?v=1.0.1-p7.4r.3';
+import {getClubsV51,getMyClubV51} from './profile.js?v=1.0.0';
 
 // TT-Rivals Versión 1.0 — módulo aislado de comunidad.
 // Si este archivo falla, el núcleo competitivo de TT Rivals sigue iniciando.

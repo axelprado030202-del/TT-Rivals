@@ -1,16 +1,16 @@
-/* TT Rivals 1.0.1 — Service Worker P7.4R.4.15
+/* TT Rivals 1.0.0 — Service Worker de lanzamiento
    Navegación: network-first.
    Estáticos: cache-first + actualización en segundo plano.
    Al activar, elimina cachés TT Rivals de builds anteriores. */
 const params=new URL(self.location.href).searchParams;
-const TT_BUILD=params.get('v')||'v1.0.1-p7.4r.4.15-legal-age-spotlight';
+const TT_BUILD=params.get('v')||'v1.0.0-release';
 const CACHE_PREFIX='tt-rivals-';
-const CACHE_NAME='tt-rivals-v1-0-1-p7-4r-4-15-legal-age-spotlight';
+const CACHE_NAME='tt-rivals-v1-0-0-release';
 
 const APP_SHELL=[
   './','./index.html','./manifest.webmanifest',
-  './css/style.css','./css/v101_ui_rework.css','./css/v101_premium.css','./css/v101_motion_fx.css','./css/v70_metrics.css','./css/v71_result.css','./css/v72_progress.css','./css/v73_rematch.css','./css/v74_performance.css','./css/v74_rivalries.css','./css/v74_admin_decision.css','./css/v75_access_control.css','./css/v76_moderation_email.css','./css/v77_auto_moderation.css','./css/v743_profile_hub.css','./css/v744_profile_card.css','./css/v746_stats_play.css','./css/v747_match_flow.css','./css/v748_postmatch_cinematic.css','./css/v751_play_profile.css','./css/v101_tutorials.css',
-  './js/version.js','./js/app.js','./js/v101_tutorials.js','./js/v102_legal_copy.js','./js/v75_access_control.js','./js/v76_moderation_email.js','./js/v76_visibility.js','./js/v77_auto_moderation.js','./js/v55_competition_live.js','./js/v74_navigation.js','./js/v74_rivalries.js','./js/v70_metrics.js','./js/v72_progress.js','./js/v101_feedback.js','./js/v101_motion_fx.js','./js/v101_performance.js','./js/v748_postmatch_cinematic.js',
+  './css/style.css','./css/v101_ui_rework.css','./css/v101_premium.css','./css/v101_motion_fx.css','./css/v70_metrics.css','./css/v71_result.css','./css/v72_progress.css','./css/v73_rematch.css','./css/v74_performance.css','./css/v74_rivalries.css','./css/v74_admin_decision.css','./css/v75_access_control.css','./css/v76_moderation_email.css','./css/v77_auto_moderation.css','./css/v743_profile_hub.css','./css/v744_profile_card.css','./css/v746_stats_play.css','./css/v747_match_flow.css','./css/v748_postmatch_cinematic.css','./css/v751_play_profile.css','./css/v101_tutorials.css','./css/v100_release.css',
+  './js/version.js','./js/app.js','./js/v100_release.js','./js/v101_tutorials.js','./js/v102_legal_copy.js','./js/v75_access_control.js','./js/v76_moderation_email.js','./js/v76_visibility.js','./js/v77_auto_moderation.js','./js/v55_competition_live.js','./js/v74_navigation.js','./js/v74_rivalries.js','./js/v70_metrics.js','./js/v72_progress.js','./js/v101_feedback.js','./js/v101_motion_fx.js','./js/v101_performance.js','./js/v748_postmatch_cinematic.js',
   './js/pwa.js','./js/v61_ai.js','./js/v62_doubles.js','./js/v63_integrity_rewards.js','./js/v100_launch.js','./js/v101_experience.js',
   './js/v60_runtime.js','./js/v60_motion.js','./js/v60_presence.js','./js/v60_history.js','./js/supabase.js','./js/auth.js',
   './js/challenges.js','./js/matches.js','./js/profile.js','./js/preferences.js','./js/social.js','./js/history.js','./js/tournaments.js',
@@ -64,4 +64,33 @@ self.addEventListener('fetch',event=>{
   const url=new URL(request.url);if(url.origin!==self.location.origin)return;
   if(request.mode==='navigate'){event.respondWith(navigationResponse(request));return}
   event.respondWith(staticResponse(request));
+});
+
+self.addEventListener('push',event=>{
+  let payload={};
+  try{payload=event.data?.json?.()||{}}catch{payload={body:event.data?.text?.()||'Tenés una novedad.'}}
+  const title=payload.title||'TT Rivals';
+  event.waitUntil(self.registration.showNotification(title,{
+    body:payload.body||'Tenés una novedad.',
+    icon:'./assets/pwa/icon-192.png',
+    badge:'./assets/pwa/favicon-64.png',
+    tag:`tt-rivals-${payload.notification_id||payload.type||'activity'}`,
+    renotify:false,
+    data:payload
+  }));
+});
+
+self.addEventListener('notificationclick',event=>{
+  event.notification.close();
+  const data=event.notification.data||{};
+  const target=new URL('./',self.registration.scope);
+  if(data.action)target.searchParams.set('tt_push_action',data.action);
+  if(data.entity_kind)target.searchParams.set('tt_push_entity',data.entity_kind);
+  if(data.entity_id)target.searchParams.set('tt_push_id',data.entity_id);
+  event.waitUntil((async()=>{
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    const existing=windows[0];
+    if(existing){await existing.navigate(target.href);return existing.focus()}
+    return self.clients.openWindow(target.href);
+  })());
 });

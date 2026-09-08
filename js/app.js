@@ -1,45 +1,46 @@
 import { supabase } from './supabase.js';
-import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.1-p7.4r.4.15';
-import {initAccessControlV75,startSessionAccessGuardV76,stopSessionAccessGuardV76} from './v75_access_control.js?v=1.0.1-p7.4r.3.1';
+import {getSession,signUpUser,signInUser,signOutUser,requestPasswordReset,updateRecoveredPassword,verifySessionAccessV75} from './auth.js?v=1.0.0';
+import {initAccessControlV75,startSessionAccessGuardV76,stopSessionAccessGuardV76} from './v75_access_control.js?v=1.0.0';
 import {
   initModerationEmailV76,showAccessBlockedV76,clearAccessBlockedActionV76,
   loadAdminSuspendedV76,createRegistrationCancelTokenV76,maskEmailV76,
   savePendingRegistrationV76,getPendingRegistrationV76,clearPendingRegistrationV76,
   getRegistrationConfigV76,verifyRegistrationCodeV76,resendRegistrationCodeV76,
   cancelPendingRegistrationV76
-} from './v76_moderation_email.js?v=1.0.1-p7.4r.3';
+} from './v76_moderation_email.js?v=1.0.0';
 import {
   getAdminAutoModerationV77,setAutoModerationModeV77,
   dismissAutoModerationCaseV77,reprocessAutoModerationV77,
   getMyIntegrityStatusV78,submitIntegrityAppealV78,resolveIntegrityHoldV78
-} from './v77_auto_moderation.js?v=1.0.1-p7.4r.4.1';
-import {getMyProfile,getMyRatings,completeSportsProfile,getClubsV47,ensureClubV47,getClubsV49,getClubsV50,getClubsV51,suggestClubsV49,suggestClubsV50,suggestClubsV51,ensureClubV49,ensureClubV51,setMyClubV49,setMyClubV51,getMyClubV49,getMyClubV51,adminListClubsV49,adminListClubsV51,adminMergeClubsV49,adminMergeClubsV51,adminRenameClubV49,adminCreateClubV51,adminUpdateClubV51,getRanking,searchPlayers,getRatingHistory,getRankTiers,setProfilePhotoUrl,uploadProfilePhoto,deleteProfilePhotoByUrl} from './profile.js?v=1.0.1-p7.4r.3';
-import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges,invalidateChallengesCacheV60} from './challenges.js?v=1.0.1-p7.4r.3';
-import {getMyMatches,submitMatchResult,confirmMatchResult,disputeMatchResult,getMyDurationStatsV59,adminListMatchIntegrityV59,invalidateMatchesCacheV60} from './matches.js?v=1.0.1-p7.4r.4.1';
-import {createTournamentV8,getTournamentsV8,getTournamentEntriesV8,getTournamentMembersV8,getTournamentGamesV8,getTournamentStandingsV8,getTournamentStandingsV31,submitTournamentGameResultV8,closeGroupStageV8,finalizeTournamentV8,searchTournamentUsersV8,getTournamentParticipantProfilesV8,createTournamentV30,getMyTournamentHistoryV30,searchActiveTournamentsV30,joinTournamentV30,leaveTournamentV30,startTournamentV30,getTournamentLobbyV30} from './tournaments.js?v=1.0.1-p7.4r.3';
-import {getReviewsForUser,getReviewsAuthoredByUser,submitPlayerReview,getPlayerProfile,getPlayerRatings,followPlayer,unfollowPlayer,getFollowingIds,getFollowingRanking,getPublicPlayerCard,getFollowingFeed,setPrimaryRival,clearPrimaryRival,getMyPrimaryRival,getShowcaseAchievements,setShowcaseAchievements,getPlayerReliabilityV34} from './social.js?v=1.0.1-p7.4r.3';
-import {getPreferences,updatePreferences,getFrames,equipFrame,getSeasonDashboard,getSeasonHistory,getRecommendedRivals,getPlayerPercentiles,getPublicProfilePreferences} from './preferences.js?v=1.0.1-p7.4r.3';
-import {getSeasonChampions,getPublicPlayerSeasons,getH2HAdvanced,getPlayerRecords,getTournamentSummary} from './history.js?v=1.0.1-p7.4r.3';
+} from './v77_auto_moderation.js?v=1.0.0';
+import {getMyProfile,getMyRatings,completeSportsProfile,getClubsV47,ensureClubV47,getClubsV49,getClubsV50,getClubsV51,suggestClubsV49,suggestClubsV50,suggestClubsV51,ensureClubV49,ensureClubV51,setMyClubV49,setMyClubV51,getMyClubV49,getMyClubV51,adminListClubsV49,adminListClubsV51,adminMergeClubsV49,adminMergeClubsV51,adminRenameClubV49,adminCreateClubV51,adminUpdateClubV51,getRanking,searchPlayers,getRatingHistory,getRankTiers,setProfilePhotoUrl,uploadProfilePhoto,deleteProfilePhotoByUrl} from './profile.js?v=1.0.0';
+import {createChallenge,createRematchChallengeV73,respondToChallenge,cancelChallenge,getMyChallenges,invalidateChallengesCacheV60} from './challenges.js?v=1.0.0';
+import {getMyMatches,submitMatchResult,confirmMatchResult,disputeMatchResult,getMyDurationStatsV59,adminListMatchIntegrityV59,invalidateMatchesCacheV60} from './matches.js?v=1.0.0';
+import {createTournamentV8,getTournamentsV8,getTournamentEntriesV8,getTournamentMembersV8,getTournamentGamesV8,getTournamentStandingsV8,getTournamentStandingsV31,submitTournamentGameResultV8,closeGroupStageV8,finalizeTournamentV8,searchTournamentUsersV8,getTournamentParticipantProfilesV8,createTournamentV30,getMyTournamentHistoryV30,searchActiveTournamentsV30,joinTournamentV30,leaveTournamentV30,startTournamentV30,getTournamentLobbyV30} from './tournaments.js?v=1.0.0';
+import {getReviewsForUser,getReviewsAuthoredByUser,submitPlayerReview,getPlayerProfile,getPlayerRatings,followPlayer,unfollowPlayer,getFollowingIds,getFollowingRanking,getPublicPlayerCard,getFollowingFeed,setPrimaryRival,clearPrimaryRival,getMyPrimaryRival,getShowcaseAchievements,setShowcaseAchievements,getPlayerReliabilityV34} from './social.js?v=1.0.0';
+import {getPreferences,updatePreferences,getFrames,equipFrame,getSeasonDashboard,getSeasonHistory,getRecommendedRivals,getPlayerPercentiles,getPublicProfilePreferences} from './preferences.js?v=1.0.0';
+import {getSeasonChampions,getPublicPlayerSeasons,getH2HAdvanced,getPlayerRecords,getTournamentSummary} from './history.js?v=1.0.0';
 import {getPlayerTitles,equipCompetitiveTitle,refreshOwnCompetitiveTitlesV58,getTournamentHistory,getComparativeStats,getPostMatchSummary} from './v21.js';
 import {getV28Dashboard,getV28LastSeasonRecap,getDailyMissionsV101} from './v28.js';
-import {getMyV35Flags,updateMyLocationV35,getNearbyPlayersV35,createPresenceManagerV35} from './v35_social.js?v=1.0.1-p7.4r.3';
+import {getMyV35Flags,updateMyLocationV35,getNearbyPlayersV35,createPresenceManagerV35} from './v35_social.js?v=1.0.0';
 import {getPublicAdminFlagV37,getPublicAdminIdsV38} from './v36_live.js';
 import {getFrameFitsV44,saveFrameFitV44,resetFrameFitV44,subscribeAvatarLiveV44} from './v44_avatar_fit.js';
 import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,submitTeamTournamentMatchResultV32,createTeamTiebreakV32,finalizeTeamTournamentDrawV32,finalizeTeamTournamentV33,listMyTeamTournamentHistoryV33} from './team_tournaments.js';
 import {setupTrainingTimerV53} from './training.js';
-import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.1-p7.4';
+import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.0';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1-p7.4r.4.15';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1-p7.4r.4.15';
-import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.1-p7.4r.4.12';
-import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.1-p7.4r.4.15';
-import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.1-p7.4';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.0';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.0';
+import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.0';
+import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.0';
+import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.0';
 import {getPresenceV60,createPresenceHeartbeatV60} from './v60_presence.js';
 import {getAdminProductMetricsV70,recordProductEventV70} from './v70_metrics.js';
 import {getCompetitiveProgressV72} from './v72_progress.js';
 import {getHistorySeasonsV60} from './v60_history.js';
-import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,celebrateRewardV601} from './v60_motion.js?v=1.0.1-p7.3.1';
-import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.1-p7.4r.4.6';
+import {initMotionV601,animateTabEnterV601,animateNumberV601,animateProgressV601,animatePriorityV601,animateListV601,animateRankingMovementV601,pulseProtectionReadyV601,celebrateRewardV601} from './v60_motion.js?v=1.0.0';
+import {installSwipeNavigationV74} from './v74_navigation.js?v=1.0.0';
+import {syncRewardUnlocksV100,startPushPresenceV100,stopPushPresenceV100,getPushStatusV100,enablePushV100,disablePushV100,installPerformanceTelemetryV100,consumePushDeepLinkV100} from './v100_release.js?v=1.0.0';
 import {
   registerCurrentInstallationV58,
   getMyProtectionV58,
@@ -58,7 +59,7 @@ import {
   adminSecurityAuditV57,
   adminUpdateLegalConfigV57,
   renderLegalDocumentV57
-} from './v57_legal.js?v=1.0.1-p7.4r.4.15';
+} from './v57_legal.js?v=1.0.0';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
@@ -155,7 +156,7 @@ function showPlayModeV62(mode=null){
 async function ensureDoublesModuleV62(){
   if(doublesModuleV62)return doublesModuleV62;
   if(!doublesModulePromiseV62){
-    doublesModulePromiseV62=import('./v62_doubles.js?v=1.0.1-p7.4r.4.7')
+    doublesModulePromiseV62=import('./v62_doubles.js?v=1.0.0')
       .then(mod=>{doublesModuleV62=mod;mod.initDoublesV62?.();return mod})
       .catch(error=>{doublesModulePromiseV62=null;recordClientErrorV60(error,'v62-doubles');console.error('Dobles V62:',error);throw error});
   }
@@ -183,7 +184,7 @@ let v100ModulePromise=null;
 async function ensureV100Module(){
   if(v100Module)return v100Module;
   if(!v100ModulePromise){
-    v100ModulePromise=import('./v100_launch.js?v=1.0.1-p7.4r.4.7')
+    v100ModulePromise=import('./v100_launch.js?v=1.0.0')
       .then(mod=>{v100Module=mod;return mod})
       .catch(error=>{v100ModulePromise=null;recordClientErrorV60(error,'v100-community');console.error('TT-Rivals 1.0:',error);throw error});
   }
@@ -247,7 +248,7 @@ const dismissedLivePopupsV750=new Set();
 let pendingRematchV744=null,rematchOutcomeTimerV744=null;
 let incomingRematchV745=null;
 let v60State={challenges:[],matches:[],matchSets:new Map(),recommended:[],activityItems:[],activityFilter:'attention',historyModality:'all',historySeason:'all',historyDateFrom:'',historyDateTo:'',historySort:'recent',recentPresence:new Map(),historySeasons:[],adminCategory:'disputes',lastDiagnostics:null,metricsDays:7,lastProductMetrics:null};
-let presenceHeartbeatV60=null,activityLoadPromiseV60=null,achievementUnlockPrimedV60=false,titleUnlockPrimedV60=false,missionUnlockPrimedV60=false;
+let presenceHeartbeatV60=null,activityLoadPromiseV60=null;
 let lastUnlockedAchievementsV60=new Set(),lastUnlockedTitlesV60=new Set(),lastCompletedMissionsV60=new Set();
 let recentRewardsV60=[];
 
@@ -702,12 +703,21 @@ function decorateAllPlayersV38(root=document){
 function startUniversalPlayerObserverV38(){
   if(universalPlayerObserverV38)return;
   decorateAllPlayersV38(document);
-  universalPlayerObserverV38=new MutationObserver(mutations=>{
-    let needs=false;
-    for(const m of mutations){
-      if(m.addedNodes?.length){needs=true;break}
+  const pendingRoots=new Set();
+  let scheduled=false;
+  const flush=()=>{
+    scheduled=false;
+    for(const root of pendingRoots){
+      if(root.matches?.('[data-open-player],[data-user-id-v35]'))decoratePlayerCardV38(root);
+      decorateAllPlayersV38(root);
     }
-    if(needs)requestAnimationFrame(()=>decorateAllPlayersV38(document));
+    pendingRoots.clear();
+  };
+  universalPlayerObserverV38=new MutationObserver(mutations=>{
+    for(const m of mutations){
+      for(const node of m.addedNodes||[]){if(node.nodeType===1)pendingRoots.add(node)}
+    }
+    if(pendingRoots.size&&!scheduled){scheduled=true;requestAnimationFrame(flush)}
   });
   universalPlayerObserverV38.observe(document.body,{childList:true,subtree:true});
 }
@@ -918,6 +928,17 @@ async function loadExperienceSettings(){
     populateSettingsUI();
   }catch(err){
     console.error('settings',err);
+  }
+}
+
+async function loadStartupPreferencesV100(){
+  if(!session?.user)return;
+  try{
+    userPreferences=await getPreferences();
+    applyTheme(userPreferences?.theme||'dark');
+    applyBackgroundEffectPreferenceP61(userPreferences?.background_effect_quality||'auto');
+  }catch(error){
+    console.warn('Preferencias iniciales V1.0.0:',error);
   }
 }
 
@@ -1432,24 +1453,32 @@ function pushRewardV60(reward,{toast=true}={}){
 }
 function trackAchievementUnlocksV60(items=[]){
   const unlocked=new Set(items.filter(x=>x.unlocked).map(x=>String(x.id)));
-  if(achievementUnlockPrimedV60){
-    items.filter(x=>x.unlocked&&!lastUnlockedAchievementsV60.has(String(x.id))).forEach(a=>pushRewardV60({kind:'achievement',icon:a.icon||'✦',kicker:'LOGRO DESBLOQUEADO',name:a.name,detail:a.desc}));
-  }else achievementUnlockPrimedV60=true;
   lastUnlockedAchievementsV60=unlocked;
+  if(!session?.user?.id)return;
+  syncRewardUnlocksV100(session.user.id,'achievement',items).then(fresh=>{
+    const ids=new Set(fresh);
+    items.filter(item=>item.unlocked&&ids.has(String(item.id))).forEach(a=>pushRewardV60({kind:'achievement',icon:a.icon||'✦',kicker:'LOGRO DESBLOQUEADO',name:a.name,detail:a.desc}));
+  }).catch(error=>console.warn('Logros V1.0.0:',error));
 }
 function trackTitleUnlocksV60(items=[]){
   const unlocked=new Set(items.filter(x=>x.unlocked).map(x=>String(x.id)));
-  if(titleUnlockPrimedV60){
-    items.filter(x=>x.unlocked&&!lastUnlockedTitlesV60.has(String(x.id))).forEach(t=>pushRewardV60({kind:'title',icon:t.icon||'✦',kicker:'TÍTULO DESBLOQUEADO',name:t.name,detail:t.description||t.progress_label||'Nuevo título disponible.'}));
-  }else titleUnlockPrimedV60=true;
   lastUnlockedTitlesV60=unlocked;
+  if(!session?.user?.id)return;
+  syncRewardUnlocksV100(session.user.id,'title',items).then(fresh=>{
+    const ids=new Set(fresh);
+    items.filter(item=>item.unlocked&&ids.has(String(item.id))).forEach(t=>pushRewardV60({kind:'title',icon:t.icon||'✦',kicker:'TÍTULO DESBLOQUEADO',name:t.name,detail:t.description||t.progress_label||'Nuevo título disponible.'}));
+  }).catch(error=>console.warn('Títulos V1.0.0:',error));
 }
 function trackMissionCompletionsV60(missions=[]){
   const complete=new Set(missions.filter(m=>Number(m.progress||0)>=Number(m.goal||1)).map(m=>String(m.id||m.title)));
-  if(missionUnlockPrimedV60){
-    missions.filter(m=>Number(m.progress||0)>=Number(m.goal||1)&&!lastCompletedMissionsV60.has(String(m.id||m.title))).forEach(m=>pushRewardV60({kind:'mission',icon:'⚡',kicker:'MISIÓN COMPLETADA',name:m.title,detail:`+${Number(m.reward||0)} XP` }));
-  }else missionUnlockPrimedV60=true;
   lastCompletedMissionsV60=complete;
+  if(!session?.user?.id)return;
+  const day=new Date().toISOString().slice(0,10);
+  const normalized=missions.map(m=>({...m,id:`${m.id||m.title}:${day}`,unlocked:Number(m.progress||0)>=Number(m.goal||1)}));
+  syncRewardUnlocksV100(session.user.id,'mission',normalized).then(fresh=>{
+    const ids=new Set(fresh);
+    normalized.filter(item=>item.unlocked&&ids.has(String(item.id))).forEach(m=>pushRewardV60({kind:'mission',icon:'⚡',kicker:'MISIÓN COMPLETADA',name:m.title,detail:`+${Number(m.reward||0)} XP` }));
+  }).catch(error=>console.warn('Misiones V1.0.0:',error));
 }
 
 function formatMatchDate(m){
@@ -1540,8 +1569,6 @@ async function loadV35Flags(){
 
   if(v35Flags.is_test_admin){
     document.body.classList.add('test-admin-v35');
-    socialState.achievements=(socialState.achievements||[]).map(a=>({...a,unlocked:true}));
-    titleState.items=(titleState.items||[]).map(t=>({...t,unlocked:true}));
     renderFrameGallery();
     setupAdminFrameLabV44();
   }else{
@@ -2004,6 +2031,7 @@ async function loadApp(uid,p=null){
 
   populate();
   showMain();
+  consumePushDeepLinkV100(activateTab);
 
   // La bienvenida se monta después de identificar la sesión. Es decorativa y
   // queda completamente fuera del camino crítico de carga.
@@ -2016,15 +2044,11 @@ async function loadApp(uid,p=null){
     try{
       const [tiers]=await Promise.all([
         getRankTiers().catch(e=>{console.error(e);return []}),
-        loadSocialState(),
-        loadExperienceSettings(),
+        loadStartupPreferencesV100(),
         loadV35Flags(),
-        loadFrameFitsV44(),
         loadV58Core({refreshTitles:true,skipInstallation:true})
       ]);
       rankTiers=tiers||[];
-      titleState=await getPlayerTitles(session.user.id).catch(()=>titleState);
-      trackTitleUnlocksV60(titleState.items||[]);
       ensureV100Module().then(mod=>mod.refreshV100?.()).catch(()=>{});
       populate();
       renderProtectionV58();
@@ -2053,6 +2077,15 @@ async function loadApp(uid,p=null){
         ratings.map(r=>[r.modality,r.rating,r.matches_played,r.wins,r.losses])
       );
       startLiveNotificationStream();
+      startPushPresenceV100(session.user.id);
+
+      const hydrateProgressV100=()=>Promise.all([
+        loadSocialState(),
+        getPlayerTitles(session.user.id).then(next=>{titleState=next;trackTitleUnlocksV60(titleState.items||[])}).catch(()=>{}),
+        loadFrameFitsV44().catch(()=>{})
+      ]).then(()=>populate()).catch(error=>console.warn('Progreso diferido V1.0.0:',error));
+      if('requestIdleCallback' in window)requestIdleCallback(hydrateProgressV100,{timeout:1800});
+      else setTimeout(hydrateProgressV100,500);
 
       // P7.4R.4.4: el resumen se hidrata al abrir Perfil, ahora destino inicial.
     }catch(err){
@@ -2391,7 +2424,7 @@ function activateTab(tab,{source='tap'}={}){
     renderAchievements();renderPrimaryRival();renderProfileSeasonCards();
     renderEquippedTitle();renderIdentityShowcase();
   }
-  if(tab==='settings'){populateSettingsUI();renderFrameGallery()}
+  if(tab==='settings'){populateSettingsUI();renderFrameGallery();refreshPushStatusV100().catch(()=>{})}
   if(tab==='admin'){setupAdminFrameLabV44();setupAdminPanelsV60()}
   if(tab==='stats')renderStatsModeV56();
 
@@ -2413,6 +2446,7 @@ function activateTab(tab,{source='tap'}={}){
     ]),{ttl:30000});
 
     if(tab==='profile')runTabLoadV74('profile',()=>Promise.all([
+      loadExperienceSettings(),
       loadHomeDashboard(),loadRecommendedRivals(),loadV28Experience(),
       ensureV63Module().then(mod=>mod.loadOwnPalmaresV63?.()),
       ensureV100Module().then(mod=>mod.loadOwnSportsIdentityV100?.()),
@@ -2424,6 +2458,7 @@ function activateTab(tab,{source='tap'}={}){
     if(tab==='places')runTabLoadV74('places',()=>ensureV100Module().then(mod=>mod.loadPlacesV100?.()),{ttl:30000});
 
     if(tab==='settings')runTabLoadV74('settings',()=>Promise.all([
+      loadExperienceSettings(),
       loadLegalStatusV57(),
       loadSettingsClubV49(),
       loadV35Flags().then(()=>{renderFrameGallery();renderAchievements()})
@@ -7590,6 +7625,30 @@ $('#settingsButton').onclick=()=>{activateTab('settings');setTimeout(()=>maybeSh
 $('#adminTopButtonV101')?.addEventListener('click',()=>{if(canUseAdminUIV101())activateTab('admin')});
 $('#aiButton').onclick=()=>{activateTab('ai');setTimeout(()=>maybeShowTutorialV101('ai',session?.user?.id),220)};
 
+async function refreshPushStatusV100(){
+  const button=$('#togglePushNotificationsV100'),status=$('#pushNotificationsStatusV100');
+  if(!button||!status)return;
+  const state=await getPushStatusV100();
+  button.dataset.enabled=state.enabled?'true':'false';
+  button.classList.toggle('is-enabled',state.enabled);
+  button.textContent=state.enabled?'Desactivar':'Activar';
+  if(!state.supported){status.textContent='Este navegador no permite notificaciones externas.';return}
+  if(state.enabled){status.textContent='Activas. No se mostrarán mientras TT Rivals esté abierta y visible.';return}
+  if(state.permission==='denied'){status.textContent='El permiso está bloqueado en la configuración del navegador.';return}
+  status.textContent='Desactivadas. Se solicitará permiso únicamente cuando elijas activarlas.';
+}
+
+$('#togglePushNotificationsV100')?.addEventListener('click',async event=>{
+  const button=event.currentTarget,status=$('#pushNotificationsStatusV100');
+  button.disabled=true;
+  try{
+    if(button.dataset.enabled==='true')await disablePushV100();
+    else await enablePushV100();
+    await refreshPushStatusV100();
+  }catch(error){setStatus(status,error.message,'error')}
+  finally{button.disabled=false}
+});
+
 $$('[data-settings-toggle]').forEach(b=>b.onclick=()=>{
   const key=b.dataset.settingsToggle;
   const group=b.closest('.settings-group');
@@ -7935,25 +7994,23 @@ $('#deleteAccountButton').onclick=async()=>{
   const status=$('#accountSettingsStatus');
   try{
     setStatus(status,'Eliminando cuenta…');
-    const detach=await supabase.from('installation_exception_events_v58').update({admin_id:null}).eq('admin_id',session?.user?.id);
-    if(detach.error){
-      console.warn('No se pudo anonimizar el historial técnico antes de eliminar la cuenta.',detach.error);
-      const remove=await supabase.from('installation_exception_events_v58').delete().eq('admin_id',session?.user?.id);
-      if(remove.error)console.warn('No se pudo retirar el historial técnico asociado.',remove.error);
+    let result=await supabase.rpc('delete_my_tt_rivals_account_v100');
+    if(result.error&&/delete_my_tt_rivals_account_v100|schema cache|function/i.test(String(result.error.message||''))){
+      result=await supabase.rpc('delete_my_tt_rivals_account');
     }
-    const {error}=await supabase.rpc('delete_my_tt_rivals_account');
-    if(error)throw error;
+    if(result.error)throw result.error;
+    stopPushPresenceV100();
     try{await supabase.auth.signOut()}catch(e){}
     session=null;profile=null;ratings=[];
     showView('welcomeView');
     alert('Tu cuenta fue eliminada.');
   }catch(err){
     const foreignKey=/installation_exception_events_v58_admin_id_fkey|foreign key constraint/i.test(String(err?.message||''));
-    setStatus(status,foreignKey?'No se pudo desvincular el historial técnico de esta cuenta. La corrección de base de datos todavía no está activa.':err.message,'error');
+    setStatus(status,foreignKey?'La migración de eliminación segura V1.0.0 todavía no está activa en la base de datos.':err.message,'error');
   }
 };
 
-$('#settingsLogoutButton').onclick=async()=>{stopTrainingTimerV53?.();stopLiveNotificationStream();await stopSessionAccessGuardV76();await signOutUser();session=null;profile=null;ratings=[];showView('welcomeView')};
+$('#settingsLogoutButton').onclick=async()=>{stopTrainingTimerV53?.();stopLiveNotificationStream();stopPushPresenceV100();await stopSessionAccessGuardV76();await signOutUser();session=null;profile=null;ratings=[];showView('welcomeView')};
 
 $$('[data-ranking-mode]').forEach(b=>b.onclick=()=>{rankingMode=b.dataset.rankingMode;$$('[data-ranking-mode]').forEach(x=>x.classList.toggle('active',x===b));loadRanking()});
 $$('[data-home-rating-mode-v59]').forEach(button=>button.addEventListener('click',()=>{
@@ -9315,7 +9372,7 @@ $('#notificationButton').onclick=async()=>{
   setTimeout(()=>maybeShowTutorialV101('activity',session?.user?.id),120);
   await loadActivityCenter();
 };
-$('#logoutButton').onclick=async()=>{stopTrainingTimerV53?.();stopLiveNotificationStream();presenceHeartbeatV60?.stop?.();await presenceManagerV35?.stop?.();await stopSessionAccessGuardV76();await signOutUser();session=null;profile=null;ratings=[];showView('welcomeView')};
+$('#logoutButton').onclick=async()=>{stopTrainingTimerV53?.();stopLiveNotificationStream();stopPushPresenceV100();presenceHeartbeatV60?.stop?.();await presenceManagerV35?.stop?.();await stopSessionAccessGuardV76();await signOutUser();session=null;profile=null;ratings=[];showView('welcomeView')};
 window.addEventListener('tt-v62-doubles-confirmed',()=>{
   invalidateRivalriesV74();
   Promise.all([refreshCore(),loadRivalriesV74(true)]).catch(err=>console.warn('Refresh dobles V62:',err));
@@ -9351,6 +9408,7 @@ installRapidClickGuardV60();
 setupAdminPanelsV60();
 startMatchClocksV59();
 initMotionV601();
+installPerformanceTelemetryV100();
 initRivalriesV74();
 initAccessControlV75();
 initModerationEmailV76();

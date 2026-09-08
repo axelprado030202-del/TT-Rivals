@@ -1,0 +1,7 @@
+/* TT Rivals 1.0.0 — controles de lanzamiento */
+.push-settings-v100{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 14px;margin-top:8px;padding:16px;border:1px solid rgba(56,189,248,.2);border-radius:16px;background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(37,99,235,.05))}
+.push-settings-v100 div{display:grid;gap:4px}.push-settings-v100 strong{font-size:.78rem}.push-settings-v100 small{color:#91a5bc;font-size:.62rem;line-height:1.45}
+.push-settings-v100 button{min-width:116px;padding:10px 14px;border:1px solid rgba(96,165,250,.28);border-radius:12px;color:#dbeafe;background:#102442;font-weight:900;cursor:pointer}
+.push-settings-v100 button.is-enabled{border-color:rgba(52,211,153,.4);color:#6ee7b7;background:rgba(6,78,59,.42)}
+.push-settings-v100 button:disabled{opacity:.55;cursor:wait}.push-settings-v100 .status{grid-column:1/-1;margin:0;min-height:0;font-size:.58rem}
+@media(max-width:620px){.push-settings-v100{grid-template-columns:1fr}.push-settings-v100 button{width:100%}}

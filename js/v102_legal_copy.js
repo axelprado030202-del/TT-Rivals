@@ -82,7 +82,7 @@ export const PRIVACY_HTML_V102=`
 <h3><span>9.</span>UBICACIÓN</h3>
 <p>Jugadores cerca es optativo. Cuando se activa, el dispositivo puede proporcionar coordenadas para calcular una distancia aproximada. La finalidad no es publicar coordenadas exactas. La persona puede desactivar la función y cambiar su visibilidad.</p>
 <h3><span>10.</span>FOTOGRAFÍAS Y VIDEO LAB</h3>
-<p>Las fotografías de perfil se utilizan para identificar visualmente la cuenta y pueden sustituirse o eliminarse. Video Lab extrae fotogramas en el dispositivo según lo informado en la interfaz; el archivo completo no debe almacenarse salvo que una versión futura lo informe y solicite la autorización correspondiente.</p>
+<p>Las fotografías de perfil se utilizan para identificar visualmente la cuenta y pueden sustituirse o eliminarse. Video Lab recorre localmente clips de hasta 10 segundos y prepara una secuencia temporal optimizada según lo informado en la interfaz; el archivo completo no se sube ni se almacena. El resultado, las marcas de tiempo y los metadatos técnicos podrán guardarse en la cuenta para prestar la función solicitada.</p>
 <h3><span>11.</span>PROVEEDORES Y DESTINATARIOS</h3>
 <p>TT Rivals utiliza Supabase para autenticación, base de datos, almacenamiento y tiempo real, y GitHub Pages u otro proveedor informado para servir la aplicación. Estos proveedores pueden procesar datos únicamente para prestar su infraestructura y bajo sus medidas y condiciones técnicas.</p>
 <h3><span>12.</span>TRANSFERENCIAS INTERNACIONALES</h3>

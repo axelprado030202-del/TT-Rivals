@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import {createRequestCacheV60} from './v60_runtime.js?v=1.0.1-p7.4';
+import {createRequestCacheV60} from './v60_runtime.js?v=1.0.0';
 
 const matchesCacheV60=createRequestCacheV60(30000);
 

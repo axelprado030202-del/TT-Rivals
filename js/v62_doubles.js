@@ -1,5 +1,5 @@
 import {supabase} from './supabase.js';
-import {searchPlayers} from './profile.js?v=1.0.1-p7.4r.3';
+import {searchPlayers} from './profile.js?v=1.0.0';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=(v='')=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
