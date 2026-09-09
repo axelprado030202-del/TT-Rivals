@@ -1,11 +1,11 @@
-/* TT Rivals 1.0.0 — Service Worker de lanzamiento
+/* TT Rivals 1.0.1 — Service Worker
    Navegación: network-first.
    Estáticos: cache-first + actualización en segundo plano.
    Al activar, elimina cachés TT Rivals de builds anteriores. */
 const params=new URL(self.location.href).searchParams;
-const TT_BUILD=params.get('v')||'v1.0.0-release';
+const TT_BUILD=params.get('v')||'v1.0.1-push-challenges';
 const CACHE_PREFIX='tt-rivals-';
-const CACHE_NAME='tt-rivals-v1-0-0-release';
+const CACHE_NAME='tt-rivals-v1-0-1-push-challenges';
 
 const APP_SHELL=[
   './','./index.html','./manifest.webmanifest',
@@ -74,7 +74,7 @@ self.addEventListener('push',event=>{
     body:payload.body||'Tenés una novedad.',
     icon:'./assets/pwa/icon-192.png',
     badge:'./assets/pwa/favicon-64.png',
-    tag:`tt-rivals-${payload.notification_id||payload.type||'activity'}`,
+    tag:`tt-rivals-${payload.event_key||payload.notification_id||payload.type||'activity'}`,
     renotify:false,
     data:payload
   }));
