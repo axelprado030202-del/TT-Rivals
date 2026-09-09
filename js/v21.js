@@ -30,16 +30,25 @@ export async function refreshOwnCompetitiveTitlesV58(){
 }
 
 export async function equipCompetitiveTitle(titleId){
-  const id=titleId||null;
-  if(id?.startsWith('v58_')||id?.startsWith('v100_')){
-    const {error}=await supabase.rpc('equip_competitive_title',{p_title_id:null});
-    if(error)throw error;
-    await equipTitleV58(id);
-    return;
+  const {error}=await supabase.rpc('equip_any_title_v103',{p_title_id:titleId||null});
+  if(error){
+    if(error.code==='PGRST202'||error.code==='42883'){
+      // Compatibilidad mientras se aplica SQL 1.0.3: validar/equipar destino
+      // antes de quitar el anterior. No recurrir aquí ante errores de permisos.
+      const id=titleId||null;
+      if(id?.startsWith('v58_')||id?.startsWith('v100_')){
+        await equipTitleV58(id);
+        const {error:clearError}=await supabase.rpc('equip_competitive_title',{p_title_id:null});
+        if(clearError)throw clearError;
+      }else{
+        const {error:equipError}=await supabase.rpc('equip_competitive_title',{p_title_id:id});
+        if(equipError)throw equipError;
+        await equipTitleV58(null);
+      }
+      return;
+    }
+    throw error;
   }
-  await equipTitleV58(null).catch(()=>{});
-  const {error}=await supabase.rpc('equip_competitive_title',{p_title_id:id});
-  if(error)throw error;
 }
 export async function getTournamentHistory(limit=50){
   const {data,error}=await supabase.rpc('get_tournament_history_v21',{p_limit:limit});

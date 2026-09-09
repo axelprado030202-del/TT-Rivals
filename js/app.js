@@ -20,7 +20,7 @@ import {createTournamentV8,getTournamentsV8,getTournamentEntriesV8,getTournament
 import {getReviewsForUser,getReviewsAuthoredByUser,submitPlayerReview,getPlayerProfile,getPlayerRatings,followPlayer,unfollowPlayer,getFollowingIds,getFollowingRanking,getPublicPlayerCard,getFollowingFeed,setPrimaryRival,clearPrimaryRival,getMyPrimaryRival,getShowcaseAchievements,setShowcaseAchievements,getPlayerReliabilityV34} from './social.js?v=1.0.0';
 import {getPreferences,updatePreferences,getFrames,equipFrame,getSeasonDashboard,getSeasonHistory,getRecommendedRivals,getPlayerPercentiles,getPublicProfilePreferences} from './preferences.js?v=1.0.0';
 import {getSeasonChampions,getPublicPlayerSeasons,getH2HAdvanced,getPlayerRecords,getTournamentSummary} from './history.js?v=1.0.0';
-import {getPlayerTitles,equipCompetitiveTitle,refreshOwnCompetitiveTitlesV58,getTournamentHistory,getComparativeStats,getPostMatchSummary} from './v21.js';
+import {getPlayerTitles,equipCompetitiveTitle,refreshOwnCompetitiveTitlesV58,getTournamentHistory,getComparativeStats,getPostMatchSummary} from './v21.js?v=1.0.3-admin';
 import {getV28Dashboard,getV28LastSeasonRecap,getDailyMissionsV101} from './v28.js';
 import {getMyV35Flags,updateMyLocationV35,getNearbyPlayersV35,createPresenceManagerV35} from './v35_social.js?v=1.0.0';
 import {getPublicAdminFlagV37,getPublicAdminIdsV38} from './v36_live.js';
@@ -29,8 +29,8 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.0';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.2';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.2';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.3';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.3';
 import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.0';
 import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.0';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.0';
@@ -236,8 +236,9 @@ let v35Flags={is_test_admin:false,nearby_opt_in:false,nearby_visibility:'everyon
 let frameFitsV44=new Map(),liveFramePreviewV44=null,stopAvatarLiveV44=null;
 
 const PRIMARY_ADMIN_EMAIL_V101='ttrivalsuy@gmail.com';
+let adminFlagsUserIdV103=null;
 function canUseAdminUIV101(){
-  return !!v35Flags?.is_test_admin && String(session?.user?.email||'').trim().toLowerCase()===PRIMARY_ADMIN_EMAIL_V101;
+  return !!session?.user?.id && adminFlagsUserIdV103===session.user.id && !!v35Flags?.is_test_admin && String(session?.user?.email||'').trim().toLowerCase()===PRIMARY_ADMIN_EMAIL_V101;
 }
 let adminUserIdsV38=new Set(),universalPlayerObserverV38=null;
 let passwordRecoveryActiveV53=false,recoveryProfileV53=null;
@@ -1461,6 +1462,7 @@ function trackAchievementUnlocksV60(items=[]){
   }).catch(error=>console.warn('Logros V1.0.0:',error));
 }
 function trackTitleUnlocksV60(items=[]){
+  items=items.filter(item=>!item.admin_access);
   const unlocked=new Set(items.filter(x=>x.unlocked).map(x=>String(x.id)));
   lastUnlockedTitlesV60=unlocked;
   if(!session?.user?.id)return;
@@ -1556,7 +1558,23 @@ async function requestDeviceLocationV35(){
   ));
 }
 async function loadV35Flags(){
-  try{v35Flags=await getMyV35Flags()}catch(e){console.error('V35 flags',e)}
+  const flagsUserId=session?.user?.id;
+  if(adminFlagsUserIdV103!==flagsUserId){
+    v35Flags={is_test_admin:false,nearby_opt_in:false,nearby_visibility:'everyone'};
+    adminFlagsUserIdV103=null;
+  }
+  try{
+    const freshFlags=await getMyV35Flags();
+    if(session?.user?.id!==flagsUserId)return;
+    v35Flags=freshFlags;
+    adminFlagsUserIdV103=flagsUserId;
+    v35Flags.is_test_admin=canUseAdminUIV101();
+  }catch(e){
+    if(session?.user?.id!==flagsUserId)return;
+    v35Flags={is_test_admin:false,nearby_opt_in:false,nearby_visibility:'everyone'};
+    adminFlagsUserIdV103=null;
+    console.error('V35 flags',e);
+  }
   // V41: las herramientas admin salen de Configuración y viven en su propia pestaña.
   $('#testAdminSectionV35')?.classList.add('hidden');
   $('#adminNavItemV43')?.classList.toggle('hidden',!canUseAdminUIV101());
@@ -2096,6 +2114,13 @@ async function loadApp(uid,p=null){
 }
 async function route(prefetchedSession=undefined){
   session=prefetchedSession===undefined?await getSession():prefetchedSession;
+  if(adminFlagsUserIdV103!==session?.user?.id){
+    adminFlagsUserIdV103=null;
+    v35Flags={is_test_admin:false,nearby_opt_in:false,nearby_visibility:'everyone'};
+    document.body.classList.remove('is-admin-v43','test-admin-v35');
+    $('#adminNavItemV43')?.classList.add('hidden');
+    $('#adminTopButtonV101')?.classList.add('hidden');
+  }
 
   if(!session?.user){
     const pending=getPendingRegistrationV76();
@@ -4217,7 +4242,8 @@ async function openTitleSelector(){
     await refreshOwnCompetitiveTitlesV58().catch(()=>[]);
     titleState=await getPlayerTitles(session.user.id);
     trackTitleUnlocksV60(titleState.items||[]);
-    const visibleTitles=(titleState.items||[]).filter(t=>t.id!=='v100_tester'||v35Flags?.is_test_admin||t.unlocked);
+    const visibleTitles=(titleState.items||[]).filter(t=>t.id!=='v100_tester'||canUseAdminUIV101()||t.unlocked)
+      .map(t=>({...t,unlocked:t.unlocked||canUseAdminUIV101()}));
     const items=[{id:'',icon:'○',name:'Sin título',description:'No mostrar ningún título bajo tu nombre.',rarity:'common',unlocked:true,progress:100,progress_label:'Disponible',source:'system'},...visibleTitles];
     box.innerHTML=items.map(t=>{
       const active=(titleState.equipped||'')===t.id;
@@ -4905,13 +4931,13 @@ function openShowcaseSelector(){
 }
 
 function renderShowcaseSelector(){
-  const rows=(socialState.achievements||[]).filter(a=>a.unlocked);
+  const rows=(socialState.achievements||[]).filter(a=>a.unlocked||canUseAdminUIV101());
   $('#showcaseSelectorCount').textContent=`${showcaseDraftIds.length} / 3 seleccionados`;
   $('#showcaseSelectorList').innerHTML=rows.length?rows.map(a=>{
     const selected=showcaseDraftIds.includes(a.id);
     return `<button class="showcase-selector-item ${selected?'selected':''}" data-toggle-showcase="${a.id}" type="button">
       <span class="showcase-selector-emblem">${achievementEmblemHtml(a,true)}</span>
-      <div><strong>${esc(a.name)}</strong><small>${esc(a.desc)}</small></div>
+      <div><strong>${esc(a.name)}</strong><small>${esc(a.desc)}${!a.unlocked&&canUseAdminUIV101()?' · Selección de administrador (sin alterar tu progreso)':''}</small></div>
       <b>${selected?'✓':'＋'}</b>
     </button>`;
   }).join(''):'<div class="loading-row">Todavía no desbloqueaste logros.</div>';
@@ -8006,7 +8032,7 @@ $('#deleteAccountButton').onclick=async()=>{
     alert('Tu cuenta fue eliminada.');
   }catch(err){
     const foreignKey=/installation_exception_events_v58_admin_id_fkey|foreign key constraint/i.test(String(err?.message||''));
-    setStatus(status,foreignKey?'La migración de eliminación segura V1.0.0 todavía no está activa en la base de datos.':err.message,'error');
+    setStatus(status,foreignKey?'No se pudo eliminar la cuenta porque hay registros relacionados que lo impiden. Compartí el detalle técnico con soporte: '+String(err?.message||''):err.message,'error');
   }
 };
 
