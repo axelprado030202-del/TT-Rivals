@@ -1,4 +1,4 @@
-import {APP_VERSION,APP_BUILD,APP_CACHE_NAME} from './version.js?v=1.0.1';
+import {APP_VERSION,APP_BUILD,APP_CACHE_NAME} from './version.js?v=1.0.2';
 
 const TT_SW_URL_V60=`./service-worker.js?v=${encodeURIComponent(APP_BUILD)}`;
 const TT_CACHE_PREFIX='tt-rivals-';

@@ -29,8 +29,8 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.0';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.1';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.1';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.2';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.2';
 import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.0';
 import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.0';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.0';
@@ -191,7 +191,7 @@ async function ensureV100Module(){
   return v100ModulePromise;
 }
 
-// TT Rivals 1.0.1 — experiencia de entrada sin IA/tokens.
+// TT Rivals 1.0.2 — experiencia de entrada sin IA/tokens.
 // Se carga de forma lazy para que nunca pueda bloquear el arranque principal.
 let v101ExperienceModule=null;
 let v101ExperiencePromise=null;
@@ -200,7 +200,7 @@ async function ensureV101Experience(){
   if(!v101ExperiencePromise){
     v101ExperiencePromise=import(`./v101_experience.js?v=${encodeURIComponent(APP_VERSION)}`)
       .then(mod=>{v101ExperienceModule=mod;return mod})
-      .catch(error=>{v101ExperiencePromise=null;recordClientErrorV60(error,'v101-experience');console.warn('TT Rivals 1.0.1 experiencia:',error);throw error});
+      .catch(error=>{v101ExperiencePromise=null;recordClientErrorV60(error,'v101-experience');console.warn('TT Rivals 1.0.2 experiencia:',error);throw error});
   }
   return v101ExperiencePromise;
 }
@@ -1266,7 +1266,7 @@ function averageReviews(rows=[]){
   return {average,count:rows.length};
 }
 function computeStreaks(matches,userId){
-  // V1.0.1: la racha competitiva que alimenta el boost de RP usa sólo ranked.
+  // V1.0.2: la racha competitiva que alimenta el boost de RP usa sólo ranked.
   // Ganar por abandono no aumenta la racha; abandonar sí la corta.
   const confirmed=(matches||[])
     .filter(m=>m.result_status==='confirmed'&&(m.match_type||'ranked')==='ranked')
@@ -9475,7 +9475,7 @@ async function bootApplicationV741(){
 })();
 
 
-// TT Rivals 1.0.1 Premium P4 — ayuda contextual de métricas de Inicio.
+// TT Rivals 1.0.2 Premium P4 — ayuda contextual de métricas de Inicio.
 const METRIC_INFO_V101={
   streak:{icon:'🔥',eyebrow:'RACHA COMPETITIVA',title:'Tu impulso oficial',body:`<p>La racha individual cuenta victorias consecutivas en <strong>ranked y torneos oficiales</strong>. Dobles lleva una racha separada.</p><div class="metric-info-benefit-v101"><strong>Las casuales quedan fuera</strong><span>Una victoria casual no aumenta la racha y una derrota casual tampoco la corta.</span></div><p class="metric-info-note-v101">Solo entran resultados verificados. Este cambio no modifica la fórmula RP vigente.</p>`},
   'best-streak':{icon:'🏆',eyebrow:'MEJOR RACHA OFICIAL',title:'Tu récord competitivo',body:`<p>Muestra la mayor cantidad de <strong>victorias oficiales consecutivas</strong> que alcanzaste en individual.</p><div class="metric-info-benefit-v101"><strong>Es un récord histórico</strong><span>No baja cuando perdés y nunca se altera por un partido casual. Dobles conserva su propio récord.</span></div>`},
