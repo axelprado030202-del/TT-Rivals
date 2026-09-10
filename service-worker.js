@@ -1,13 +1,14 @@
-/* TT Rivals 1.0.4 — Service Worker
+/* TT Rivals 1.0.5 — Service Worker
    Navegación: network-first.
    Estáticos: cache-first + actualización en segundo plano.
    Al activar, elimina cachés TT Rivals de builds anteriores. */
 const params=new URL(self.location.href).searchParams;
-const TT_BUILD=params.get('v')||'v1.0.4-profile-photo';
+const TT_BUILD=params.get('v')||'v1.0.5-leagues';
 const CACHE_PREFIX='tt-rivals-';
-const CACHE_NAME='tt-rivals-v1-0-4-profile-photo';
+const CACHE_NAME='tt-rivals-v1-0-5-leagues';
 
 const APP_SHELL=[
+  './css/v105_leagues.css','./js/leagues_v105.js',
   './css/v104_profile_photo.css',
   './','./index.html','./manifest.webmanifest',
   './css/style.css','./css/v101_ui_rework.css','./css/v101_premium.css','./css/v101_motion_fx.css','./css/v70_metrics.css','./css/v71_result.css','./css/v72_progress.css','./css/v73_rematch.css','./css/v74_performance.css','./css/v74_rivalries.css','./css/v74_admin_decision.css','./css/v75_access_control.css','./css/v76_moderation_email.css','./css/v77_auto_moderation.css','./css/v743_profile_hub.css','./css/v744_profile_card.css','./css/v746_stats_play.css','./css/v747_match_flow.css','./css/v748_postmatch_cinematic.css','./css/v751_play_profile.css','./css/v101_tutorials.css','./css/v100_release.css',

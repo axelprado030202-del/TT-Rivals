@@ -29,8 +29,8 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.0';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.4';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.4';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.5';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.5';
 import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.0';
 import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.0';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.0';
@@ -2057,7 +2057,13 @@ async function loadApp(uid,p=null){
 
   populate();
   showMain();
-  consumePushDeepLinkV100(activateTab);
+  const leaguePushURL=new URL(location.href);
+  if(leaguePushURL.searchParams.get('tt_push_action')==='leagues'){
+    const leagueId=Number(leaguePushURL.searchParams.get('tt_push_id'));
+    ['tt_push_action','tt_push_entity','tt_push_id'].forEach(k=>leaguePushURL.searchParams.delete(k));
+    history.replaceState(history.state,'',leaguePushURL.href);
+    openLeagueV105(Number.isSafeInteger(leagueId)&&leagueId>0?leagueId:null);
+  }else consumePushDeepLinkV100(activateTab);
 
   // La bienvenida se monta después de identificar la sesión. Es decorativa y
   // queda completamente fuera del camino crítico de carga.
@@ -2433,6 +2439,19 @@ function setupProfileHubV743(){
   openProfileHubViewV743('summary',{scroll:false});
 }
 
+let leaguesUIV105Promise=null;
+function ensureLeaguesUIV105(){
+  if(!leaguesUIV105Promise)leaguesUIV105Promise=import('./leagues_v105.js?v=1.0.5').then(mod=>mod.createLeaguesUI({
+    supabase,getUser:()=>session?.user,
+    searchPlayers:async query=>{const {data,error}=await supabase.rpc('search_league_players_v105',{p_query:query});if(error)throw error;return data||[]},
+    onRP:()=>{loadHomeDashboard().catch(()=>{});loadRanking().catch(()=>{})}
+  })).catch(err=>{leaguesUIV105Promise=null;throw err});
+  return leaguesUIV105Promise;
+}
+function loadLeaguesV105(options){return ensureLeaguesUIV105().then(ui=>ui.open(options)).catch(()=>{
+  const el=document.getElementById('leaguesRootV105');if(el)el.textContent='No se pudo cargar Ligas. Volvé a entrar o actualizá la aplicación.';
+})}
+function openLeagueV105(id){activateTab('leagues');loadLeaguesV105({leagueId:id,dateId:null})}
 function activateTab(tab,{source='tap'}={}){
   const startedAt=performance.now();
   const requestedProfileView=tab==='stats'?'stats':null;
@@ -2444,7 +2463,7 @@ function activateTab(tab,{source='tap'}={}){
   document.body.dataset.activeTabV101=tab||'play';
   if(!$$('.modal').some(m=>!m.classList.contains('hidden')))lockPageScroll(false);
   $$('.tab-page').forEach(page=>page.classList.toggle('active',page.id===`tab-${tab}`));
-  const navigationTab=tab==='tournaments'?'play':tab;
+  const navigationTab=['tournaments','leagues'].includes(tab)?'play':tab;
   $$('.nav-item').forEach(button=>button.classList.toggle('active',button.dataset.tab===navigationTab));
   if(previousTab!==tab)animateTabEnterV601(tab);
   if(window.scrollY>0)window.scrollTo({top:0,behavior:'auto'});
@@ -2471,6 +2490,7 @@ function activateTab(tab,{source='tap'}={}){
     ]),{ttl:15000});
 
     if(tab==='tournaments')runTabLoadV74('tournaments',()=>loadTournamentHubV30(),{ttl:30000});
+    if(tab==='leagues')loadLeaguesV105();
 
     if(tab==='history')runTabLoadV74('history',()=>loadHistoryPage(),{ttl:30000});
 
@@ -2907,6 +2927,7 @@ async function handleNotificationActionV58(n){
     return;
   }
   if(n.action==='titles'){activateTab('profile');setTimeout(openTitleSelector,100);return}
+  if(n.action==='leagues'){openLeagueV105(Number(n.entity_id)||null);return}
   if(n.action==='history'){activateTab('history');return}
   if(n.action==='protection'){activateTab('profile');return}
   if(n.action==='places'){activateTab('places');return}
