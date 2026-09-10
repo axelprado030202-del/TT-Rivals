@@ -29,8 +29,8 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.0';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.7';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.7';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.8';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.8';
 import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.0';
 import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.0';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.0';
@@ -377,6 +377,7 @@ function applyFrameAutoFitV44(parts,frameId,fitOverride=null){
   }
 
   const fit=fitOverride||activeFrameFitV44(id);
+  parts.host.dataset.frameId=id;
   if(!fit || !fit.hole_diameter){
     parts.frameStage.classList.add('hidden');
     parts.frameImg.removeAttribute('src');
@@ -482,6 +483,7 @@ function applyEquippedFrameLiveV46(chosenFrameId){
 
   // Actualización optimista/local inmediata.
   frameState={...frameState,equipped:normalized};
+  updateOwnRankingFramesV108();
 
   // En Admin, el modo preview puede estar mostrando otro marco y tiene
   // prioridad en ownFrameSelectionV44(). Al equipar salimos de ese modo.
@@ -550,6 +552,7 @@ async function loadFrameFitsV44(){
   try{
     const rows=await getFrameFitsV44();
     frameFitsV44=new Map((rows||[]).map(x=>[x.frame_id,x]));
+    for(const [id,row] of frameFitsV44)updateVisibleFrameFitV44(id,row);
     renderOwnAvatarsV44();
     renderFrameGallery();
     if(v35Flags?.is_test_admin)setupAdminFrameLabV44();
@@ -579,6 +582,7 @@ function startAvatarLiveSyncV44(){
     },
     onCosmetics:row=>{
       frameState={...frameState,equipped:row?.equipped_frame_id||null};
+      updateOwnRankingFramesV108();
       if(!liveFramePreviewV44?.enabled)renderOwnAvatarsV44();
       renderFrameGallery();
     },
@@ -924,9 +928,9 @@ function applyTheme(theme='dark'){
 async function loadExperienceSettings(){
   if(!session?.user)return;
   try{
-    [userPreferences,frameState,seasonState,percentileState,titleState,comparativeState]=await Promise.all([
+    [userPreferences,,seasonState,percentileState,titleState,comparativeState]=await Promise.all([
       getPreferences(),
-      getFrames(session.user.id),
+      loadOwnFramesV108(),
       getSeasonDashboard(),
       getPlayerPercentiles().catch(()=>({})),
       getPlayerTitles(session.user.id).catch(()=>({equipped:null,items:[]})),
@@ -938,6 +942,52 @@ async function loadExperienceSettings(){
   }catch(err){
     console.error('settings',err);
   }
+}
+
+async function loadOwnFramesV108(){
+  const uid=session?.user?.id;
+  if(!uid)return;
+  try{
+    const next=await getFrames(uid);
+    if(session?.user?.id!==uid)return;
+    frameState=next;
+    renderOwnAvatarsV44();
+    renderFrameGallery();
+    updateOwnRankingFramesV108();
+  }catch(error){console.warn('No se pudo actualizar el marco equipado:',error)}
+}
+
+function updateOwnRankingFramesV108(){
+  document.querySelectorAll('[data-ranking-avatar-v108]').forEach(host=>{
+    if(host.dataset.userId!==session?.user?.id)return;
+    applyFrameAutoFitV44(ensureTTAvatarV44(host),frameState.equipped||'none');
+  });
+}
+
+async function loadRankingFramesV108(rows){
+  const ids=[...new Set(rows.map(x=>x.profile?.id).filter(Boolean))];
+  if(!ids.length)return;
+  try{
+    const [{data,error}]=await Promise.all([
+      supabase.from('player_cosmetics').select('user_id,equipped_frame_id').in('user_id',ids),
+      frameFitsV44.size?Promise.resolve():loadFrameFitsV44()
+    ]);
+    if(error)throw error;
+    const frames=new Map((data||[]).map(x=>[x.user_id,x.equipped_frame_id]));
+    for(const x of rows){
+      const p=x.profile;
+      document.querySelectorAll('[data-ranking-avatar-v108]').forEach(host=>{
+        if(host.dataset.userId!==p.id)return;
+        const frameId=p.id===session?.user?.id?(frameState.equipped||frames.get(p.id)):frames.get(p.id);
+        renderTTAvatarV44(host,{frameId:frameId||'none',photoUrl:p.profile_photo_url,
+          initials:((p.first_name?.[0]||'')+(p.last_name?.[0]||'')).toUpperCase()||'TT',userId:p.id});
+      });
+    }
+  }catch(error){console.warn('No se pudieron cargar los marcos del ranking:',error)}
+}
+
+function rankingAvatarV108(p){
+  return `<span class="ranking-frame-envelope-v108"><span data-ranking-avatar-v108 data-user-id="${esc(p.id)}">${avatarHtml(p,'ranking-avatar')}</span></span>`;
 }
 
 async function loadStartupPreferencesV100(){
@@ -2113,6 +2163,7 @@ async function loadApp(uid,p=null){
 
       const hydrateProgressV100=()=>Promise.all([
         loadSocialState(),
+        loadOwnFramesV108(),
         getPlayerTitles(session.user.id).then(next=>{titleState=next;trackTitleUnlocksV60(titleState.items||[])}).catch(()=>{}),
         loadFrameFitsV44().catch(()=>{})
       ]).then(()=>populate()).catch(error=>console.warn('Progreso diferido V1.0.0:',error));
@@ -2441,7 +2492,7 @@ function setupProfileHubV743(){
 
 let leaguesUIV105Promise=null;
 function ensureLeaguesUIV105(){
-  if(!leaguesUIV105Promise)leaguesUIV105Promise=import('./leagues_v105.js?v=1.0.7').then(mod=>mod.createLeaguesUI({
+  if(!leaguesUIV105Promise)leaguesUIV105Promise=import('./leagues_v105.js?v=1.0.8').then(mod=>mod.createLeaguesUI({
     supabase,getUser:()=>session?.user,
     searchPlayers:async query=>{const {data,error}=await supabase.rpc('search_league_players_v105',{p_query:query});if(error)throw error;return data||[]},
     onRP:()=>{loadHomeDashboard().catch(()=>{});loadRanking().catch(()=>{})}
@@ -2557,7 +2608,7 @@ async function loadRanking(){
       return `<article class="v62-rank-row ${x.profile.id===session.user.id?'is-me':''}">
         <button class="v62-rank-profile" data-open-player="${p.id}" type="button">
           <div class="v62-rank-position"><strong>${m}</strong><small>POS</small></div>
-          <span class="v62-rank-avatar ranking-avatar-online-v35" data-user-id-v35="${p.id}">${avatarHtml(p,'ranking-avatar')}${onlineDotV35(p.id)}</span>
+          <span class="v62-rank-avatar ranking-avatar-online-v35" data-user-id-v35="${p.id}">${rankingAvatarV108(p)}</span>
           <div class="v62-rank-identity">
             <strong>${esc(p.first_name||'Jugador')} ${esc(p.last_name||'')} ${adminBadgeV37(!!p.is_test_admin)}</strong>
             <div class="v62-rank-meta"><small>@${esc(p.username||'usuario')}${x.profile.id===session.user.id?' · Vos':''}</small><span class="ranking-rank-chip ${rankCss(rank)}">${rank}</span></div>
@@ -2570,6 +2621,7 @@ async function loadRanking(){
     }).join(''):(rankingScope==='following'
       ?'<div class="following-empty"><strong>Todavía no seguís a ningún jugador.</strong><span>Abrí un perfil desde el ranking global y tocá “Seguir”.</span></div>'
       :rows.length?'<div class="compact-empty">El podio ocupa actualmente todo el ranking.</div>':'<div class="compact-empty">Sin jugadores.</div>');
+    loadRankingFramesV108(rows);
     refreshPresenceV60(rows.map(x=>x.profile?.id).filter(Boolean)).catch(()=>{});
     animateListV601(list,'.v62-rank-row',20);
     const meV601=rows.find(x=>x.profile?.id===session.user.id);
@@ -2600,7 +2652,7 @@ function renderRankingPodium(rows=[]){
     const p=x.profile,rank=rankForRating(x.rating);
     return `<button class="podium-slot podium-${pos} ${p.id===session.user.id?'is-me':''}" data-open-player="${p.id}" type="button">
       <span class="podium-crown">${pos===1?'♛':pos===2?'♕':'♜'}</span>
-      <div class="podium-avatar-wrap" data-user-id-v35="${p.id}">${avatarHtml(p,'podium-avatar')}${onlineDotV35(p.id)}<b>${pos}</b></div>
+      <div class="podium-avatar-wrap" data-user-id-v35="${p.id}">${rankingAvatarV108(p)}<b>${pos}</b></div>
       <strong>${esc(p.first_name)} ${p.is_test_admin?'<span class="admin-mini-v37">◆</span>':''}</strong>
       <small>@${esc(p.username)}</small>
       <div class="podium-rating">${x.rating} <span>RP</span></div>

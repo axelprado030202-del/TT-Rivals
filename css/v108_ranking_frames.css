@@ -1,0 +1,8 @@
+/* Reserve the full artwork so frames cannot overlap player names or rows. */
+.ranking-frame-envelope-v108{--frame-room-v108:60px;display:grid;place-items:center;width:var(--frame-room-v108);height:var(--frame-room-v108);flex:none}
+[data-ranking-avatar-v108]{display:block;width:42px;height:42px}
+[data-ranking-avatar-v108].tt-avatar-v44{width:min(42px,calc(var(--frame-room-v108) / var(--profile-avatar-envelope-v104,1)))!important;height:min(42px,calc(var(--frame-room-v108) / var(--profile-avatar-envelope-v104,1)))!important;min-width:0!important;min-height:0!important}
+.v62-rank-avatar:has(.ranking-frame-envelope-v108){width:60px!important;height:60px!important;flex:0 0 60px!important;overflow:visible!important}
+.podium-avatar-wrap:has(.ranking-frame-envelope-v108){width:100px!important;height:100px!important;overflow:visible!important}
+.podium-avatar-wrap .ranking-frame-envelope-v108{--frame-room-v108:100px}
+.podium-avatar-wrap [data-ranking-avatar-v108].tt-avatar-v44{width:min(66px,calc(100px / var(--profile-avatar-envelope-v104,1)))!important;height:min(66px,calc(100px / var(--profile-avatar-envelope-v104,1)))!important}
