@@ -29,8 +29,8 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.0';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.3';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.3';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.4';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.4';
 import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.0';
 import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.0';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.0';
@@ -367,6 +367,7 @@ function ensureTTAvatarV44(host){
 function applyFrameAutoFitV44(parts,frameId,fitOverride=null){
   const id=frameId||'none';
   const src=id==='none'?'':frameArtUrlV37(id);
+  parts.host.style.setProperty('--profile-avatar-envelope-v104','1');
 
   if(!src){
     parts.frameStage.classList.add('hidden');
@@ -397,6 +398,13 @@ function applyFrameAutoFitV44(parts,frameId,fitOverride=null){
   // no el centro geométrico del canvas PNG.
   const anchorXPct=(Number(fit.hole_center_x)/Number(fit.png_width))*100;
   const anchorYPct=(Number(fit.hole_center_y)/Number(fit.png_height))*100;
+
+  // Reserve the full calibrated artwork, including asymmetric offsets.
+  // Only the own-profile CSS consumes this value; calibration is unchanged.
+  const left=Number(fit.fine_x??0)/100-widthPct/100*anchorXPct/100;
+  const top=Number(fit.fine_y??0)/100-heightPct/100*anchorYPct/100;
+  const envelope=2*Math.max(.5,-left,left+widthPct/100,-top,top+heightPct/100);
+  parts.host.style.setProperty('--profile-avatar-envelope-v104',String(Number.isFinite(envelope)?envelope:1));
 
   parts.frameStage.classList.remove('hidden');
   if(parts.frameImg.getAttribute('src')!==src)parts.frameImg.src=src;

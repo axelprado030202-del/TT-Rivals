@@ -1,0 +1,38 @@
+/* 1.0.4: keep the complete calibrated frame inside its own layout area. */
+#tab-profile .profile-summary-card-v744>.v44-profile-hero{
+  grid-template-columns:170px minmax(0,1fr)!important;
+  gap:18px!important;
+}
+#tab-profile .profile-summary-card-v744 .v44-profile-avatar-slot{
+  width:170px!important;height:auto!important;
+  display:flex!important;flex-direction:column;align-items:center;gap:10px;
+}
+.profile-avatar-envelope-v104{
+  width:160px;height:160px;display:grid;place-items:center;flex:none;
+}
+#tab-profile .profile-summary-card-v744 .tt-avatar-profile-v44{
+  width:min(102px,calc(152px / var(--profile-avatar-envelope-v104,1)))!important;
+  height:min(102px,calc(152px / var(--profile-avatar-envelope-v104,1)))!important;
+  min-width:0!important;min-height:0!important;
+}
+.profile-photo-edit-v104{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;
+  min-height:44px;padding:9px 14px;border:1px solid rgba(96,165,250,.45);
+  border-radius:12px;background:#142a49;color:#e6f2ff;font:inherit;
+  font-size:.8rem;font-weight:750;cursor:pointer;max-width:100%;
+}
+.profile-photo-edit-v104:hover{background:#1d3b64}
+.profile-photo-edit-v104:focus-visible{outline:3px solid #67e8f9;outline-offset:3px}
+.profile-photo-edit-v104:disabled{opacity:.6;cursor:wait}
+#tab-profile .profile-summary-card-v744 .v44-profile-copy{overflow-wrap:anywhere}
+#tab-profile .profile-summary-card-v744 .v15-profile-tags{flex-wrap:wrap!important}
+#tab-profile .profile-summary-card-v744 .v15-profile-tags>span{max-width:100%;white-space:normal}
+body[data-theme="light"] .profile-photo-edit-v104{background:#eaf3ff;color:#17355f;border-color:#93b8e8}
+@media(max-width:600px){
+  #tab-profile .profile-summary-card-v744>.v44-profile-hero{
+    grid-template-columns:minmax(0,1fr)!important;justify-items:center!important;gap:16px!important;
+  }
+  #tab-profile .profile-summary-card-v744 .v44-profile-avatar-slot{justify-self:center!important}
+  #tab-profile .profile-summary-card-v744 .v44-profile-copy{width:100%;text-align:center!important}
+  #tab-profile .profile-summary-card-v744 .v15-profile-tags{justify-content:center!important}
+}
