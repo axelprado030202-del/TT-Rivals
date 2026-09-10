@@ -1,11 +1,11 @@
-/* TT Rivals 1.0.5 — Service Worker
+/* TT Rivals 1.0.6 — Service Worker
    Navegación: network-first.
    Estáticos: cache-first + actualización en segundo plano.
    Al activar, elimina cachés TT Rivals de builds anteriores. */
 const params=new URL(self.location.href).searchParams;
-const TT_BUILD=params.get('v')||'v1.0.5-leagues';
+const TT_BUILD=params.get('v')||'v1.0.6-leagues-review';
 const CACHE_PREFIX='tt-rivals-';
-const CACHE_NAME='tt-rivals-v1-0-5-leagues';
+const CACHE_NAME='tt-rivals-v1-0-6-leagues-review';
 
 const APP_SHELL=[
   './css/v105_leagues.css','./js/leagues_v105.js',
