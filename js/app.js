@@ -29,8 +29,8 @@ import {createTeamTournamentV32,getTeamTournamentV32,listMyTeamTournamentsV32,su
 import {setupTrainingTimerV53} from './training.js';
 import {createCompetitionLiveSyncV55} from './v55_competition_live.js?v=1.0.0';
 import {getMyStatsV56} from './v56_stats.js';
-import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.8';
-import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.8';
+import {setupPwaV573,getPwaDiagnosticsV60,checkForUpdateV60} from './pwa.js?v=1.0.9';
+import {APP_VERSION,APP_BUILD} from './version.js?v=1.0.9';
 import {beginPostMatchCinematicV750,completePostMatchCinematicV750,closePostMatchCinematicV750,isPostMatchCinematicOpenV750} from './v748_postmatch_cinematic.js?v=1.0.0';
 import {maybeShowTutorialV101,maybeShowSectionTutorialV101} from './v101_tutorials.js?v=1.0.0';
 import {withActionLockV60,installRapidClickGuardV60,installErrorCaptureV60,getRecentErrorsV60,recordClientErrorV60} from './v60_runtime.js?v=1.0.0';
@@ -2492,7 +2492,7 @@ function setupProfileHubV743(){
 
 let leaguesUIV105Promise=null;
 function ensureLeaguesUIV105(){
-  if(!leaguesUIV105Promise)leaguesUIV105Promise=import('./leagues_v105.js?v=1.0.8').then(mod=>mod.createLeaguesUI({
+  if(!leaguesUIV105Promise)leaguesUIV105Promise=import('./leagues_v105.js?v=1.0.9').then(mod=>mod.createLeaguesUI({
     supabase,getUser:()=>session?.user,
     searchPlayers:async query=>{const {data,error}=await supabase.rpc('search_league_players_v105',{p_query:query});if(error)throw error;return data||[]},
     onRP:()=>{loadHomeDashboard().catch(()=>{});loadRanking().catch(()=>{})}

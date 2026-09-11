@@ -7,8 +7,12 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="theme-color" content="#0b1020">
-  <meta name="description" content="TT Rivals — Tu juego. Tu ranking. Tu desafío.">
-  <title>TT Rivals</title>
+  <meta name="description" content="Desafiá a otros jugadores, organizá ligas y torneos y subí en el ranking de tenis de mesa. Seguí tus resultados y encontrá tu próximo rival.">
+  <title>TT Rivals — Ligas, torneos y ranking de tenis de mesa</title>
+  <link rel="canonical" href="https://ttrivals.com/">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebSite","name":"TT Rivals","alternateName":"TTRivals","url":"https://ttrivals.com/"}
+  </script>
   <meta name="copyright" content="TT Rivals">
   <meta name="application-name" content="TT Rivals">
   <meta name="mobile-web-app-capable" content="yes">
@@ -16,7 +20,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TT Rivals">
   <link rel="manifest" href="./manifest.webmanifest?v=1.0.0">
-  <link rel="icon" type="image/png" sizes="64x64" href="./assets/pwa/favicon-64.png?v=p6">
+  <link rel="icon" type="image/png" sizes="192x192" href="https://ttrivals.com/assets/pwa/icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./assets/pwa/apple-touch-icon.png?v=p6">
   <link rel="stylesheet" href="css/style.css?v=1.0.0">
   <link rel="stylesheet" href="css/v101_ui_rework.css?v=1.0.0">
@@ -40,12 +44,12 @@
   <link rel="stylesheet" href="css/v751_play_profile.css?v=1.0.0">
   <link rel="stylesheet" href="css/v101_tutorials.css?v=1.0.0">
   <link rel="stylesheet" href="css/v100_release.css?v=1.0.0">
-  <link rel="stylesheet" href="css/v104_profile_photo.css?v=1.0.8">
-  <link rel="stylesheet" href="css/v108_ranking_frames.css?v=1.0.8">
-  <link rel="stylesheet" href="css/v105_leagues.css?v=1.0.8">
+  <link rel="stylesheet" href="css/v104_profile_photo.css?v=1.0.9">
+  <link rel="stylesheet" href="css/v108_ranking_frames.css?v=1.0.9">
+  <link rel="stylesheet" href="css/v105_leagues.css?v=1.0.9">
 </head>
-<body data-tt-build="v1.0.8-avatar-frames" data-ui-build="1.0.8" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
-  <div id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
+<body data-tt-build="v1.0.9-search-brand" data-ui-build="1.0.9" data-tt-boot-stage="files" data-active-tab-v101="play" class="tt-booting-v572">
+  <div data-nosnippet id="ttBootScreenV572" class="tt-boot-screen-v572" aria-live="polite">
     <div class="tt-loader-v572" aria-hidden="true">
       <div class="tt-loader-orbit-v572"></div>
       <div class="tt-loader-core-v572"><strong>TT</strong><small>RIVALS</small></div>
@@ -75,7 +79,7 @@
       const panel=document.createElement('div');
       panel.id='ttBootRecoveryV601';
       panel.style.cssText='position:fixed;inset:0;z-index:999999;display:grid;place-items:center;padding:24px;background:#07111f;color:#fff;font-family:system-ui,sans-serif';
-      panel.innerHTML=`<div style="width:min(440px,100%);padding:24px;border:1px solid rgba(255,255,255,.15);border-radius:20px;background:#0c1a2b;box-shadow:0 20px 60px rgba(0,0,0,.35)"><strong style="display:block;font-size:20px;margin-bottom:8px">TT Rivals no pudo terminar de iniciar</strong><p style="margin:0 0 18px;color:#a9bdd2;line-height:1.45">${reason||'La carga está tardando más de lo esperado.'}</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button id="ttBootRetryV601" style="padding:11px 15px;border:0;border-radius:12px;font-weight:800;cursor:pointer">REINTENTAR</button><button id="ttBootResetV601" style="padding:11px 15px;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:transparent;color:#fff;font-weight:800;cursor:pointer">LIMPIAR CACHÉ</button></div><small style="display:block;margin-top:14px;color:#728aa3">Etapa: ${document.body.dataset.ttBootStage||'carga de archivos'} · TT Rivals 1.0.8</small></div>`;
+      panel.innerHTML=`<div style="width:min(440px,100%);padding:24px;border:1px solid rgba(255,255,255,.15);border-radius:20px;background:#0c1a2b;box-shadow:0 20px 60px rgba(0,0,0,.35)"><strong style="display:block;font-size:20px;margin-bottom:8px">TT Rivals no pudo terminar de iniciar</strong><p style="margin:0 0 18px;color:#a9bdd2;line-height:1.45">${reason||'La carga está tardando más de lo esperado.'}</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button id="ttBootRetryV601" style="padding:11px 15px;border:0;border-radius:12px;font-weight:800;cursor:pointer">REINTENTAR</button><button id="ttBootResetV601" style="padding:11px 15px;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:transparent;color:#fff;font-weight:800;cursor:pointer">LIMPIAR CACHÉ</button></div><small style="display:block;margin-top:14px;color:#728aa3">Etapa: ${document.body.dataset.ttBootStage||'carga de archivos'} · TT Rivals 1.0.9</small></div>`;
       document.body.appendChild(panel);
       document.getElementById('ttBootRetryV601').onclick=async()=>{
         try{
@@ -145,6 +149,7 @@
           <p class="eyebrow">COMPETITIVE TABLE TENNIS</p>
           <h1><span>TT</span> RIVALS</h1>
           <p class="welcome-tagline-v47">COMPETÍ. SUBÍ. DOMINÁ.</p>
+          <p style="max-width:38rem;margin:14px auto 0;font-size:1rem;line-height:1.5;color:inherit">Desafiá a otros jugadores, organizá ligas y torneos y subí en el ranking de tenis de mesa.</p>
         </div>
 
         <div class="welcome-arena-v47" aria-hidden="true">
@@ -179,7 +184,7 @@
     </section>
 
     <section id="registerView" class="view">
-      <div class="panel form-panel">
+      <div data-nosnippet class="panel form-panel">
         <button class="back-btn" data-back="welcomeView" type="button">← Volver</button>
         <p class="eyebrow">NUEVA CUENTA</p>
         <h2>Creá tu cuenta</h2>
@@ -222,7 +227,7 @@
     </section>
 
     <section id="emailVerificationViewV76" class="view">
-      <div class="panel form-panel v76-email-panel">
+      <div data-nosnippet class="panel form-panel v76-email-panel">
         <button id="emailVerificationBackV76" class="back-btn" type="button">← Cambiar correo</button>
         <div class="v76-email-shield" aria-hidden="true">✦</div>
         <p class="eyebrow">SEGURIDAD TT RIVALS</p>
@@ -251,7 +256,7 @@
     </section>
 
     <section id="loginView" class="view">
-      <div class="panel form-panel">
+      <div data-nosnippet class="panel form-panel">
         <button class="back-btn" data-back="welcomeView" type="button">← Volver</button>
         <p class="eyebrow">ACCESO</p>
         <h2>Iniciar sesión</h2>
@@ -266,7 +271,7 @@
     </section>
 
     <section id="forgotPasswordView" class="view">
-      <div class="panel form-panel recovery-panel-v53">
+      <div data-nosnippet class="panel form-panel recovery-panel-v53">
         <button class="back-btn" data-back="loginView" type="button">← Volver</button>
         <div class="recovery-icon-v53" aria-hidden="true">⌁</div>
         <p class="eyebrow">RECUPERAR CUENTA</p>
@@ -288,7 +293,7 @@
     </section>
 
     <section id="resetPasswordView" class="view">
-      <div class="panel form-panel recovery-panel-v53">
+      <div data-nosnippet class="panel form-panel recovery-panel-v53">
         <div class="recovery-icon-v53 is-success" aria-hidden="true">✓</div>
         <p class="eyebrow">CUENTA VERIFICADA</p>
         <h2>Creá una nueva contraseña</h2>
@@ -312,7 +317,7 @@
     </section>
 
     <section id="sportsProfileView" class="view">
-      <div class="panel form-panel">
+      <div data-nosnippet class="panel form-panel">
         <p class="eyebrow">PERFIL DEPORTIVO</p>
         <h2>Completá tu perfil</h2>
         <form id="sportsProfileForm" class="form-grid" novalidate>
@@ -407,7 +412,7 @@
     </section>
   </main>
 
-  <div id="onboardingPhotoEditorV47" class="onboarding-photo-editor-v47 hidden" role="dialog" aria-modal="true" aria-labelledby="onboardingPhotoEditorTitleV47">
+  <div data-nosnippet id="onboardingPhotoEditorV47" class="onboarding-photo-editor-v47 hidden" role="dialog" aria-modal="true" aria-labelledby="onboardingPhotoEditorTitleV47">
     <div class="onboarding-photo-editor-card-v47">
       <div class="onboarding-photo-editor-head-v47">
         <div>
@@ -436,7 +441,7 @@
     </div>
   </div>
 
-  <div id="mainApp" class="main-app hidden">
+  <div data-nosnippet id="mainApp" class="main-app hidden">
     <header class="topbar">
       <div><p class="eyebrow top-eyebrow">TT RIVALS</p><h2 id="topGreeting">Hola</h2></div>
       <div class="topbar-actions">
@@ -2606,7 +2611,7 @@
               <div class="v59-update-panel">
                 <div>
                   <span>VERSIÓN INSTALADA</span>
-                  <strong id="appBuildLabelV59">TT Rivals 1.0.8</strong>
+                  <strong id="appBuildLabelV59">TT Rivals 1.0.9</strong>
                   <small id="appUpdateStatusV59">La navegación prioriza siempre los archivos más nuevos disponibles.</small>
                 </div>
                 <button id="checkAppUpdateV59" class="hidden" type="button">Buscar actualización</button>
@@ -3068,7 +3073,7 @@
     </div>
   </div>
 
-  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.8" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
+  <script type="module" data-tt-critical="true" src="js/app.js?v=1.0.9" onload="window.__TT_BOOT_FILES_READY?.()" onerror="window.__TT_BOOT_RECOVER?.('No se pudo cargar el archivo principal de la aplicación.')"></script>
   <script type="module" src="js/v101_feedback.js?v=1.0.0"></script>
   <script type="module" src="js/v101_motion_fx.js?v=1.0.0"></script>
   <script type="module" src="js/v101_performance.js?v=1.0.0"></script>
