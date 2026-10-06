@@ -9,3 +9,7 @@
 .lg110-help-dialog::backdrop{background:#030a16b0}
 .lg110-next{border-top:1px solid #2a3d58;border-bottom:1px solid #2a3d58;padding:0 0 14px;margin:16px 0}
 .lg110-next .lg105-actions{align-items:center;margin-bottom:6px}
+.lg111-standing-heading{display:flex;align-items:center;gap:10px}
+.lg111-glossary{margin:18px 0;line-height:1.55}
+.lg111-glossary dt{font-weight:700;color:#edf5ff;margin-top:16px}
+.lg111-glossary dd{margin:4px 0 0;color:#aabbcf}
